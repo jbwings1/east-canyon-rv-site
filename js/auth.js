@@ -1,6 +1,6 @@
 /**
- * Auth + member data via Supabase (email/password, profiles, bookings).
- * Uses the publishable/anon key from js/supabase-config.js only — never a service_role key.
+ * Auth + member data via the official Supabase JS client.
+ * Config/keys live in js/supabase-config.js — never put a service_role key in the frontend.
  */
 const SESSION_KEY = "eastCanyonSupabaseSession";
 const PROFILE_CACHE_KEY = "eastCanyonProfileCache";
@@ -19,12 +19,11 @@ const RESERVATION_TYPE_LABELS = {
   guest: "Member",
 };
 
-function getConfig() {
-  const cfg = window.SUPABASE_CONFIG;
-  if (!cfg?.url || !cfg?.anonKey) {
-    throw new Error("Supabase is not configured. Load js/supabase-config.js before js/auth.js.");
+function getClient() {
+  if (!window.ecrSupabase) {
+    throw new Error("Supabase client is not ready. Load js/supabase-client.js before js/auth.js.");
   }
-  return cfg;
+  return window.ecrSupabase;
 }
 
 function storageAvailable() {
@@ -84,13 +83,13 @@ function mapProfile(session, profile) {
     id: authUser.id || profile?.id || "",
     email,
     name: profile?.full_name || authUser.user_metadata?.full_name || "",
-    phone: profile?.phone || "",
+    phone: profile?.phone || authUser.user_metadata?.phone || "",
     profileEmail: email,
     address: profile?.address || "",
     city: profile?.city || "",
     state: profile?.state || "",
     zip: profile?.zip || "",
-    rv: profile?.rv_details || "",
+    rv: profile?.rv_details || authUser.user_metadata?.rv_details || "",
     assignedSpot: profile?.assigned_spot || null,
     accountType: reservationType || profile?.reservation_type || "",
     reservationType,
@@ -100,47 +99,49 @@ function mapProfile(session, profile) {
   };
 }
 
-function authHeaders(accessToken) {
-  const { anonKey } = getConfig();
-  const headers = {
-    apikey: anonKey,
-    Authorization: `Bearer ${accessToken || anonKey}`,
-    "Content-Type": "application/json",
-  };
-  return headers;
+function siteOrigin() {
+  return window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
 }
 
-async function api(path, options = {}) {
-  const { url } = getConfig();
-  const session = readJson(SESSION_KEY);
-  const res = await fetch(`${url}${path}`, {
-    ...options,
-    headers: {
-      ...authHeaders(options.accessToken || session?.access_token),
-      ...(options.headers || {}),
-    },
+function officialStorageKey() {
+  try {
+    const host = new URL(window.SUPABASE_CONFIG.url).hostname;
+    const ref = host.split(".")[0];
+    return `sb-${ref}-auth-token`;
+  } catch {
+    return "sb-jmxlewxczfnxciamrtze-auth-token";
+  }
+}
+
+function readOfficialSession() {
+  try {
+    const raw = localStorage.getItem(officialStorageKey());
+    if (!raw) return readJson(SESSION_KEY);
+    const parsed = JSON.parse(raw);
+    if (parsed?.access_token) return parsed;
+    if (parsed?.currentSession?.access_token) return parsed.currentSession;
+    return parsed || readJson(SESSION_KEY);
+  } catch {
+    return readJson(SESSION_KEY);
+  }
+}
+
+function cacheSession(session) {
+  if (!session?.access_token) {
+    writeJson(SESSION_KEY, null);
+    return;
+  }
+  writeJson(SESSION_KEY, {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    user: session.user,
   });
-  const text = await res.text();
-  let body = null;
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = { message: text };
-    }
-  }
-  if (!res.ok) {
-    const err = new Error(formatApiError(body, res.status));
-    err.status = res.status;
-    err.body = body;
-    throw err;
-  }
-  return body;
 }
 
-function formatApiError(body, status) {
-  const code = body?.error_code || body?.code || "";
-  const msg = body?.msg || body?.error_description || body?.message || body?.error || "";
+function formatClientError(error) {
+  const code = error?.code || error?.error_code || "";
+  const msg = error?.message || error?.msg || "";
   if (code === "email_not_confirmed" || /email not confirmed/i.test(msg)) {
     return "Confirm your email before signing in. Check your inbox for the East Canyon link.";
   }
@@ -156,11 +157,11 @@ function formatApiError(body, status) {
   if (code === "over_email_send_rate_limit") {
     return "Too many emails were sent. Wait a minute and try again.";
   }
-  return msg || `Request failed (${status}).`;
+  return msg || "Request failed.";
 }
 
-function siteOrigin() {
-  return window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
+function throwIfError(error) {
+  if (error) throw new Error(formatClientError(error));
 }
 
 const Auth = {
@@ -171,7 +172,7 @@ const Auth = {
   LAST_BOOKING_KEY,
 
   getSession() {
-    return readJson(SESSION_KEY);
+    return readOfficialSession();
   },
 
   getCurrentUser() {
@@ -202,18 +203,22 @@ const Auth = {
 
   async listAllProfiles() {
     if (!this.isAdmin()) throw new Error("Admin access required.");
-    const rows = await api(
-      "/rest/v1/profiles?select=id,email,full_name,phone,reservation_type,assigned_spot,profile_complete,is_admin&order=full_name.asc.nullslast"
-    );
-    return Array.isArray(rows) ? rows : [];
+    const { data, error } = await getClient()
+      .from("profiles")
+      .select("id,email,full_name,phone,reservation_type,assigned_spot,profile_complete,is_admin")
+      .order("full_name", { ascending: true, nullsFirst: false });
+    throwIfError(error);
+    return data || [];
   },
 
   async listAllBookings() {
     if (!this.isAdmin()) throw new Error("Admin access required.");
-    const rows = await api(
-      "/rest/v1/bookings?select=id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at&order=check_in.desc"
-    );
-    return Array.isArray(rows) ? rows : [];
+    const { data, error } = await getClient()
+      .from("bookings")
+      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at")
+      .order("check_in", { ascending: false });
+    throwIfError(error);
+    return data || [];
   },
 
   async updateBookingStatus(bookingId, status) {
@@ -223,12 +228,14 @@ const Auth = {
     }
     const payload = { status };
     if (status === "confirmed") payload.confirmed_at = new Date().toISOString();
-    const rows = await api(`/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(payload),
-    });
-    return Array.isArray(rows) ? rows[0] : rows;
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update(payload)
+      .eq("id", bookingId)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    return data;
   },
 
   isProfileComplete(user = this.getCurrentUser()) {
@@ -242,6 +249,11 @@ const Auth = {
   clearSession() {
     writeJson(SESSION_KEY, null);
     writeJson(PROFILE_CACHE_KEY, null);
+    try {
+      localStorage.removeItem(officialStorageKey());
+    } catch {
+      /* ignore */
+    }
   },
 
   clearAllSiteData() {
@@ -260,10 +272,9 @@ const Auth = {
   },
 
   logout() {
-    const session = this.getSession();
-    if (session?.access_token) {
-      api("/auth/v1/logout", { method: "POST" }).catch(() => {});
-    }
+    getClient()
+      .auth.signOut()
+      .catch(() => {});
     this.clearSession();
     window.location.href = "login.html";
   },
@@ -289,6 +300,12 @@ const Auth = {
   },
 
   async ready() {
+    try {
+      const { data, error } = await getClient().auth.getSession();
+      if (!error && data?.session) cacheSession(data.session);
+    } catch {
+      /* keep cached session */
+    }
     const session = this.getSession();
     if (!session?.access_token) return this.getCurrentUser();
     try {
@@ -302,13 +319,24 @@ const Auth = {
   async refreshProfile() {
     const session = this.getSession();
     if (!session?.user?.id) return null;
-    const rows = await api(
-      `/rest/v1/profiles?id=eq.${encodeURIComponent(session.user.id)}&select=*`
-    );
-    const profile = Array.isArray(rows) ? rows[0] : rows;
-    if (profile) writeJson(PROFILE_CACHE_KEY, profile);
+    const { data, error } = await getClient()
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    throwIfError(error);
+    if (data) writeJson(PROFILE_CACHE_KEY, data);
     await this._applyPendingProfile();
     return this.getCurrentUser();
+  },
+
+  async _waitForProfile(userId, attempts = 6) {
+    for (let i = 0; i < attempts; i += 1) {
+      const { data } = await getClient().from("profiles").select("*").eq("id", userId).maybeSingle();
+      if (data) return data;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return null;
   },
 
   async _applyPendingProfile() {
@@ -339,18 +367,9 @@ const Auth = {
   },
 
   async signIn(email, password) {
-    const body = await api("/auth/v1/token?grant_type=password", {
-      method: "POST",
-      accessToken: getConfig().anonKey,
-      body: JSON.stringify({ email, password }),
-    });
-    const session = {
-      access_token: body.access_token,
-      refresh_token: body.refresh_token,
-      expires_at: body.expires_at,
-      user: body.user,
-    };
-    writeJson(SESSION_KEY, session);
+    const { data, error } = await getClient().auth.signInWithPassword({ email, password });
+    throwIfError(error);
+    cacheSession(data.session);
     try {
       await this.refreshProfile();
     } catch {
@@ -367,16 +386,15 @@ const Auth = {
       reservation_type: dbType,
       rv_details: rv || "",
     };
-    const redirectTo = `${siteOrigin()}login.html`;
-    const body = await api(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
-      method: "POST",
-      accessToken: getConfig().anonKey,
-      body: JSON.stringify({
-        email,
-        password,
+    const { data, error } = await getClient().auth.signUp({
+      email,
+      password,
+      options: {
         data: metadata,
-      }),
+        emailRedirectTo: `${siteOrigin()}login.html`,
+      },
     });
+    throwIfError(error);
 
     try {
       sessionStorage.setItem(
@@ -393,19 +411,15 @@ const Auth = {
       /* ignore */
     }
 
-    if (body?.identities && body.identities.length === 0) {
+    if (data?.user?.identities && data.user.identities.length === 0) {
       throw new Error("An account with this email already exists. Sign in instead.");
     }
 
-    if (body?.access_token && body.user) {
-      writeJson(SESSION_KEY, {
-        access_token: body.access_token,
-        refresh_token: body.refresh_token,
-        expires_at: body.expires_at,
-        user: body.user,
-      });
+    if (data?.session) {
+      cacheSession(data.session);
       try {
-        await this.refreshProfile();
+        const profile = await this._waitForProfile(data.user.id);
+        if (profile) writeJson(PROFILE_CACHE_KEY, profile);
         await this.updateProfile({
           name,
           phone,
@@ -425,16 +439,14 @@ const Auth = {
   async updateProfileRaw(updates) {
     const session = this.getSession();
     if (!session?.user?.id) throw new Error("Not signed in.");
-    const rows = await api(
-      `/rest/v1/profiles?id=eq.${encodeURIComponent(session.user.id)}`,
-      {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(updates),
-      }
-    );
-    const profile = Array.isArray(rows) ? rows[0] : rows;
-    if (profile) writeJson(PROFILE_CACHE_KEY, profile);
+    const { data, error } = await getClient()
+      .from("profiles")
+      .update(updates)
+      .eq("id", session.user.id)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (data) writeJson(PROFILE_CACHE_KEY, data);
     return this.getCurrentUser();
   },
 
@@ -474,20 +486,16 @@ const Auth = {
       throw new Error("New password must be at least 8 characters.");
     }
     await this.signIn(user.email, currentPassword);
-    await api("/auth/v1/user", {
-      method: "PUT",
-      body: JSON.stringify({ password: newPassword }),
-    });
+    const { error } = await getClient().auth.updateUser({ password: newPassword });
+    throwIfError(error);
     return this.getCurrentUser();
   },
 
   async requestPasswordReset(email) {
-    const redirectTo = `${siteOrigin()}reset-password.html`;
-    await api(`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
-      method: "POST",
-      accessToken: getConfig().anonKey,
-      body: JSON.stringify({ email }),
+    const { error } = await getClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteOrigin()}reset-password.html`,
     });
+    throwIfError(error);
     return { email };
   },
 
@@ -499,10 +507,8 @@ const Auth = {
     if (!session?.access_token) {
       throw new Error("This reset link is invalid or has expired.");
     }
-    await api("/auth/v1/user", {
-      method: "PUT",
-      body: JSON.stringify({ password: newPassword }),
-    });
+    const { error } = await getClient().auth.updateUser({ password: newPassword });
+    throwIfError(error);
     return true;
   },
 
@@ -512,9 +518,9 @@ const Auth = {
     const accessToken = hash.get("access_token") || query.get("access_token");
     const refreshToken = hash.get("refresh_token") || query.get("refresh_token");
     const type = hash.get("type") || query.get("type");
-    if (!accessToken) return false;
+    if (!accessToken) return Boolean(this.getCurrentUser());
     const payload = decodeJwt(accessToken);
-    writeJson(SESSION_KEY, {
+    cacheSession({
       access_token: accessToken,
       refresh_token: refreshToken,
       expires_at: payload?.exp,
@@ -532,10 +538,13 @@ const Auth = {
   async listBookings() {
     const user = this.getCurrentUser();
     if (!user?.id) return [];
-    const rows = await api(
-      `/rest/v1/bookings?user_id=eq.${encodeURIComponent(user.id)}&select=*&order=check_in.desc`
-    );
-    return Array.isArray(rows) ? rows : [];
+    const { data, error } = await getClient()
+      .from("bookings")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("check_in", { ascending: false });
+    throwIfError(error);
+    return data || [];
   },
 
   getActiveBookings(bookings = []) {
@@ -551,10 +560,9 @@ const Auth = {
     const dbType = toDbReservationType(reservationType);
     if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
     const now = new Date().toISOString();
-    const rows = await api("/rest/v1/bookings", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
+    const { data, error } = await getClient()
+      .from("bookings")
+      .insert({
         user_id: user.id,
         reservation_type: dbType,
         spot: spot || null,
@@ -563,11 +571,12 @@ const Auth = {
         status: "confirmed",
         notes: notes || null,
         confirmed_at: now,
-      }),
-    });
-    const booking = Array.isArray(rows) ? rows[0] : rows;
-    if (!booking) throw new Error("Booking could not be saved.");
-    return booking;
+      })
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Booking could not be saved.");
+    return data;
   },
 
   saveLastBooking(record) {
