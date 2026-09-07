@@ -317,7 +317,10 @@ updateMapAvailability();
 updateMemberReservationNotice();
 
 function showConfirmedState(record) {
-  if (completeBookingBtn) completeBookingBtn.hidden = true;
+  if (completeBookingBtn) {
+    completeBookingBtn.hidden = true;
+    completeBookingBtn.disabled = true;
+  }
   if (bookingSigninNotice) bookingSigninNotice.hidden = true;
   if (bookingConfirmed) bookingConfirmed.hidden = false;
   if (bookAnotherBtn) bookAnotherBtn.hidden = false;
@@ -331,9 +334,13 @@ function showBookingFormState() {
   const signedIn = typeof Auth !== "undefined" && Auth.getCurrentUser();
   if (bookingConfirmed) bookingConfirmed.hidden = true;
   if (bookAnotherBtn) bookAnotherBtn.hidden = true;
-  if (completeBookingBtn) completeBookingBtn.hidden = !signedIn;
+  if (completeBookingBtn) {
+    completeBookingBtn.hidden = !signedIn;
+    completeBookingBtn.disabled = !signedIn;
+  }
   if (bookingSigninNotice) bookingSigninNotice.hidden = Boolean(signedIn);
 }
+
 
 function mergeUserBookingsIntoMap(bookings) {
   if (!Array.isArray(window.SPOT_BOOKINGS)) window.SPOT_BOOKINGS = [];

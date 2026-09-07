@@ -252,6 +252,11 @@ const Auth = {
     } catch {
       /* ignore */
     }
+    try {
+      localStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
+    }
   },
 
   logout() {
@@ -566,14 +571,26 @@ const Auth = {
   },
 
   saveLastBooking(record) {
+    const payload = JSON.stringify(record);
     try {
-      sessionStorage.setItem(LAST_BOOKING_KEY, JSON.stringify(record));
+      localStorage.setItem(LAST_BOOKING_KEY, payload);
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.setItem(LAST_BOOKING_KEY, payload);
     } catch {
       /* ignore */
     }
   },
 
   getLastBooking() {
+    try {
+      const local = localStorage.getItem(LAST_BOOKING_KEY);
+      if (local) return JSON.parse(local);
+    } catch {
+      /* ignore */
+    }
     try {
       return JSON.parse(sessionStorage.getItem(LAST_BOOKING_KEY) || "null");
     } catch {
@@ -582,6 +599,11 @@ const Auth = {
   },
 
   clearLastBooking() {
+    try {
+      localStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
+    }
     try {
       sessionStorage.removeItem(LAST_BOOKING_KEY);
     } catch {
