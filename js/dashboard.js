@@ -126,5 +126,7 @@
     }
   });
 
+  Auth.showAdminLinks();
+
   document.getElementById("logout-btn").addEventListener("click", () => Auth.logout());
 })();

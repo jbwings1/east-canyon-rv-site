@@ -95,6 +95,7 @@ function mapProfile(session, profile) {
     accountType: reservationType || profile?.reservation_type || "",
     reservationType,
     profileComplete: profile?.profile_complete === true,
+    isAdmin: profile?.is_admin === true,
     accessToken: session?.access_token || "",
   };
 }
@@ -186,6 +187,48 @@ const Auth = {
 
   canAccessMembers(user = this.getCurrentUser()) {
     return Boolean(user);
+  },
+
+  isAdmin(user = this.getCurrentUser()) {
+    return Boolean(user?.isAdmin);
+  },
+
+  showAdminLinks() {
+    if (!this.isAdmin()) return;
+    document.querySelectorAll("[data-admin-link]").forEach((el) => {
+      el.hidden = false;
+    });
+  },
+
+  async listAllProfiles() {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    const rows = await api(
+      "/rest/v1/profiles?select=id,email,full_name,phone,reservation_type,assigned_spot,profile_complete,is_admin&order=full_name.asc.nullslast"
+    );
+    return Array.isArray(rows) ? rows : [];
+  },
+
+  async listAllBookings() {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    const rows = await api(
+      "/rest/v1/bookings?select=id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at&order=check_in.desc"
+    );
+    return Array.isArray(rows) ? rows : [];
+  },
+
+  async updateBookingStatus(bookingId, status) {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    if (status !== "confirmed" && status !== "cancelled") {
+      throw new Error("Status must be confirmed or cancelled.");
+    }
+    const payload = { status };
+    if (status === "confirmed") payload.confirmed_at = new Date().toISOString();
+    const rows = await api(`/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(payload),
+    });
+    return Array.isArray(rows) ? rows[0] : rows;
   },
 
   isProfileComplete(user = this.getCurrentUser()) {
