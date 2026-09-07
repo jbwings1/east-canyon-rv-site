@@ -1,109 +1,132 @@
-const user = Auth.syncSessionUser() || Auth.requireAuth();
-if (!user) throw new Error("Unauthorized");
+(async function () {
+  const sessionUser = Auth.requireAuth();
+  if (!sessionUser) return;
 
-document.getElementById("welcome-name").textContent = user.name
-  ? `Hello, ${user.name.split(" ")[0]}`
-  : "My Account";
-document.getElementById("account-type-label").textContent =
-  user.accountType === "seasonal" ? "Seasonal Member" : "Guest Account";
+  try {
+    await Auth.ready();
+  } catch {
+    /* cached profile */
+  }
 
-document.getElementById("profile-login").value = user.email || "";
-document.getElementById("profile-name").value = user.name || "";
-document.getElementById("profile-email").value = user.profileEmail || "";
-document.getElementById("profile-phone").value = user.phone || "";
-document.getElementById("profile-address").value = user.address || "";
-document.getElementById("profile-city").value = user.city || "";
-document.getElementById("profile-state").value = user.state || "";
-document.getElementById("profile-zip").value = user.zip || "";
-document.getElementById("profile-rv").value = user.rv || "";
+  const user = Auth.getCurrentUser() || sessionUser;
+  const typeLabel = Auth.reservationTypeLabel(user.reservationType || user.accountType) || "Member";
 
-const spotContent = document.getElementById("spot-content");
-const bookingsContent = document.getElementById("bookings-content");
-const bookingsCard = document.getElementById("bookings-card");
+  document.getElementById("welcome-name").textContent = user.name
+    ? `Hello, ${user.name.split(" ")[0]}`
+    : "My Account";
+  document.getElementById("account-type-label").textContent = typeLabel;
 
-if (user.accountType === "seasonal") {
+  document.getElementById("profile-login").value = user.email || "";
+  document.getElementById("profile-name").value = user.name || "";
+  document.getElementById("profile-email").value = user.profileEmail || "";
+  document.getElementById("profile-phone").value = user.phone || "";
+  document.getElementById("profile-address").value = user.address || "";
+  document.getElementById("profile-city").value = user.city || "";
+  document.getElementById("profile-state").value = user.state || "";
+  document.getElementById("profile-zip").value = user.zip || "";
+  document.getElementById("profile-rv").value = user.rv || "";
+  const typeSelect = document.getElementById("profile-type");
+  if (typeSelect) typeSelect.value = user.reservationType || "";
+
+  const spotContent = document.getElementById("spot-content");
+  const bookingsContent = document.getElementById("bookings-content");
+
   if (user.assignedSpot) {
-    const spot = window.CAMPGROUND_SPOTS.find((s) => s.id === user.assignedSpot);
+    const spots = window.CAMPGROUND_SPOTS || window.MAP_UNITS || [];
+    const spot = spots.find((s) => s.id === user.assignedSpot);
+    const spotType =
+      spot && window.SPOT_TYPE_LABELS ? window.SPOT_TYPE_LABELS[spot.type] : "Assigned site";
     spotContent.innerHTML = `
       <p class="dashboard-spot-number">Site <strong>${user.assignedSpot}</strong></p>
-      <p>${spot ? window.SPOT_TYPE_LABELS[spot.type] : "Full hookup pad"}</p>
+      <p>${spotType}</p>
       <a href="map.html?spot=${user.assignedSpot}" class="btn btn-outline">View on Map</a>
     `;
   } else {
     spotContent.innerHTML = `
-      <p class="dashboard-empty">No spot assigned yet. Contact the office to complete your seasonal setup.</p>
-      <a href="tel:+18013599030" class="btn btn-outline">Call Office</a>
+      <p>No assigned spot — book a Condo, Family reunion, or RV stay on the map.</p>
+      <a href="reservations.html" class="btn btn-primary">Make a Reservation</a>
     `;
   }
-  bookingsCard.querySelector("h2").textContent = "Membership";
-  bookingsContent.innerHTML = `
-    <dl class="detail-list">
-      <div><dt>Season</dt><dd>April – October 2026</dd></div>
-      <div><dt>Status</dt><dd><span class="status-pill member">Active</span></dd></div>
-      <div><dt>Next renewal</dt><dd>March 1, 2027</dd></div>
-    </dl>
-  `;
-} else {
-  spotContent.innerHTML = `
-    <p>No assigned spot — browse the map to book your next stay.</p>
-    <a href="map.html" class="btn btn-primary">View Site Map</a>
-  `;
 
-  const bookings = user.bookings || [];
-  if (bookings.length === 0) {
-    bookingsContent.innerHTML = `<p class="dashboard-empty">No bookings yet.</p>`;
-  } else {
+  async function renderBookings() {
+    let bookings = [];
+    try {
+      bookings = await Auth.listBookings();
+    } catch {
+      bookings = [];
+    }
+
+    if (!bookings.length) {
+      bookingsContent.innerHTML = `<p class="dashboard-empty">No bookings yet.</p>`;
+      return;
+    }
+
     bookingsContent.innerHTML = bookings
-      .map(
-        (b) => `
+      .map((b) => {
+        const label = Auth.reservationTypeLabel(b.reservation_type) || "Reservation";
+        const status = b.status || "confirmed";
+        const spot = b.spot ? ` · ${b.spot}` : "";
+        return `
       <article class="booking-item">
-        <p><strong>Site ${b.spot}</strong> · ${b.checkIn} → ${b.checkOut}</p>
-        <span class="status-pill ${b.status === "confirmed" ? "available" : "reserved"}">${b.status}</span>
-      </article>`
-      )
+        <p><strong>${label}${spot}</strong> · ${b.check_in} → ${b.check_out}</p>
+        <span class="status-pill ${status === "confirmed" ? "available" : "reserved"}">${status}</span>
+      </article>`;
+      })
       .join("");
   }
-}
 
-document.getElementById("password-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const msg = document.getElementById("password-message");
-  const currentPassword = document.getElementById("current-password").value;
-  const newPassword = document.getElementById("new-password").value;
-  const confirmPassword = document.getElementById("confirm-password").value;
+  await renderBookings();
 
-  try {
-    if (newPassword !== confirmPassword) {
-      throw new Error("New passwords do not match.");
+  document.getElementById("password-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("password-message");
+    const currentPassword = document.getElementById("current-password").value;
+    const newPassword = document.getElementById("new-password").value;
+    const confirmPassword = document.getElementById("confirm-password").value;
+
+    try {
+      if (newPassword !== confirmPassword) {
+        throw new Error("New passwords do not match.");
+      }
+      await Auth.changePassword(currentPassword, newPassword);
+      msg.textContent = "Password updated.";
+      msg.className = "form-message success";
+      e.target.reset();
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = "form-message error";
     }
-    Auth.changePassword(currentPassword, newPassword);
-    msg.textContent = "Password updated.";
-    msg.className = "form-message success";
-    e.target.reset();
-  } catch (err) {
-    msg.textContent = err.message;
-    msg.className = "form-message error";
-  }
-});
-
-document.getElementById("profile-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const msg = document.getElementById("profile-message");
-  const updated = Auth.updateProfile({
-    name: document.getElementById("profile-name").value.trim(),
-    profileEmail: document.getElementById("profile-email").value.trim(),
-    phone: document.getElementById("profile-phone").value.trim(),
-    address: document.getElementById("profile-address").value.trim(),
-    city: document.getElementById("profile-city").value.trim(),
-    state: document.getElementById("profile-state").value.trim().toUpperCase(),
-    zip: document.getElementById("profile-zip").value.trim(),
-    rv: document.getElementById("profile-rv").value.trim(),
   });
-  msg.textContent = "Profile saved.";
-  msg.className = "form-message success";
-  document.getElementById("welcome-name").textContent = updated.name
-    ? `Hello, ${updated.name.split(" ")[0]}`
-    : "My Account";
-});
 
-document.getElementById("logout-btn").addEventListener("click", () => Auth.logout());
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("profile-message");
+    try {
+      const updated = await Auth.updateProfile({
+        name: document.getElementById("profile-name").value.trim(),
+        profileEmail: document.getElementById("profile-email").value.trim(),
+        phone: document.getElementById("profile-phone").value.trim(),
+        address: document.getElementById("profile-address").value.trim(),
+        city: document.getElementById("profile-city").value.trim(),
+        state: document.getElementById("profile-state").value.trim().toUpperCase(),
+        zip: document.getElementById("profile-zip").value.trim(),
+        rv: document.getElementById("profile-rv").value.trim(),
+        reservationType: typeSelect ? typeSelect.value : user.reservationType,
+      });
+      msg.textContent = "Profile saved.";
+      msg.className = "form-message success";
+      document.getElementById("welcome-name").textContent = updated.name
+        ? `Hello, ${updated.name.split(" ")[0]}`
+        : "My Account";
+      document.getElementById("account-type-label").textContent =
+        Auth.reservationTypeLabel(updated.reservationType) || "Member";
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = "form-message error";
+    }
+  });
+
+  Auth.showAdminLinks();
+
+  document.getElementById("logout-btn").addEventListener("click", () => Auth.logout());
+})();

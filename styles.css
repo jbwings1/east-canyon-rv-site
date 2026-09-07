@@ -1799,6 +1799,72 @@ a:hover {
   max-width: 20rem;
 }
 
+.booking-confirmed {
+  margin: 0 0 0.75rem;
+  padding: 0.85rem 1rem;
+  text-align: center;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--color-pine, #1c3a32);
+  background: #f6f1e8;
+  border: 1px solid rgba(28, 58, 50, 0.18);
+  border-radius: 10px;
+}
+
+#book-another-btn {
+  margin-bottom: 0.5rem;
+}
+
+.admin-intro {
+  margin: 0 0 1.25rem;
+}
+
+.admin-card {
+  background: #fff;
+  border: 1px solid rgba(28, 26, 23, 0.12);
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem 1.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-card h2 {
+  margin-top: 0;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(28, 26, 23, 0.08);
+  vertical-align: top;
+}
+
+.admin-table th {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c564e;
+}
+
+.admin-actions {
+  white-space: nowrap;
+}
+
+.admin-actions .btn-link {
+  margin-right: 0.75rem;
+}
+
 .page-reservations .reservation-map-layout .map-panel {
   border: none;
   padding: 0;
@@ -2433,6 +2499,10 @@ a:hover {
   .reservation-map-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.page-visitor [hidden] {
+  display: none !important;
 }
 
 .page-visitor .btn {

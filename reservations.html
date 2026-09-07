@@ -51,8 +51,8 @@
         <section class="reservation-steps" aria-label="How reservations work">
           <h2>How it works</h2>
           <ol>
-            <li><strong>Choose</strong> condo, travel trailer, motorhome, or reunion and pick your dates.</li>
-            <li><strong>Select</strong> an open RV site or condo on the map (travel trailer, motorhome, or condo).</li>
+            <li><strong>Choose</strong> condo, family reunion, or RV and pick your dates.</li>
+            <li><strong>Select</strong> an open unit on the map that matches your reservation type.</li>
             <li><strong>Book</strong> online – if it is available, your reservation is confirmed right away.</li>
             <li><strong>Check your email</strong> for your confirmation and arrival details.</li>
           </ol>
@@ -79,9 +79,8 @@
                 <select id="res-type" name="type" required>
                   <option value="">Select type</option>
                   <option value="condo">Condo</option>
-                  <option value="travel-trailer">Travel trailer</option>
-                  <option value="motorhome">Motorhome</option>
-                  <option value="reunion">Reunion</option>
+                  <option value="family-reunion">Family reunion</option>
+                  <option value="rv">RV</option>
                 </select>
               </div>
               <div class="form-group">
@@ -189,7 +188,12 @@
             <p class="spot-detail-placeholder">Click any RV site, condo, or family reunion site to see bookings for the next 90 days.</p>
           </aside>
           <div class="reservation-submit">
-            <button type="submit" class="btn btn-primary btn-full" form="reservation-form">Complete Booking</button>
+            <p id="booking-signin-notice" class="stay-length-notice" hidden>
+              <a href="login.html?next=reservations.html">Sign in</a> to complete a booking.
+            </p>
+            <button type="submit" class="btn btn-primary btn-full" id="complete-booking-btn" form="reservation-form">Complete Booking</button>
+            <p id="booking-confirmed" class="booking-confirmed" hidden>Booking confirmed</p>
+            <button type="button" id="book-another-btn" class="btn btn-outline btn-full" hidden>Book another stay</button>
             <p id="reservation-message" class="form-message" role="status" aria-live="polite"></p>
           </div>
         </section>
@@ -200,7 +204,11 @@
   <script src="js/spots-data.js"></script>
   <script src="js/campground-map.js"></script>
   <script src="js/map-zoom.js"></script>
-  <script src="js/reservations.js?v=18"></script>
+  <script src="js/supabase-config.js?v=sb2"></script>
+  <script src="js/supabase.js?v=sb2"></script>
+  <script src="js/supabase-client.js?v=sb2"></script>
+  <script src="js/auth.js?v=sb2"></script>
+  <script src="js/reservations.js?v=21"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

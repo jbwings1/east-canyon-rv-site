@@ -1,14 +1,10 @@
-const user = Auth.getCurrentUser();
-
-if (!user || !user.tempVerified) {
-  window.location.replace("create-account.html");
-} else if (Auth.getDemoUser(user.email)?.passwordSetByUser === true) {
-  window.location.replace("dashboard.html");
+if (!Auth.getCurrentUser()) {
+  window.location.replace("reset-password.html" + window.location.hash);
 } else {
-  document.getElementById("password-login").value = user.email || "";
+  document.getElementById("password-login").value = Auth.getCurrentUser().email || "";
 }
 
-document.getElementById("password-form").addEventListener("submit", (e) => {
+document.getElementById("password-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = document.getElementById("password-message");
   message.textContent = "";
@@ -21,8 +17,8 @@ document.getElementById("password-form").addEventListener("submit", (e) => {
     if (newPassword !== confirmPassword) {
       throw new Error("New passwords do not match.");
     }
-    Auth.setNewPassword(newPassword);
-    window.location.replace("dashboard.html");
+    await Auth.updatePassword(newPassword);
+    window.location.replace("member-home.html");
   } catch (err) {
     message.textContent = err.message;
     message.className = "form-message error";

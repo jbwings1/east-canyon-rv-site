@@ -1,177 +1,29 @@
 /**
- * Auth module — demo uses localStorage.
- * Replace initSupabase() and the marked sections when connecting Supabase.
+ * Auth + member data via the official Supabase JS client.
+ * Config/keys live in js/supabase-config.js — never put a service_role key in the frontend.
  */
-const AUTH_STORAGE_KEY = "eastCanyonUser";
-const RESET_STORAGE_KEY = "eastCanyonPasswordResets";
-const DEMO_USERS_KEY = "eastCanyonDemoUsers";
-const DEMO_SEED_KEY = "eastCanyonDemoSeed";
-const DEMO_SEED_VERSION = "flow12-2026-08-13";
-const RESET_LINK_HOURS = 1;
+const SESSION_KEY = "eastCanyonSupabaseSession";
+const PROFILE_CACHE_KEY = "eastCanyonProfileCache";
+const PENDING_PROFILE_KEY = "eastCanyonPendingProfile";
+const LAST_BOOKING_KEY = "ecr-last-booking-confirmation";
 
-/** Default demo accounts — used once, then stored in localStorage. */
-const DEFAULT_DEMO_USERS = [
-  {
-    email: "member@example.com",
-    password: "demo1234",
-    accountType: "seasonal",
-    name: "Jane Miller",
-    phone: "(801) 555-0101",
-    profileEmail: "member@example.com",
-    address: "120 Maple Street",
-    city: "Morgan",
-    state: "UT",
-    zip: "84050",
-    rv: "Airstream Classic 30 ft",
-    assignedSpot: "1",
-    mustChangePassword: false,
-    passwordSetByUser: true,
-    profileComplete: true,
-  },
-  {
-    email: "guest@example.com",
-    password: "demo1234",
-    accountType: "guest",
-    name: "Alex Rivera",
-    phone: "(801) 555-0202",
-    profileEmail: "guest@example.com",
-    address: "88 River Road",
-    city: "Henefer",
-    state: "UT",
-    zip: "84033",
-    rv: "Winnebago View 24V — 25 ft",
-    assignedSpot: null,
-    mustChangePassword: false,
-    passwordSetByUser: true,
-    profileComplete: true,
-    bookings: [
-      { spot: "3", checkIn: "2026-08-15", checkOut: "2026-08-18", status: "confirmed" },
-      { spot: "14", checkIn: "2026-06-02", checkOut: "2026-06-05", status: "completed" },
-    ],
-  },
-  {
-    email: "newmember1",
-    password: "temp1234",
-    accountType: "seasonal",
-    name: "Pat Larson",
-    phone: "(801) 555-0188",
-    profileEmail: "pat.larson@example.com",
-    address: "455 Canyon View Drive",
-    city: "Morgan",
-    state: "UT",
-    zip: "84050",
-    rv: "",
-    assignedSpot: null,
-    mustChangePassword: true,
-    passwordSetByUser: false,
-    profileComplete: false,
-  },
-  {
-    email: "newmember2",
-    password: "temp1234",
-    accountType: "seasonal",
-    name: "Chris Morgan",
-    phone: "(801) 555-0199",
-    profileEmail: "chris.morgan@example.com",
-    address: "12 Pine Lane",
-    city: "Henefer",
-    state: "UT",
-    zip: "84033",
-    rv: "",
-    assignedSpot: null,
-    mustChangePassword: true,
-    passwordSetByUser: false,
-    profileComplete: false,
-  },
-];
+const RESERVATION_TYPE_LABELS = {
+  condo: "Condo",
+  rv: "RV",
+  "family-reunion": "Family reunion",
+  family_reunion: "Family reunion",
+  reunion: "Family reunion",
+  "travel-trailer": "RV",
+  motorhome: "RV",
+  seasonal: "Member",
+  guest: "Member",
+};
 
-function loadDemoUsers() {
-  let users = [];
-  let changed = false;
-
-  try {
-    const raw = localStorage.getItem(DEMO_USERS_KEY);
-    users = raw ? JSON.parse(raw) : [];
-    changed = !raw;
-  } catch {
-    users = [];
-    changed = true;
+function getClient() {
+  if (!window.ecrSupabase) {
+    throw new Error("Supabase client is not ready. Load js/supabase-client.js before js/auth.js.");
   }
-
-  if (!Array.isArray(users)) {
-    users = [];
-    changed = true;
-  }
-
-  let seedVersion = null;
-  try {
-    seedVersion = localStorage.getItem(DEMO_SEED_KEY);
-  } catch {
-    seedVersion = null;
-  }
-
-  const forceSeedReset = seedVersion !== DEMO_SEED_VERSION;
-
-  if (forceSeedReset) {
-    users = JSON.parse(JSON.stringify(DEFAULT_DEMO_USERS));
-    changed = true;
-    localStorage.setItem(DEMO_SEED_KEY, DEMO_SEED_VERSION);
-    localStorage.removeItem(RESET_STORAGE_KEY);
-    // Keep the signed-in member — only reset demo account records.
-  } else {
-    DEFAULT_DEMO_USERS.forEach((def) => {
-      const index = users.findIndex((u) => u.email === def.email);
-      if (index === -1) {
-        users.push(JSON.parse(JSON.stringify(def)));
-        changed = true;
-        return;
-      }
-
-      const existing = users[index];
-      let updated = { ...existing };
-      let accountChanged = false;
-
-      for (const [key, value] of Object.entries(def)) {
-        if (key === "password") continue;
-        if (updated[key] === undefined || updated[key] === null || updated[key] === "") {
-          updated[key] = value;
-          accountChanged = true;
-        }
-      }
-
-      // Fix older saved demo accounts that couldn't complete sign-in.
-      if (def.passwordSetByUser === true && updated.passwordSetByUser !== true) {
-        updated.passwordSetByUser = true;
-        updated.mustChangePassword = false;
-        updated.password = def.password;
-        accountChanged = true;
-      }
-
-      if (updated.passwordSetByUser === true) {
-        updated.mustChangePassword = false;
-      }
-
-      if (accountChanged) {
-        users[index] = updated;
-        changed = true;
-      }
-    });
-  }
-
-  if (changed) {
-    try {
-      localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
-    } catch {
-      /* storage blocked */
-    }
-  }
-  return users;
-}
-
-const DEMO_USERS = loadDemoUsers();
-
-function persistDemoUsers() {
-  localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(DEMO_USERS));
+  return window.ecrSupabase;
 }
 
 function storageAvailable() {
@@ -185,393 +37,613 @@ function storageAvailable() {
   }
 }
 
+function readJson(key, fallback = null) {
+  if (!storageAvailable()) return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  if (!storageAvailable()) return;
+  try {
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage blocked */
+  }
+}
+
+function toDbReservationType(value) {
+  if (value === "family-reunion" || value === "reunion") return "family_reunion";
+  if (value === "travel-trailer" || value === "motorhome") return "rv";
+  if (value === "condo" || value === "rv" || value === "family_reunion") return value;
+  return null;
+}
+
+function toUiReservationType(value) {
+  if (value === "family_reunion" || value === "reunion") return "family-reunion";
+  if (value === "travel-trailer" || value === "motorhome") return "rv";
+  if (value === "condo" || value === "rv" || value === "family-reunion") return value;
+  return "";
+}
+
+function reservationTypeLabel(value) {
+  return RESERVATION_TYPE_LABELS[value] || "";
+}
+
+function mapProfile(session, profile) {
+  const authUser = session?.user || {};
+  const email = profile?.email || authUser.email || "";
+  const reservationType = toUiReservationType(profile?.reservation_type);
+  return {
+    id: authUser.id || profile?.id || "",
+    email,
+    name: profile?.full_name || authUser.user_metadata?.full_name || "",
+    phone: profile?.phone || authUser.user_metadata?.phone || "",
+    profileEmail: email,
+    address: profile?.address || "",
+    city: profile?.city || "",
+    state: profile?.state || "",
+    zip: profile?.zip || "",
+    rv: profile?.rv_details || authUser.user_metadata?.rv_details || "",
+    assignedSpot: profile?.assigned_spot || null,
+    accountType: reservationType || profile?.reservation_type || "",
+    reservationType,
+    profileComplete: profile?.profile_complete === true,
+    isAdmin: profile?.is_admin === true,
+    accessToken: session?.access_token || "",
+  };
+}
+
+function siteOrigin() {
+  return window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
+}
+
+function officialStorageKey() {
+  try {
+    const host = new URL(window.SUPABASE_CONFIG.url).hostname;
+    const ref = host.split(".")[0];
+    return `sb-${ref}-auth-token`;
+  } catch {
+    return "sb-jmxlewxczfnxciamrtze-auth-token";
+  }
+}
+
+function readOfficialSession() {
+  try {
+    const raw = localStorage.getItem(officialStorageKey());
+    if (!raw) return readJson(SESSION_KEY);
+    const parsed = JSON.parse(raw);
+    if (parsed?.access_token) return parsed;
+    if (parsed?.currentSession?.access_token) return parsed.currentSession;
+    return parsed || readJson(SESSION_KEY);
+  } catch {
+    return readJson(SESSION_KEY);
+  }
+}
+
+function cacheSession(session) {
+  if (!session?.access_token) {
+    writeJson(SESSION_KEY, null);
+    return;
+  }
+  writeJson(SESSION_KEY, {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    user: session.user,
+  });
+}
+
+function formatClientError(error) {
+  const code = error?.code || error?.error_code || "";
+  const msg = error?.message || error?.msg || "";
+  if (code === "email_not_confirmed" || /email not confirmed/i.test(msg)) {
+    return "Confirm your email before signing in. Check your inbox for the East Canyon link.";
+  }
+  if (code === "invalid_credentials" || /invalid login/i.test(msg)) {
+    return "Invalid email or password.";
+  }
+  if (code === "user_already_exists" || /already registered/i.test(msg)) {
+    return "An account with this email already exists. Sign in instead.";
+  }
+  if (code === "email_address_invalid") {
+    return "Enter a real email address.";
+  }
+  if (code === "over_email_send_rate_limit") {
+    return "Too many emails were sent. Wait a minute and try again.";
+  }
+  return msg || "Request failed.";
+}
+
+function throwIfError(error) {
+  if (error) throw new Error(formatClientError(error));
+}
+
 const Auth = {
   storageAvailable,
+  toDbReservationType,
+  toUiReservationType,
+  reservationTypeLabel,
+  LAST_BOOKING_KEY,
+
+  getSession() {
+    return readOfficialSession();
+  },
 
   getCurrentUser() {
-    if (!storageAvailable()) return null;
-    try {
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
+    const session = this.getSession();
+    if (!session?.access_token || !session.user) return null;
+    const cached = readJson(PROFILE_CACHE_KEY);
+    return mapProfile(session, cached);
   },
 
-  clearAllSiteData() {
-    if (!storageAvailable()) return;
-    [
-      AUTH_STORAGE_KEY,
-      RESET_STORAGE_KEY,
-      DEMO_USERS_KEY,
-      DEMO_SEED_KEY,
-    ].forEach((key) => {
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        /* ignore */
-      }
-    });
-    try {
-      sessionStorage.removeItem("eastCanyonNewAccountSetup");
-    } catch {
-      /* ignore */
-    }
-  },
-
-  saveUser(user) {
-    if (!storageAvailable()) {
-      throw new Error(
-        "This browser blocked saved login data. Try a normal window (not private browsing) or use http://localhost instead of opening the file directly."
-      );
-    }
-    const { password, ...safe } = user;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(safe));
-    return safe;
-  },
-
-  clearSession() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  },
-
-  logout() {
-    this.clearSession();
-    window.location.href = "login.html";
-  },
-
-  requireAuth(redirectTo = "login.html") {
-    if (!this.getCurrentUser()) {
-      window.location.href = redirectTo;
-      return null;
-    }
-    return this.getCurrentUser();
-  },
-
-  getDemoUser(loginId) {
-    return (
-      DEMO_USERS.find(
-        (u) => u.email.toLowerCase() === String(loginId || "").toLowerCase()
-      ) || null
-    );
-  },
-
-  needsPasswordChange(user = this.getCurrentUser()) {
-    if (!user) return false;
-
-    // Trust the active session after a successful sign-in or password setup.
-    if (user.passwordSetByUser === true && user.mustChangePassword !== true) {
-      return false;
-    }
-
-    const demo = this.getDemoUser(user.email);
-    if (demo) {
-      return demo.passwordSetByUser !== true || user.mustChangePassword === true;
-    }
-
-    return user.passwordSetByUser !== true || user.mustChangePassword === true;
+  needsPasswordChange() {
+    return false;
   },
 
   canAccessMembers(user = this.getCurrentUser()) {
-    return Boolean(user) && !this.needsPasswordChange(user);
+    return Boolean(user);
   },
 
-  redirectForAuth(options = {}) {
-    const {
-      requireMember = false,
-      loginPage = "login.html",
-      setupPage = "create-account.html",
-    } = options;
-
-    const user = this.getCurrentUser();
-
-    if (!requireMember) {
-      return user;
-    }
-
-    if (!user) {
-      window.location.href = loginPage;
-      return null;
-    }
-
-    if (this.needsPasswordChange(user)) {
-      window.location.href = setupPage;
-      return null;
-    }
-
-    return user;
+  isAdmin(user = this.getCurrentUser()) {
+    return Boolean(user?.isAdmin);
   },
 
-  /** Step 1: check login ID + temporary password, then continue to create password. */
-  verifyTempLogin(loginId, tempPassword) {
-    const demo = this.getDemoUser(loginId);
-    if (!demo) {
-      throw new Error("Login ID not found.");
+  async verifyAdmin() {
+    try {
+      const { data, error } = await getClient().rpc("is_admin");
+      if (!error && data === true) return true;
+    } catch {
+      /* fall back to the cached profile flag */
     }
-    if (demo.passwordSetByUser === true) {
-      throw new Error(
-        "This login already has a password. Use Sign In with the password you created."
-      );
+    try {
+      await this.refreshProfile();
+    } catch {
+      /* keep cached profile */
     }
-    if (demo.password !== tempPassword) {
-      throw new Error("Temporary password is incorrect.");
-    }
-    return this.saveUser({
-      ...demo,
-      mustChangePassword: true,
-      passwordSetByUser: false,
-      tempVerified: true,
+    return this.isAdmin();
+  },
+
+  showAdminLinks() {
+    if (!this.isAdmin()) return;
+    document.querySelectorAll("[data-admin-link]").forEach((el) => {
+      el.hidden = false;
     });
   },
 
-  /** Step 2: save the new password, then go to member profile. */
-  setNewPassword(newPassword, loginId) {
-    const id = loginId || this.getCurrentUser()?.email;
-    if (!id) {
-      throw new Error("Please enter your login ID and temporary password first.");
-    }
-
-    const demo = this.getDemoUser(id);
-    if (!demo) {
-      throw new Error("Account not found.");
-    }
-    if (demo.passwordSetByUser === true) {
-      throw new Error("This login already has a password. Use Sign In.");
-    }
-    if (newPassword.length < 8) {
-      throw new Error("New password must be at least 8 characters.");
-    }
-    if (newPassword === demo.password) {
-      throw new Error("Choose a new password that is different from the temporary password.");
-    }
-
-    demo.password = newPassword;
-    demo.mustChangePassword = false;
-    demo.passwordSetByUser = true;
-    persistDemoUsers();
-
-    return this.saveUser({
-      ...demo,
-      mustChangePassword: false,
-      passwordSetByUser: true,
-      tempVerified: false,
-    });
+  async listAllProfiles() {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    const { data, error } = await getClient()
+      .from("profiles")
+      .select("id,email,full_name,phone,reservation_type,assigned_spot,profile_complete,is_admin")
+      .order("full_name", { ascending: true, nullsFirst: false });
+    throwIfError(error);
+    return data || [];
   },
 
-  needsAccountSetup(user = this.getCurrentUser()) {
-    if (!user) return false;
-    return this.needsPasswordChange(user);
+  async listAllBookings() {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    const { data, error } = await getClient()
+      .from("bookings")
+      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at")
+      .order("check_in", { ascending: false });
+    throwIfError(error);
+    return data || [];
+  },
+
+  async updateBookingStatus(bookingId, status) {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    if (status !== "confirmed" && status !== "cancelled") {
+      throw new Error("Status must be confirmed or cancelled.");
+    }
+    const payload = { status };
+    if (status === "confirmed") payload.confirmed_at = new Date().toISOString();
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update(payload)
+      .eq("id", bookingId)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    return data;
   },
 
   isProfileComplete(user = this.getCurrentUser()) {
     if (!user) return false;
     if (user.profileComplete === true) return true;
-    if (user.profileComplete === false) return false;
     return Boolean(
-      user.name &&
-        user.profileEmail &&
-        user.phone &&
-        user.address &&
-        user.city &&
-        user.state &&
-        user.zip
+      user.name && user.profileEmail && user.phone && user.address && user.city && user.state && user.zip
     );
   },
 
-  /** Refresh session flags/fields from the stored demo account record. */
-  syncSessionUser() {
-    const session = this.getCurrentUser();
-    if (!session) return null;
-    const demo = this.getDemoUser(session.email);
-    if (!demo) return session;
-
-    const {
-      password,
-      mustChangePassword,
-      passwordSetByUser,
-      tempVerified,
-      ...profileFields
-    } = demo;
-
-    return this.saveUser({
-      ...session,
-      ...profileFields,
-      mustChangePassword: session.mustChangePassword ?? mustChangePassword,
-      passwordSetByUser: session.passwordSetByUser ?? passwordSetByUser,
-      tempVerified: session.tempVerified ?? tempVerified,
-    });
+  clearSession() {
+    writeJson(SESSION_KEY, null);
+    writeJson(PROFILE_CACHE_KEY, null);
+    try {
+      localStorage.removeItem(officialStorageKey());
+    } catch {
+      /* ignore */
+    }
   },
 
-  /** TODO: Replace with Supabase Auth signInWithPassword */
-  signIn(email, password) {
-    const demo = this.getDemoUser(email);
-    if (!demo) {
-      throw new Error("Invalid login ID or password.");
+  clearAllSiteData() {
+    this.clearSession();
+    try {
+      sessionStorage.removeItem(PENDING_PROFILE_KEY);
+      sessionStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
     }
-
-    if (demo.passwordSetByUser !== true) {
-      throw new Error(
-        "This is a new account. Use New account below — enter the temporary password and your new password there first."
-      );
+    try {
+      localStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
     }
-
-    if (demo.password !== password) {
-      throw new Error("Invalid login ID or password.");
-    }
-
-    return this.saveUser({
-      ...demo,
-      mustChangePassword: false,
-      passwordSetByUser: true,
-    });
   },
 
-  /** TODO: Replace with Supabase Auth signUp + profiles insert */
-  signUp({ email, password, name, phone, accountType, rv }) {
-    if (DEMO_USERS.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error("An account with this email already exists.");
-    }
-    const user = {
-      email,
-      password,
-      name,
-      phone,
-      accountType,
-      rv: rv || "",
-      profileEmail: email,
-      assignedSpot: accountType === "seasonal" ? null : null,
-      passwordSetByUser: true,
-      mustChangePassword: false,
-      profileComplete: false,
-      bookings: accountType === "guest" ? [] : undefined,
-    };
-    DEMO_USERS.push(user);
-    persistDemoUsers();
-    return this.saveUser(user);
+  logout() {
+    getClient()
+      .auth.signOut()
+      .catch(() => {});
+    this.clearSession();
+    window.location.href = "login.html";
   },
 
-  /** TODO: Replace with Supabase profiles table update */
-  updateProfile(updates) {
+  requireAuth(redirectTo = "login.html") {
     const user = this.getCurrentUser();
-    if (!user) throw new Error("Not signed in.");
-    const merged = { ...user, ...updates };
-    const complete = Boolean(
-      merged.name &&
-        merged.profileEmail &&
-        merged.phone &&
-        merged.address &&
-        merged.city &&
-        merged.state &&
-        merged.zip
-    );
-    merged.profileComplete = complete;
-    const demo = DEMO_USERS.find((u) => u.email === user.email);
-    if (demo) {
-      Object.assign(demo, merged);
-      persistDemoUsers();
-    }
-    return this.saveUser(merged);
-  },
-
-  /** TODO: Replace with Supabase Auth updateUser */
-  changePassword(currentPassword, newPassword) {
-    const user = this.getCurrentUser();
-    if (!user) throw new Error("Not signed in.");
-    const demo = DEMO_USERS.find((u) => u.email === user.email);
-    if (!demo) throw new Error("Account not found.");
-    if (demo.password !== currentPassword) {
-      throw new Error("Current password is incorrect.");
-    }
-    if (newPassword.length < 8) {
-      throw new Error("New password must be at least 8 characters.");
-    }
-    demo.password = newPassword;
-    demo.mustChangePassword = false;
-    persistDemoUsers();
-    return this.saveUser({ ...user, mustChangePassword: false });
-  },
-
-  /** First-time setup after temp password login — no need to re-enter temp password. */
-  setPasswordAfterTempLogin(newPassword) {
-    const user = this.getCurrentUser();
-    if (!user) throw new Error("Not signed in.");
-    const demo = this.getDemoUser(user.email);
-    if (!demo) throw new Error("Account not found.");
-    if (!this.needsPasswordChange(user)) {
-      throw new Error("Password was already set. Use Change Password on your account page.");
-    }
-    if (newPassword.length < 8) {
-      throw new Error("New password must be at least 8 characters.");
-    }
-    demo.password = newPassword;
-    demo.mustChangePassword = false;
-    persistDemoUsers();
-    return this.saveUser({ ...user, mustChangePassword: false });
-  },
-
-  _readResetTokens() {
-    const raw = localStorage.getItem(RESET_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  },
-
-  _writeResetTokens(tokens) {
-    localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(tokens));
-  },
-
-  getResetToken(token) {
-    const entry = this._readResetTokens()[token];
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-      const tokens = this._readResetTokens();
-      delete tokens[token];
-      this._writeResetTokens(tokens);
+    if (!user) {
+      window.location.href = redirectTo;
       return null;
     }
-    return entry;
+    return user;
   },
 
-  /**
-   * TODO: Replace with Supabase Auth resetPasswordForEmail (real email link).
-   * Demo: creates a temporary link and returns it so the flow can be tested.
-   */
-  requestPasswordReset(loginId) {
-    const user = DEMO_USERS.find((u) => u.email.toLowerCase() === loginId.toLowerCase());
-    if (!user || !user.profileEmail) {
-      return { demoLink: null };
+  redirectForAuth(options = {}) {
+    const { requireMember = false, loginPage = "login.html" } = options;
+    const user = this.getCurrentUser();
+    if (!requireMember) return user;
+    if (!user) {
+      window.location.href = loginPage;
+      return null;
+    }
+    return user;
+  },
+
+  async ready() {
+    try {
+      const { data, error } = await getClient().auth.getSession();
+      if (!error && data?.session) cacheSession(data.session);
+    } catch {
+      /* keep cached session */
+    }
+    const session = this.getSession();
+    if (!session?.access_token) return this.getCurrentUser();
+    try {
+      await this.refreshProfile();
+    } catch {
+      /* keep cached profile */
+    }
+    return this.getCurrentUser();
+  },
+
+  async refreshProfile() {
+    const session = this.getSession();
+    if (!session?.user?.id) return null;
+    const { data, error } = await getClient()
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    throwIfError(error);
+    if (data) writeJson(PROFILE_CACHE_KEY, data);
+    await this._applyPendingProfile();
+    return this.getCurrentUser();
+  },
+
+  async _waitForProfile(userId, attempts = 6) {
+    for (let i = 0; i < attempts; i += 1) {
+      const { data } = await getClient().from("profiles").select("*").eq("id", userId).maybeSingle();
+      if (data) return data;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return null;
+  },
+
+  async _applyPendingProfile() {
+    const session = this.getSession();
+    if (!session?.user?.id) return;
+    let pending = null;
+    try {
+      pending = JSON.parse(sessionStorage.getItem(PENDING_PROFILE_KEY) || "null");
+    } catch {
+      pending = null;
+    }
+    if (!pending || (pending.email && pending.email !== session.user.email)) return;
+
+    const cached = readJson(PROFILE_CACHE_KEY) || {};
+    const updates = {};
+    if (pending.full_name && !cached.full_name) updates.full_name = pending.full_name;
+    if (pending.phone && !cached.phone) updates.phone = pending.phone;
+    if (pending.reservation_type && !cached.reservation_type) {
+      updates.reservation_type = pending.reservation_type;
+    }
+    if (pending.rv_details && !cached.rv_details) updates.rv_details = pending.rv_details;
+    if (!Object.keys(updates).length) {
+      sessionStorage.removeItem(PENDING_PROFILE_KEY);
+      return;
+    }
+    await this.updateProfileRaw(updates);
+    sessionStorage.removeItem(PENDING_PROFILE_KEY);
+  },
+
+  async signIn(email, password) {
+    const { data, error } = await getClient().auth.signInWithPassword({ email, password });
+    throwIfError(error);
+    cacheSession(data.session);
+    try {
+      await this.refreshProfile();
+    } catch {
+      writeJson(PROFILE_CACHE_KEY, null);
+    }
+    return this.getCurrentUser();
+  },
+
+  async signUp({ email, password, name, phone, reservationType, rv }) {
+    const dbType = toDbReservationType(reservationType);
+    const metadata = {
+      full_name: name || "",
+      phone: phone || "",
+      reservation_type: dbType,
+      rv_details: rv || "",
+    };
+    const { data, error } = await getClient().auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+        emailRedirectTo: `${siteOrigin()}login.html`,
+      },
+    });
+    throwIfError(error);
+
+    try {
+      sessionStorage.setItem(
+        PENDING_PROFILE_KEY,
+        JSON.stringify({
+          email,
+          full_name: name || "",
+          phone: phone || "",
+          reservation_type: dbType,
+          rv_details: rv || "",
+        })
+      );
+    } catch {
+      /* ignore */
     }
 
-    const token = crypto.randomUUID();
-    const tokens = this._readResetTokens();
-    tokens[token] = {
-      loginId: user.email,
-      expiresAt: Date.now() + RESET_LINK_HOURS * 60 * 60 * 1000,
-    };
-    this._writeResetTokens(tokens);
+    if (data?.user?.identities && data.user.identities.length === 0) {
+      throw new Error("An account with this email already exists. Sign in instead.");
+    }
 
-    const demoLink = `reset-password.html?token=${encodeURIComponent(token)}`;
-    return { demoLink, email: user.profileEmail };
+    if (data?.session) {
+      cacheSession(data.session);
+      try {
+        const profile = await this._waitForProfile(data.user.id);
+        if (profile) writeJson(PROFILE_CACHE_KEY, profile);
+        await this.updateProfile({
+          name,
+          phone,
+          reservationType,
+          rv,
+          profileEmail: email,
+        });
+      } catch {
+        /* profile trigger may still be running */
+      }
+      return { user: this.getCurrentUser(), needsEmailConfirmation: false };
+    }
+
+    return { user: null, needsEmailConfirmation: true, email };
   },
 
-  /** TODO: Replace with Supabase Auth updateUser from recovery session */
-  resetPasswordWithToken(token, newPassword) {
-    const entry = this.getResetToken(token);
-    if (!entry) throw new Error("This reset link is invalid or has expired.");
+  async updateProfileRaw(updates) {
+    const session = this.getSession();
+    if (!session?.user?.id) throw new Error("Not signed in.");
+    const { data, error } = await getClient()
+      .from("profiles")
+      .update(updates)
+      .eq("id", session.user.id)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (data) writeJson(PROFILE_CACHE_KEY, data);
+    return this.getCurrentUser();
+  },
+
+  async updateProfile(updates) {
+    const user = this.getCurrentUser();
+    if (!user) throw new Error("Not signed in.");
+    const mergedName = updates.name ?? user.name;
+    const mergedEmail = updates.profileEmail ?? user.profileEmail;
+    const mergedPhone = updates.phone ?? user.phone;
+    const mergedAddress = updates.address ?? user.address;
+    const mergedCity = updates.city ?? user.city;
+    const mergedState = updates.state ?? user.state;
+    const mergedZip = updates.zip ?? user.zip;
+    const complete = Boolean(
+      mergedName && mergedEmail && mergedPhone && mergedAddress && mergedCity && mergedState && mergedZip
+    );
+    const payload = {
+      full_name: mergedName || "",
+      email: mergedEmail || user.email,
+      phone: mergedPhone || "",
+      address: mergedAddress || "",
+      city: mergedCity || "",
+      state: mergedState || "",
+      zip: mergedZip || "",
+      rv_details: updates.rv ?? user.rv ?? "",
+      profile_complete: complete,
+    };
+    const dbType = toDbReservationType(updates.reservationType ?? user.reservationType);
+    if (dbType) payload.reservation_type = dbType;
+    return this.updateProfileRaw(payload);
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const user = this.getCurrentUser();
+    if (!user) throw new Error("Not signed in.");
     if (newPassword.length < 8) {
       throw new Error("New password must be at least 8 characters.");
     }
+    await this.signIn(user.email, currentPassword);
+    const { error } = await getClient().auth.updateUser({ password: newPassword });
+    throwIfError(error);
+    return this.getCurrentUser();
+  },
 
-    const demo = DEMO_USERS.find((u) => u.email === entry.loginId);
-    if (!demo) throw new Error("Account not found.");
+  async requestPasswordReset(email) {
+    const { error } = await getClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteOrigin()}reset-password.html`,
+    });
+    throwIfError(error);
+    return { email };
+  },
 
-    demo.password = newPassword;
-    demo.mustChangePassword = false;
-    persistDemoUsers();
-
-    const tokens = this._readResetTokens();
-    delete tokens[token];
-    this._writeResetTokens(tokens);
-
+  async updatePassword(newPassword) {
+    if (newPassword.length < 8) {
+      throw new Error("New password must be at least 8 characters.");
+    }
+    const session = this.getSession();
+    if (!session?.access_token) {
+      throw new Error("This reset link is invalid or has expired.");
+    }
+    const { error } = await getClient().auth.updateUser({ password: newPassword });
+    throwIfError(error);
     return true;
   },
+
+  acceptRecoveryFromUrl() {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(window.location.search);
+    const accessToken = hash.get("access_token") || query.get("access_token");
+    const refreshToken = hash.get("refresh_token") || query.get("refresh_token");
+    const type = hash.get("type") || query.get("type");
+    if (!accessToken) return Boolean(this.getCurrentUser());
+    const payload = decodeJwt(accessToken);
+    cacheSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_at: payload?.exp,
+      user: {
+        id: payload?.sub,
+        email: payload?.email,
+      },
+    });
+    if (window.history.replaceState) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    return type === "recovery" || Boolean(accessToken);
+  },
+
+  async listBookings() {
+    const user = this.getCurrentUser();
+    if (!user?.id) return [];
+    const { data, error } = await getClient()
+      .from("bookings")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("check_in", { ascending: false });
+    throwIfError(error);
+    return data || [];
+  },
+
+  getActiveBookings(bookings = []) {
+    const today = new Date().toISOString().split("T")[0];
+    return bookings.filter(
+      (b) => b.status === "confirmed" && b.check_in && b.check_in > today
+    );
+  },
+
+  async createBooking({ reservationType, spot, checkIn, checkOut, notes }) {
+    const user = this.getCurrentUser();
+    if (!user?.id) throw new Error("Sign in to complete a booking.");
+    const dbType = toDbReservationType(reservationType);
+    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
+    const now = new Date().toISOString();
+    const { data, error } = await getClient()
+      .from("bookings")
+      .insert({
+        user_id: user.id,
+        reservation_type: dbType,
+        spot: spot || null,
+        check_in: checkIn,
+        check_out: checkOut,
+        status: "confirmed",
+        notes: notes || null,
+        confirmed_at: now,
+      })
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Booking could not be saved.");
+    return data;
+  },
+
+  saveLastBooking(record) {
+    const payload = JSON.stringify(record);
+    try {
+      localStorage.setItem(LAST_BOOKING_KEY, payload);
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.setItem(LAST_BOOKING_KEY, payload);
+    } catch {
+      /* ignore */
+    }
+  },
+
+  getLastBooking() {
+    try {
+      const local = localStorage.getItem(LAST_BOOKING_KEY);
+      if (local) return JSON.parse(local);
+    } catch {
+      /* ignore */
+    }
+    try {
+      return JSON.parse(sessionStorage.getItem(LAST_BOOKING_KEY) || "null");
+    } catch {
+      return null;
+    }
+  },
+
+  clearLastBooking() {
+    try {
+      localStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.removeItem(LAST_BOOKING_KEY);
+    } catch {
+      /* ignore */
+    }
+  },
 };
+
+function decodeJwt(token) {
+  try {
+    const part = token.split(".")[1];
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
 
 window.Auth = Auth;

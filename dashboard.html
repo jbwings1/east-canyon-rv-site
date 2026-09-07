@@ -35,7 +35,7 @@
       <header class="page-header">
         <p class="section-label" id="account-type-label">Account</p>
         <h1 id="welcome-name">Member Profile</h1>
-        <p><a href="member-home.html">Members home</a> · <button type="button" id="logout-btn" class="btn-link">Sign Out</button></p>
+        <p><a href="member-home.html">Members home</a> · <a href="admin.html" data-admin-link hidden>Admin</a> · <button type="button" id="logout-btn" class="btn-link">Sign Out</button></p>
       </header>
 
       <div class="dashboard-grid">
@@ -81,6 +81,15 @@
               <input type="text" id="profile-zip" required>
             </div>
             <div class="form-group">
+              <label for="profile-type">Type</label>
+              <select id="profile-type">
+                <option value="">Select type</option>
+                <option value="condo">Condo</option>
+                <option value="family-reunion">Family reunion</option>
+                <option value="rv">RV</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="profile-rv">RV / rig details</label>
               <input type="text" id="profile-rv">
             </div>
@@ -124,8 +133,11 @@
     </div>
   </main>
   <script src="js/spots-data.js"></script>
-  <script src="js/auth.js?v=flow10"></script>
-  <script src="js/dashboard.js?v=flow10"></script>
+  <script src="js/supabase-config.js?v=sb2"></script>
+  <script src="js/supabase.js?v=sb2"></script>
+  <script src="js/supabase-client.js?v=sb2"></script>
+  <script src="js/auth.js?v=sb2"></script>
+  <script src="js/dashboard.js?v=sb1"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

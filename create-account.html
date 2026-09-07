@@ -5,12 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Account | East Canyon Resort</title>
   <link rel="stylesheet" href="styles.css?v=site2">
-  <style>
-    #temp-step[hidden],
-    #password-step[hidden] {
-      display: none !important;
-    }
-  </style>
 </head>
 <body class="page-visitor page-login">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -37,49 +31,54 @@
 
   <main>
     <div class="container page-content login-box">
-      <h1 id="page-title">New Account</h1>
-      <section id="temp-step">
-        <p>Step 1 of 2 — Enter the login ID and temporary password from the resort.</p>
-        <form id="temp-form" class="auth-form" autocomplete="off">
-          <div class="form-group">
-            <label for="setup-login">Login ID</label>
-            <input type="text" id="setup-login" autocomplete="off" required>
-          </div>
-          <div class="form-group">
-            <label for="setup-temp-password">Temporary password</label>
-            <input type="password" id="setup-temp-password" autocomplete="off" required>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Continue</button>
-        </form>
-        <p id="temp-message" class="form-message" role="status" aria-live="polite"></p>
-      </section>
-
-      <section id="password-step" hidden>
-        <p>Step 2 of 2 — Create your new password. Your login ID stays the same.</p>
-        <form id="password-form" class="auth-form" autocomplete="off">
-          <div class="form-group">
-            <label for="password-login">Login ID</label>
-            <input type="text" id="password-login" disabled>
-          </div>
-          <div class="form-group">
-            <label for="setup-new-password">New password</label>
-            <input type="password" id="setup-new-password" autocomplete="new-password" required minlength="8">
-          </div>
-          <div class="form-group">
-            <label for="setup-confirm-password">Confirm new password</label>
-            <input type="password" id="setup-confirm-password" autocomplete="new-password" required minlength="8">
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Save Password</button>
-        </form>
-        <p id="password-message" class="form-message" role="status" aria-live="polite"></p>
-      </section>
-
+      <h1>New Account</h1>
+      <p>Create a member account to book Condo, Family reunion, or RV stays online.</p>
+      <form id="signup-form" class="auth-form" autocomplete="on">
+        <div class="form-group">
+          <label for="signup-name">Full name</label>
+          <input type="text" id="signup-name" autocomplete="name" required>
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="signup-phone">Phone</label>
+          <input type="tel" id="signup-phone" autocomplete="tel" required>
+        </div>
+        <div class="form-group">
+          <label for="signup-type">Type</label>
+          <select id="signup-type" name="reservationType" required>
+            <option value="">Select type</option>
+            <option value="condo">Condo</option>
+            <option value="family-reunion">Family reunion</option>
+            <option value="rv">RV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="signup-rv">RV / rig details <span class="label-optional">(optional)</span></label>
+          <input type="text" id="signup-rv" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" autocomplete="new-password" required minlength="8">
+        </div>
+        <div class="form-group">
+          <label for="signup-confirm">Confirm password</label>
+          <input type="password" id="signup-confirm" autocomplete="new-password" required minlength="8">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+      </form>
+      <p id="signup-message" class="form-message" role="status" aria-live="polite"></p>
       <p class="login-links"><a href="login.html">Back to Sign In</a></p>
     </div>
   </main>
 
-  <script src="js/auth.js?v=members5"></script>
-  <script src="js/create-account.js?v=members5"></script>
+  <script src="js/supabase-config.js?v=sb2"></script>
+  <script src="js/supabase.js?v=sb2"></script>
+  <script src="js/supabase-client.js?v=sb2"></script>
+  <script src="js/auth.js?v=sb2"></script>
+  <script src="js/create-account.js?v=sb1"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

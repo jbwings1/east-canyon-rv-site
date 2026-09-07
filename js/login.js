@@ -24,7 +24,8 @@ const nextUrl = getSafeNextUrl();
 const signedInContinue = document.getElementById("signed-in-continue");
 if (signedInContinue && nextUrl) {
   signedInContinue.href = nextUrl;
-  signedInContinue.textContent = "Continue to Reservations";
+  signedInContinue.textContent =
+    nextUrl === "admin.html" ? "Continue to Admin" : "Continue to Reservations";
 }
 
 function showSignedIn(user) {
@@ -52,15 +53,7 @@ if (typeof Auth === "undefined") {
 } else {
   const currentUser = Auth.getCurrentUser();
   if (currentUser) {
-    if (Auth.needsPasswordChange(currentUser)) {
-      showSignInForm();
-      showMessage(
-        "Finish account setup on the New account page, or reset site data below and use the demo login.",
-        "error"
-      );
-    } else {
-      window.location.href = nextUrl || "member-home.html";
-    }
+    window.location.href = nextUrl || "member-home.html";
   }
 }
 
@@ -68,7 +61,7 @@ if (resetSiteData) {
   resetSiteData.addEventListener("click", () => {
     Auth.clearAllSiteData();
     showSignInForm();
-    showMessage("Site data cleared. Try signing in again with the demo account.", "success");
+    showMessage("Saved sign-in data was cleared. Sign in again with your email.", "success");
     if (signinForm) signinForm.reset();
   });
 }
@@ -78,7 +71,7 @@ if (signedInLogout) {
 }
 
 if (signinForm && typeof Auth !== "undefined") {
-  signinForm.addEventListener("submit", (e) => {
+  signinForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     showMessage("", "");
 
@@ -86,12 +79,12 @@ if (signinForm && typeof Auth !== "undefined") {
     const password = document.getElementById("signin-password").value;
 
     if (!loginId || !password) {
-      showMessage("Enter your login ID and password.", "error");
+      showMessage("Enter your email and password.", "error");
       return;
     }
 
     try {
-      Auth.signIn(loginId, password);
+      await Auth.signIn(loginId, password);
       window.location.href = nextUrl || "member-home.html";
     } catch (err) {
       showMessage(err.message, "error");

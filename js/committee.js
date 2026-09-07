@@ -10,9 +10,9 @@ function splitName(fullName) {
   };
 }
 
-function prefill() {
+function prefill(user) {
   if (typeof Auth === "undefined" || !Auth.getCurrentUser) return;
-  const user = Auth.getCurrentUser();
+  user = user || Auth.getCurrentUser();
   if (!user) return;
   const names = splitName(user.name);
   const first = document.getElementById("committee-first");
@@ -71,4 +71,8 @@ form.addEventListener("submit", (event) => {
   message.textContent = "Thanks for submitting!";
 });
 
-prefill();
+if (typeof Auth !== "undefined" && Auth.ready) {
+  Auth.ready().then(prefill);
+} else {
+  prefill();
+}

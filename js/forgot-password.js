@@ -2,24 +2,18 @@ const form = document.getElementById("forgot-form");
 const message = document.getElementById("forgot-message");
 const demoLink = document.getElementById("demo-reset-link");
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  demoLink.hidden = true;
-  demoLink.innerHTML = "";
+  if (demoLink) {
+    demoLink.hidden = true;
+    demoLink.innerHTML = "";
+  }
 
   try {
-    const result = Auth.requestPasswordReset(
-      document.getElementById("forgot-login").value.trim()
-    );
+    await Auth.requestPasswordReset(document.getElementById("forgot-login").value.trim());
     message.textContent =
-      "If that login ID has an email on the profile, a temporary reset link has been sent.";
+      "If that email has an account, a reset link is on its way. Use the link to choose a new password.";
     message.className = "form-message success";
-
-    // Demo only — remove when real email sending is connected.
-    if (result.demoLink) {
-      demoLink.hidden = false;
-      demoLink.innerHTML = `<a href="${result.demoLink}">Open temporary reset link (demo)</a>`;
-    }
   } catch (err) {
     message.textContent = err.message;
     message.className = "form-message error";
