@@ -24,7 +24,8 @@ const nextUrl = getSafeNextUrl();
 const signedInContinue = document.getElementById("signed-in-continue");
 if (signedInContinue && nextUrl) {
   signedInContinue.href = nextUrl;
-  signedInContinue.textContent = "Continue to Reservations";
+  signedInContinue.textContent =
+    nextUrl === "admin.html" ? "Continue to Admin" : "Continue to Reservations";
 }
 
 function showSignedIn(user) {

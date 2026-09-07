@@ -194,6 +194,21 @@ const Auth = {
     return Boolean(user?.isAdmin);
   },
 
+  async verifyAdmin() {
+    try {
+      const { data, error } = await getClient().rpc("is_admin");
+      if (!error && data === true) return true;
+    } catch {
+      /* fall back to the cached profile flag */
+    }
+    try {
+      await this.refreshProfile();
+    } catch {
+      /* keep cached profile */
+    }
+    return this.isAdmin();
+  },
+
   showAdminLinks() {
     if (!this.isAdmin()) return;
     document.querySelectorAll("[data-admin-link]").forEach((el) => {

@@ -27,8 +27,8 @@
     /* cached profile */
   }
 
-  const user = Auth.getCurrentUser();
-  if (!Auth.isAdmin(user)) {
+  const isAdmin = await Auth.verifyAdmin();
+  if (!isAdmin) {
     denied.hidden = false;
     app.hidden = true;
     return;
@@ -37,6 +37,7 @@
   denied.hidden = true;
   app.hidden = false;
   Auth.showAdminLinks();
+  document.getElementById("admin-logout")?.addEventListener("click", () => Auth.logout());
 
   let profiles = [];
   let bookings = [];

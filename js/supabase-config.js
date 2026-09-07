@@ -1,6 +1,9 @@
 /**
  * Browser Supabase config — publishable/anon key only.
  * Never put the service_role key in frontend code or commit it here.
+ *
+ * Promote the first admin in the Supabase SQL editor (not from this site):
+ *   update profiles set is_admin = true where email = 'you@example.com';
  */
 window.SUPABASE_CONFIG = {
   url: "https://jmxlewxczfnxciamrtze.supabase.co",
