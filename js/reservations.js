@@ -45,7 +45,7 @@ function advanceBookingMessage() {
 }
 
 function isRvReservationType(value) {
-  return value === "motorhome" || value === "travel-trailer";
+  return value === "rv" || value === "motorhome" || value === "travel-trailer";
 }
 
 function isCondoReservationType(value) {
@@ -53,7 +53,7 @@ function isCondoReservationType(value) {
 }
 
 function isReunionReservationType(value) {
-  return value === "reunion";
+  return value === "family-reunion" || value === "reunion";
 }
 
 function getMapUnitFilter(type) {
@@ -349,9 +349,11 @@ form.addEventListener("submit", (e) => {
 
   const typeLabels = {
     condo: "Condo",
+    rv: "RV",
+    "family-reunion": "Family reunion",
     "travel-trailer": "Travel trailer",
     motorhome: "Motorhome",
-    reunion: "Reunion",
+    reunion: "Family reunion",
   };
 
   const needsMapUnit =
