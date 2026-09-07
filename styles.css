@@ -2501,6 +2501,10 @@ a:hover {
   }
 }
 
+.page-visitor [hidden] {
+  display: none !important;
+}
+
 .page-visitor .btn {
   display: inline-flex;
   align-items: center;
