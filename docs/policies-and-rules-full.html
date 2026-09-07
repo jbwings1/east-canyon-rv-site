@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policies and Rules | East Canyon Resort</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/auth.js?v=members2"></script>
+  <script>
+    (function () {
+      var user = Auth.getCurrentUser();
+      if (!user || Auth.needsPasswordChange(user)) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+</head>
+<body class="page-visitor">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <img src="pix/logo.jpg" alt="East Canyon Resort">
+      </a>
+      <nav class="header-nav" aria-label="Site links">
+        <a href="index.html">Main Page</a>
+        <a href="visitors.html">Visitors</a>
+        <a href="members.html">Members</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container page-content page-content--wide">
+      <h1>Policies and Rules</h1>
+      <p class="policy-intro">
+        East Canyon Resort Rules and Regulations
+        (effective May 1st, 2025).
+      </p>
+      <form class="policy-search" id="policy-search-form" role="search">
+        <label class="policy-search-label" for="policy-search-input">Search rules</label>
+        <div class="policy-search-row">
+          <input
+            type="search"
+            id="policy-search-input"
+            name="q"
+            placeholder="Search rules…"
+            autocomplete="off"
+          >
+          <button type="submit">Search</button>
+          <button type="button" id="policy-search-prev" disabled>Prev</button>
+          <button type="button" id="policy-search-next" disabled>Next</button>
+          <button type="button" id="policy-search-clear">Clear</button>
+        </div>
+        <p class="policy-search-status" id="policy-search-status" aria-live="polite"></p>
+      </form>
+      <article class="policy-document">
+<h2 id="sec-1">1. PURPOSE AND AUTHORITY</h2>
+<p>The following Rules and Regulations are made for the safety and enjoyment of all Members, Owners and Visitors of East Canyon Resort (ECR). They are adopted by the Board of Directors as provided for in the Bylaws of ECR. ECR may enforce these Rules and Regulations by any or all of these methods: immediate fine, verbal warning, written warning, no action, or refer the matter to the Board of Directors for suspension or termination of Members' privileges.</p>
+<h3 id="sec-1-1">1.1. Penalties</h3>
+<p>The penalty for violation of any Rule or Regulation shall be itemized in Appendix A, which is incorporated herein by reference. Penalties may be assessed for each violation, incident, or repetition of a violation. The continuance of a condition is a violation for each day the condition continues.</p>
+<h3 id="sec-1-2">1.2. Number and Sex</h3>
+<p>Any reference to a person by sex shall be deemed a reference to both sexes. Any reference to one person shall be understood as applying to all persons of the same class.</p>
+<h3 id="sec-1-3">1.3. Volunteer Staff</h3>
+<p>Resort Management may appoint Volunteer Staff from time to time who may be exempt from reservation and use restrictions during the course of their duties.</p>
+<h3 id="sec-1-4">1.4. Liability</h3>
+<p>Anyone entering ECR property assumes the risk of loss, damage, injury or theft. ECR is not liable for any of the above.</p>
+<h2 id="sec-2">2. DEFINITIONS</h2>
+<h3 id="sec-2-1">2.1. Member</h3>
+<p>Unless otherwise stated, a Full Member, Designated Member, or Temporary Member will hereafter be referred to as Member(s).</p>
+<h4 id="sec-2-1-1">2.1.1. Full Member</h4>
+<p>An individual, a married couple as joint tenants, a corporation or business that has purchased or acquired at least one share of stock in ECR, are Full Members. Married couples may not act as two separate Members.</p>
+<h4 id="sec-2-1-2">2.1.2. Temporary Member</h4>
+<p>An individual occupying a Condo or the Family Reunion Area (FRA) for the following reasons: A) during a Full Member's Regular Time in the absence of the Full Member, or B) on a VRI or RCI exchange, or C) as a Renter or Invitee of ECR.</p>
+<h4 id="sec-2-1-3">2.1.3. Designated Member</h4>
+<p>An individual, designated by a corporation owning a corporate share, to exercise the membership rights of the corporation as described in Section 3 herein.</p>
+<h4 id="sec-2-1-4">2.1.4. Relative Rights Member</h4>
+<p>An individual who is 1) at least 21 years of age, and 2) is the parent or child of a Full Member who has Relative Rights as described in the ECR Bylaws, or is designated a Relative Rights by a Corporate Member, and 3) has paid the Annual Relative Rights Fee.</p>
+<h4 id="sec-2-1-5">2.1.5. Non-Member</h4>
+<p>Any person not specifically designated as a Member or in other words, a person of the general public.</p>
+<h3 id="sec-2-2">2.2. Member in Good Standing</h3>
+<p>A Member with no outstanding Fines, Fees, or Assessments.</p>
+<h3 id="sec-2-3">2.3. Membership Unit</h3>
+<p>A Full Member has one (1) Membership Unit for each share of ECR stock owned. A Temporary Member has Use Rights of one (1) Membership Unit.</p>
+<h3 id="sec-2-4">2.4. Guest</h3>
+<p>An individual using Resort facilities by personal invitation of a Member in Good Standing or at the invitation of ECR. This includes children of the Member.</p>
+<h3 id="sec-2-5">2.5. ECR</h3>
+<p>East Canyon Resort and its officers and employees acting in their official capacity.</p>
+<h3 id="sec-2-6">2.6. Reservation</h3>
+<p>A Reservation is a period of no more than seven (7) consecutive days. All reservations must be made by the Primary Member.</p>
+<h4 id="sec-2-6-1">2.6.1. Same-Day Reservation</h4>
+<p>A Reservation made by phone during reservation hours or after hours in person at the check-in desk for an occupancy beginning on the same day.</p>
+<h4 id="sec-2-6-2">2.6.2. - Rescinded 02/27/2020</h4>
+<h4 id="sec-2-6-3">2.6.3. RV Park Bonus Time Reservation</h4>
+<p>A Reservation for the RV Park of no more than three nights, which is made after paying the Daily Bonus Time fee for an occupancy to begin immediately. This is not considered an Advanced Reservation.</p>
+<h3 id="sec-2-7">2.7. Condo Bonus Time</h3>
+<p>A Reservation for a Condo which does not use Regular Time and has a Bonus Time fee.</p>
+<h3 id="sec-2-8">2.8. Regular Time</h3>
+<p>The days a Member is entitled to occupy a Condo according to his Class of Membership.</p>
+<h3 id="sec-2-9">2.9. Availability</h3>
+<p>A Condo or RV Park Site is available when no Member or Guest has been checked in and assigned to occupy it and no Reservation for it exists for that time.</p>
+<h3 id="sec-2-10">2.10. Summer Season</h3>
+<p>Summer Season is the inclusive period of time from May 15th to September 15th.</p>
+<h3 id="sec-2-11">2.11. Winter Season</h3>
+<p>Winter Season is the inclusive period of time from September 16th to May 14th.</p>
+<h3 id="sec-2-12">2.12. Reservation Year</h3>
+<p>The Reservation Year begins April 1st and ends the following March 31st.</p>
+<h3 id="sec-2-13">2.13. Recreational Vehicle (RV)</h3>
+<p>A Recreational Vehicle (RV) is any vehicle made for or intended to be used for habitation, pulled behind a vehicle or motorized including but not limited to a motor home, van/camper conversion, truck-mounted camper, travel trailer or tent trailer. Seats that recline or can be removed for sleeping do not alone qualify a vehicle as an RV.</p>
+<h3 id="sec-2-14">2.14. Tent</h3>
+<p>A Tent is a shelter of canvas, or the like, free standing or supported by poles and fastened by cords to pegs driven into the ground. This does not include products that only provide shade.</p>
+<h3 id="sec-2-15">2.15. RV Park</h3>
+<p>The RV Park is that area where RV pads with utility hookups have been built, with their adjoining common areas and roads.</p>
+<h3 id="sec-2-16">2.16. RV Use</h3>
+<p>RV Use is the right of a Full Member or Relative Rights Member to reserve and occupy a site in the RV Park.</p>
+<h3 id="sec-2-17">2.17. Wilderness Area</h3>
+<p>The Wilderness Area is the unimproved portions of ECR land, including campsites, trails, and unimproved roads.</p>
+<h3 id="sec-2-18">2.18. Resort</h3>
+<p>The Resort is the real and personal property owned by ECR and offered for use by Members, Invitees and/or Renters.</p>
+<h3 id="sec-2-19">2.19. Fine</h3>
+<p>A Fine is an assessment on a specific person imposed as a penalty for the violation of a Rule or Regulation. Fines are specified in Appendix A.</p>
+<h3 id="sec-2-20">2.20. Fee</h3>
+<p>A Fee is an assessment on a specific person imposed for the Use of a particular service or facility. Fees are specified in Appendix B, the Fee Schedule, and are available upon request or by visiting your Member's login page on the website.</p>
+<h3 id="sec-2-21">2.21. Weekend</h3>
+<p>Weekends are any part of the period from Friday after the start of check in time through Sunday before check out time.</p>
+<h3 id="sec-2-22">2.22. Condo</h3>
+<p>A Condo is one (1) of the thirty-two (32) dwelling units commonly known as a condominium.</p>
+<h3 id="sec-2-23">2.23. RV Park Site</h3>
+<p>An RV Park Site is an RV pad in the developed RV Park including a graveled or paved parking area with hookups, the landscaped area around it and any ECR personal property provided there for Visitor's use.</p>
+<h3 id="sec-2-24">2.24. Visitor</h3>
+<p>A Visitor is any person on Resort property who is not an ECR employee.</p>
+<h3 id="sec-2-25">2.25. Wilderness Campsite</h3>
+<p>A Wilderness Campsite is an area in Druby or Bernice Canyons designated as a Campsite.</p>
+<h3 id="sec-2-26">2.26. Family Reunion Area (FRA)</h3>
+<p>A Family Reunion Area (FRA) is a Fee area on Resort property designated for group use.</p>
+<h3 id="sec-2-27">2.27. Special Events Area</h3>
+<p>A Special Events Area is a Fee area designated for group day use for meetings, festivities, weddings, or other approved gatherings.</p>
+<h3 id="sec-2-28">2.28. Over Limit Fine</h3>
+<p>An Over Limit Fine is a fine imposed whenever more people than allowed by the rules occupy any reserved area.</p>
+<h3 id="sec-2-29">2.29. Relative Rights</h3>
+<p>Relative Rights (RR) is the privilege of allowing family members to purchase an annual Relative Rights membership as regulated herein.</p>
+<h3 id="sec-2-30">2.30. Off Highway Vehicles (OHV)</h3>
+<p>Off Highway Vehicles include any motorized vehicle which does not meet Utah State qualifications to be licensed for road use. This includes, but is not limited to, street legal OHVs, snowmobiles, 4-wheelers, ATVs, tractors or other</p>
+<p>agricultural vehicles, non-street legal motorcycles (OHMs), golf carts, or any other non-street legal motorized vehicles. Vehicles designed to carry disabled persons are excluded.</p>
+<h3 id="sec-2-31">2.31. Unimproved Roads</h3>
+<p>Roads, trails, or paths on the Resort ten (10) feet wide, or more, which may be graded or graveled but have not been paved. This includes all roads outside of the improved areas around the Condos and RV Park.</p>
+<h3 id="sec-2-32">2.32. Holidays</h3>
+<p>For purposes of these Rules and Regulations, Holidays are: New Year's, Easter, Memorial Day, July 4th, July 24th, Labor Day, UEA Weekend, Thanksgiving and Christmas. Weekends surrounding the holiday are included in all holiday reservation regulations.</p>
+<h3 id="sec-2-33">2.33. Roof Top Tent</h3>
+<p>A collapsible shelter of fabric (such as nylon or canvas) stretched and sustained by poles and used for camping outdoors which has been mounted on top of a vehicle roof.</p>
+<h2 id="sec-3">3. USE RIGHTS AND PRIVILEGES</h2>
+<p>The Use Rights and Privileges of any person are limited to those specifically granted herein. All use of Resort facilities is subject to Availability and the current Rules and Regulations. Members Not in Good Standing may be excluded from any and all use of the Resort. No more than two (2) shares may be titled by one (1) Member. Resort Management reserves the right to close any portion of the Resort.</p>
+<h3 id="sec-3-1">3.1. All Members</h3>
+<p>Each Member in Good Standing is</p>
+<p>entitled to the use of any of the common facilities of the Resort and the Wilderness Areas.</p>
+<h3 id="sec-3-2">3.2. Member Classes</h3>
+<p>Each Member has the following Use Rights according to their class of Membership.</p>
+<h4 id="sec-3-2-1">3.2.1. Class A Member -Ten (10) days of Regular Time (5</h4>
+<p>Summer, 5 Winter), Unlimited Bonus Time (space available), Relative Rights, and RV Use.</p>
+<h4 id="sec-3-2-2">3.2.2. Class B Member</h4>
+<p>Eight (8) days of Regular Time (4 Summer, 4 Winter), Unlimited Bonus Time (space available), Relative Rights, and RV Use.</p>
+<h4 id="sec-3-2-3">3.2.3. Class C Member</h4>
+<p>Four (4) days of Regular Time (4 Summer), Unlimited Bonus Time (space available), Relative Rights, and RV Use</p>
+<h4 id="sec-3-2-4">3.2.4. Class D Member</h4>
+<p>RV Use and Relative Rights. Unlimited Bonus Time (space available).</p>
+<h4 id="sec-3-2-5">3.2.5. Class F Member</h4>
+<p>Seven (7) days of Regular Time (4 Summer, 3 Winter), Unlimited Bonus Time (space available), Relative Rights, and RV Use.</p>
+<h4 id="sec-3-2-6">3.2.6. Class G Member- Fourteen (14) days of Regular</h4>
+<p>Time (7 Summer, 7 Winter), Unlimited Bonus Time (space available), Relative Rights, and RV Use.</p>
+<h4 id="sec-3-2-7">3.2.7. Class H Corporate Member- Ten (10) days of</h4>
+<p>Regular Time (5 Summer, 5 Winter). Each year, the Corporation may designate up to four (4) officers, partners, directors, trustees, or employees of the Member</p>
+<p>Corporation as a Designated Member. A Designated Member has Bonus Time and RV Use with the restriction that only one of the Designated Members of the Corporation shall occupy, as a Member, the Wilderness Area campsites, RV Park or Condos at any given time. However, all four (4) may be on site at any one time for day use. Class H Members also may purchase up to ten (10) Annual Relative Rights.</p>
+<h4 id="sec-3-2-8">3.2.8. Class I Corporate Member</h4>
+<p>Ten (10) days of Regular Time (5 Summer, 5 Winter). Each year the Corporation may designate up to four (4) officers, partners, directors, directors, trustees, or employees of the Member Corporation as a Designated Member. A Designated Member has Bonus Time and RV Use with the restriction that only one (1) of the Designated Members of the Corporation shall occupy, as a Member, the Wilderness Area campsites, RV Park or Condos at any given time. However, all four may be on site at any one time for day use.</p>
+<h4 id="sec-3-2-9">3.2.9. Class L Member</h4>
+<p>RV Use and Unlimited Bonus Time (space available).</p>
+<h4 id="sec-3-2-10">3.2.10. Class M Member</h4>
+<p>Seven (7) days of Regular Time (4 Summer, 3 Winter) and Unlimited Bonus Time (space available), and RV Use.</p>
+<h4 id="sec-3-2-11">3.2.11. Class O Member</h4>
+<p>Seven (7) days of Regular Time (4 Summer, 3 Winter) and Unlimited Bonus Time (space available).</p>
+<h4 id="sec-3-2-12">3.2.12. Class P Member</h4>
+<p>Fourteen (14) days of Regular</p>
+<p>Time (7 Summer, 7 Winter), and Unlimited Bonus Time (space available).</p>
+<h4 id="sec-3-2-13">3.2.13. Class Q Member</h4>
+<p>Seven (7) days of Regular Time (4 Summer, 3 Winter) and Unlimited Bonus Time (space available). Regular Time may be used ONLY during the specific week of each year stated in the purchase agreement.</p>
+<h4 id="sec-3-2-14">3.2.14. Relative Rights Member</h4>
+<p>Relative Rights Members have the same Use Rights and Privileges as defined in this section (Section 3) as the Full Member with which they are associated except that Relative Rights Members have no Regular Time, Hunting rights, or the right to make Guest Reservations or bring Guests. Relative Rights may schedule Bonus Time up to twenty-one (21) days in advance. Relative Rights may be subject to other rules, such as Reservation policies, and fees as defined by ECR. The Relative Rights term is from April 1st through March 31st and has an Annual Fee. See Appendix B for fees.</p>
+<h4 id="sec-3-2-15">3.2.15. Temporary Member Condo or FRA -</h4>
+<p>A Temporary Member occupying a Condo or renting the Family Reunion Area has limited Use Rights during the period of the Reservation only. This Use includes all facilities but excludes the Wilderness Area. This does not apply to VRI or RCI exchange members who have Full Use Rights of all amenities and facilities, including the Wilderness Area.</p>
+<h3 id="sec-3-3">3.3. Guests</h3>
+<p>Guests may use Resort facilities only when accompanied by the inviting Member unless using Members' Regular Time in a Condo as a Temporary Member. One (1) Guest in an RV or up to three (3) tents</p>
+<p>may camp overnight in Druby or Bernice Canyon (fee applicable) only if the inviting Member is also camping overnight in the same campground. One (1) Guest may stay overnight in the Developed Area of the Resort RV Park (fee applicable) or Condos, and up to three (3) tents in the tent area (fee applicable), and the specified number of guests in the Family Reunion areas only if the inviting Member is also staying overnight in the Developed Area. Guest(s) shall always be accompanied by the Member when accessing ECR gates and Wilderness Area. Failure to be accompanied by the Member may result in removal from the property and a fine being assessed. See Appendix A for fine and Appendix B for fees.</p>
+<h3 id="sec-3-4">3.4. Member Responsibility- A Member is responsible for</h3>
+<p>all damages, fees, fines and penalties pertaining to, arising or resulting from, or under that Membership. If suspension of Resort use is part of any penalty imposed on such person(s), the suspension may also extend to the Member.</p>
+<h3 id="sec-3-5">3.5. Restriction on Purchasing New Membership -</h3>
+<p>Former Members may not purchase a new membership until one year after any forfeiture or withdrawal and only after all unpaid fees and fines are paid. 3.6 Trust Memberships - When a Membership is owned by a Trust, only the ECR Full Member is allowed to make Reservations and use the Membership according to ECR Rules and Regulations. Successor Trustees are not considered ECR Full Members.</p>
+<h2 id="sec-4">4. USE OF FACILITIES</h2>
+<h3 id="sec-4-1">4.1. General</h3>
+<h4 id="sec-4-1-1">4.1.1. General Public</h4>
+<p>The General Public is only permitted to use the Resort facilities or land as invited for specific events or activities as authorized by the Board of Directors. The General Public is invited to use the laundry, lodge and the country store.</p>
+<h4 id="sec-4-1-2">4.1.2. Non-Members</h4>
+<p>ECR may ask anyone not a Member or Guest (in other words a person of the General Public), who is in violation of any of these Rules and Regulations, to leave the Resort. ECR may pursue trespass enforcement with appropriate law enforcement agencies.</p>
+<h4 id="sec-4-1-3">4.1.3. Facility Rental</h4>
+<p>ECR may rent Resort facilities, as authorized by the Board of Directors, to businesses or individuals for conventions, meetings, wedding receptions, social gatherings or personal use providing the use of any Resort facilities by the Renters does not significantly adversely affect the Members' use of the Resort. Renters may use only those Resort facilities and areas specifically permitted in their Rental Agreement.</p>
+<h4 id="sec-4-1-4">4.1.4. Regular Time Use by Others</h4>
+<p>Members' Regular Time for Condos may be rented or given away to anyone over 21 years of age. The Member must make the reservation and provide the guest information at the time the reservation is made. The Member is responsible as stated in Rule 3.4. Bonus Time and RV Park Use may not be rented or given away.</p>
+<h4 id="sec-4-1-5">4.1.5. Proper Care</h4>
+<p>Upon a Resort inspection during or after a Visitors' occupancy which identifies damage to any of the Resort's property, the Visitor is liable for the cost of repair or replacement of the Resort's damaged property caused by that Visitor.</p>
+<h4 id="sec-4-1-6">4.1.6. Non-Interference</h4>
+<p>Users of Resort facilities shall conduct their activities so as not to interfere with the safety, rights and enjoyment of others using the Resort facilities. Failure to maintain proper conduct may result in denial of Use Privileges.</p>
+<h4 id="sec-4-1-7">4.1.7. Emergencies- In the event of unforeseen or</h4>
+<p>emergency conditions, ECR Management may temporarily close or restrict all or any portion of the Resort and its Use.</p>
+<h4 id="sec-4-1-8">4.1.8. Signs</h4>
+<p>All Visitors shall observe and obey posted regulatory signs. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-9">4.1.9. Check Out</h4>
+<p>All persons shall vacate the Condos on or before 10:00 am on the last day of the Reservation. The RV Park Site, Wilderness Area Campsite, or Tent Site must vacate on or before 12:00 noon on the last day of the reservation. Family Reunion Sites must be vacated on or before 11:00 am on the last day of the reservation. Resort facilities are rented on a daily basis and must be vacated on or before 10 PM of their reserved date. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-10">4.1.10. Vehicle/Trailer Washing- Use of culinary water for</h4>
+<p>washing vehicles or trailers is not allowed. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-11">4.1.11. Horses</h4>
+<p>Horse owners are responsible for taking care of and cleaning up after their horses. Waste areas will be designated by ECR. Horses are not allowed around the Condos or RV Park. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-12">4.1.12. Parking</h4>
+<p>No person shall park a vehicle in such a way that it: 1) Prevents another person's vehicle from being safely moved or 2) blocks any firefighting apparatus or equipment or 3) blocks a road or prevents the safe use of a road or 4) is parked on the lawn, shrubs, or flower beds or 5) is in the North of Condo Parking Area unless hooked to a trailer (See Rule 13.7). All vehicles must be parked on the pavement. Parking at ECR is restricted to Members and Guests present at the resort, except as provided elsewhere in these Rules. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-13">4.1.13. Overnight Occupancy</h4>
+<p>Overnight occupancy in the Developed Area of the Resort is permitted only in a Tent, RV, or Condo. No overnight occupancy is permitted in vehicles (other than RV's), out of doors, or in any common areas of the Developed Area of the Resort.</p>
+<h4 id="sec-4-1-14">4.1.14. Riding Toys</h4>
+<p>No riding toys are allowed in the playground. Gas powered riding toys are not permitted at the Lodge, Condo or RV Park areas, except as per Rule 13.3 when used for Handicap purposes. Foot propelled toys are not permitted where prohibited by posted signs. Tickets will be issued to the member for anyone exceeding posted speed limits. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-15">4.1.15. Quiet Hours</h4>
+<p>Quiet hours for all of ECR shall be observed from 11PM to 7AM. Amended February 22, 2024.</p>
+<h4 id="sec-4-1-16">4.1.16. No Commercial Use</h4>
+<p>No Member or Guest may use the Resort for commercial purposes. Renting Regular Use Time in the Condos is not a commercial purpose. For the purpose of ECR Rules, commercial use includes nonprofit and fundraising events.</p>
+<h4 id="sec-4-1-17">4.1.17. No Illegal Activities</h4>
+<p>No illegal activities may be conducted on the Resort. ECR may, in addition to Fines provided for elsewhere in these Rules and Regulations, evict, or deny Resort Use to any person which ECR has reason to believe has acted illegally, is acting illegally, or will act illegally on the Resort.</p>
+<h4 id="sec-4-1-18">4.1.18. Underage Visitors</h4>
+<p>No person under age twentyone (21) may use the Resort unless accompanied by a person age twenty-one (21) years or older, except for married couples without Guests.</p>
+<h4 id="sec-4-1-19">4.1.19. Smoking</h4>
+<p>Smoking restrictions vary according to the fire condition of the Resort property. The restrictions are available at check-in and will be posted. Smoking rules vary depending on Use area. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-20">4.1.20. Fires</h4>
+<p>Fires shall be built only in concrete, metal prepared fire pits or in approved enclosed portable fireplaces and shall be completely extinguished before leaving. Deadwood located on Resort property may be used for campfires, but firewood may not be taken off the Resort property for use elsewhere without the written permission of ECR. All posted Fire Rules must be followed. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-21">4.1.21. Removal or Destruction of Trees, Plants, Rocks</h4>
+<p>or Soil -The removal of live trees, plants, rocks or soil, from Resort property or the destruction of same is strictly prohibited. NO LIVE TREES shall be cut for use as firewood or for any other purpose. See Appendix A for penalty.</p>
+<h4 id="sec-4-1-22">4.1.22. Gaming Courts</h4>
+<p>Gaming courts and court equipment are on a first come-first serve basis. 1 Member can occupy 1 sporting court for 1 hour at a time. This is a self-policed system; however, areas are monitored by cameras and security. Management can assist with any member disputes. Children under the age of 16 are always to be accompanied by an adult. Reservations are available for Pickleball Courts only. Please check with front desk staff to learn more regarding reservation regulations. Amended March 21, 2024.</p>
+<h4 id="sec-4-1-23">4.1.23. Hammocks</h4>
+<p>Only free-standing hammocks are allowed.</p>
+<h4 id="sec-4-1-24">4.1.24. Check-in</h4>
+<p>A Membership photo ID or Government issued ID with picture is required for any person checking in for RV, Condo, Wilderness, or to receive gate codes. Checkin or gate codes will be denied for any person whose member status cannot be positively verified. Checking in or attempting to Check-in using another person's ID will result in a fine. See Appendix A for penalty. Amended February 22,</p>
+<h3 id="sec-4-2">4.2. Firearms, Hunting &amp; Trespassing</h3>
+<h4 id="sec-4-2-1">4.2.1. Hunting Regulations</h4>
+<p>No person may hunt on ECR property except in accordance with the Hunting Laws, Rules,</p>
+<p>Policies, and Regulations of the State of Utah and ECR. See Appendix C for Hunt Rules. See Appendix A for penalty.</p>
+<h4 id="sec-4-2-2">4.2.2. Weapon Discharge</h4>
+<p>No firearm shall be discharged on ECR property except 1) During hunting season in designated hunting areas and in accordance with Hunting laws, Rules, and Regulations of the State of Utah and ECR, or 2) at the rifle range in Rabbit Hollow during daylight hours, 3) as authorized by Resort Management. If the shooter is less than eighteen (18) years of age adult supervision is required. Discharge of any firearm or weapon in the Condo area, RV Park, FRA or any designated Wilderness Camping Area or within 600 feet of any Resort building is strictly prohibited. Violation of Firearm Regulations may result in fines, eviction from Resort property and possible suspension of some or all Use Privileges at ECR or possible termination of Membership by the Board of Directors. See Appendix A for penalty.</p>
+<h4 id="sec-4-2-3">4.2.3. Firearms</h4>
+<p>A person may not carry a loaded firearm in or on a vehicle. Pistols and revolvers must have an empty chamber, and the cylinder placed in an out-of-firing position. All firearms in condominiums, RV Park, all other buildings and within 600 feet of any buildings must be completely unloaded and no such firearm may contain live ammunition in the chamber or the magazine. A holder of a current Concealed Firearm Permit recognized by the State of Utah is exempt from this paragraph while acting within the applicable laws. Violation may result in eviction and possible suspension of some or all Use Privileges at ECR or possible termination of Membership by the Board of Directors. See Appendix A for penalty.</p>
+<h4 id="sec-4-2-4">4.2.4. Poaching</h4>
+<p>No Member or Guest of ECR may take any game on adjacent private property without permission of the land owner and UDWR. Violation may result in eviction, suspension of Hunting Privileges for the remainder of the year and the following two years and possible suspension of use of some or all ECR privileges or possible termination of Membership by the Board of Directors. See Appendix A for penalty.</p>
+<h4 id="sec-4-2-5">4.2.5. Trespassing</h4>
+<p>No Member or Guest of ECR may trespass on adjacent or nearby private property without written permission of the land owner. No Member or Guest of ECR may cause damage, including but not limited to, road damage on adjacent or nearby private, USFS, BOR or Salt Lake City Corporation property. See Appendix A for penalty.</p>
+<h4 id="sec-4-2-6">4.2.6. Parking</h4>
+<p>There is no overnight parking (except in designated parking areas) of motorized vehicles in any wilderness area. Violation of this rule will constitute a termination of the Membership's current season hunting privileges. Exceptions: 1) Hunting the Great Western Trail where parking will be allowed at Swallow Rock, or 2) if a vehicle becomes disabled. If the vehicle is disabled, you must contact a member of security for a rule waiver and/or removal. See Appendix A for penalty.</p>
+<h3 id="sec-4-3">4.3. Fishing</h3>
+<h4 id="sec-4-3-1">4.3.1. Regulations</h4>
+<p>Anyone fishing anywhere on Resort property must comply with Fishing Laws and Regulations of the State of Utah.</p>
+<h4 id="sec-4-3-2">4.3.2. Children's Fish Pond</h4>
+<p>Fishing in the designated</p>
+<p>Children's Fishing Pond is restricted to children 12 years old and younger and the limit is three (3) fish per day per child.</p>
+<h4 id="sec-4-3-3">4.3.3. Fish Pond Use</h4>
+<p>The fishing pond is for fishing only. No swimming, floatation devices, nor watercraft of any kind are permitted in the fishing pond.</p>
+<h3 id="sec-4-4">4.4. Locked Gates</h3>
+<h4 id="sec-4-4-1">4.4.1. Re-Lock Gates</h4>
+<p>Whenever entering or leaving areas of the Resort property where Gates are located the Gates shall be re-locked.</p>
+<h4 id="sec-4-4-2">4.4.2. Obtaining Combinations</h4>
+<p>A Full Member in Good Standing or Relative Rights Member may obtain the current lock combination in person at the Resort or have it sent to a pre-arranged email. Full Members or RRM are prohibited from distributing gate codes to other Visitors or Members. Full Members or Relative Rights Members found in violation of this rule may be subject to a fine as determined appropriate by ECR Management.</p>
+<h4 id="sec-4-4-3">4.4.3. Authorized Entrance</h4>
+<p>No vehicle shall enter any gated area except as authorized. Driving around the gate is strictly prohibited.</p>
+<h3 id="sec-4-5">4.5. Swimming Pool and Hot Tub</h3>
+<h4 id="sec-4-5-1">4.5.1. Swim Tags</h4>
+<p>No one may use the swimming pool or hot tub without displaying a swim tag except for use of the hot tub in the winter.</p>
+<h4 id="sec-4-5-2">4.5.2. Adult Supervision</h4>
+<p>The Member must ensure adequate adult supervision in the pool area for those using the Member's swim tags. Children aged 12 years and younger must be accompanied by a person 18 years or older.</p>
+<h4 id="sec-4-5-3">4.5.3. Age Restrictions</h4>
+<p>No one under 16 is allowed to use the Hot Tub.</p>
+<h4 id="sec-4-5-4">4.5.4. Food in Pool Area</h4>
+<p>No alcohol, food or glass containers are allowed in Pool Area.</p>
+<h4 id="sec-4-5-5">4.5.5. Violations</h4>
+<p>Any violation in the swimming pool or hot tub areas may result in forfeiture of swim tags and removal from the pool area in addition to fines. See Appendix A for penalty.</p>
+<h4 id="sec-4-5-6">4.5.6. Swim Diapers</h4>
+<p>Children who are not yet toilet trained must wear Swim Diapers in the pool or children's wading pool. Swim Diapers are specially made to prevent the spread of E-Coli and other waterborne diseases.</p>
+<h4 id="sec-4-5-7">4.5.7. Smoking</h4>
+<p>No Smoking is allowed at the Pool and Hot Tub areas.</p>
+<h3 id="sec-4-6">4.6. Lodge Mezzanine/Activities Center</h3>
+<h4 id="sec-4-6-1">4.6.1. Reservation Use</h4>
+<p>During the time period of November 1st - April 30th the Lodge Mezzanine and Activities Center may be rented on a first-come-first served basis by a Visitor for gatherings such as meetings, receptions, parties, etc. Visitors are responsible for all clean up and will be</p>
+<p>charged a fee for any additional services as determined by ECR Management. See Appendix B for pricing.</p>
+<h3 id="sec-4-7">4.7. Condos General Uses</h3>
+<h4 id="sec-4-7-1">4.7.1. Overnight Occupancy</h4>
+<p>Overnight Occupancy of a Condo is limited to eight (8) persons except that up to twelve (12) persons may occupy a Condo overnight if the twelve (12) persons are the Member, Member's spouse, and Member's children (no other Guests). See Appendix A for penalty.</p>
+<h4 id="sec-4-7-2">4.7.2. Condo Parking</h4>
+<p>Parking next to a Condo is limited to two (2) vehicles per Condo either powered or pulled. From November 1st to March 31st parking will be restricted to one (1) vehicle per condo unit and the vehicle is required to be parked under the carport. All vehicles must be parked on the pavement and any vehicle parked North of the Condo must comply with Rule 13.7. See Appendix A for penalty.</p>
+<h4 id="sec-4-7-3">4.7.3. Non-member Condo Rental</h4>
+<p>Rental of condos by a non-member allows the same use of all resort property and facilities during their rental stay subject to the rules and regulations of ECR. Hunting privileges are not included. 4.7.4 - Electric Bicycles and Scooters - Members and guests are prohibited from storage or charging e-mobility device batteries inside of a dwelling space. ADA devices are excluded from this rule. Added May 23,2024.</p>
+<h3 id="sec-4-8">4.8. Vehicle Speed Limits</h3>
+<p>No vehicle may be operated on improved Resort property or roads adjacent to the</p>
+<p>Wilderness Area campsites in excess of 10 miles per hour. OHVs are restricted to 10 miles per hour in these areas.</p>
+<h3 id="sec-4-9">4.9. RV Park General Uses</h3>
+<h4 id="sec-4-9-1">4.9.1. Check In, Check Out</h4>
+<p>All RVs must Check In and Check Out at the desk. The Check In time is 2:00 p.m. on the day of arrival and Check Out time is 12:00 noon on the day of departure.</p>
+<h4 id="sec-4-9-2">4.9.2. One RV</h4>
+<p>Only one (1) RV may be parked on a pad at any time.</p>
+<h4 id="sec-4-9-3">4.9.3. Parking</h4>
+<p>No vehicle may be parked on the access roads. These roads must be kept clear for use by other Members and for maintenance and emergency vehicles. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-4">4.9.4. Tents</h4>
+<p>No tents are allowed in the RV Park.</p>
+<h4 id="sec-4-9-5">4.9.5. Unattended RV</h4>
+<p>RV may not be left unattended overnight in the RV Park without prior approval of Resort management. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-6">4.9.6. RV Removal</h4>
+<p>The RV owner is responsible for any damage incurred if ECR removes an RV which is in violation of Resort policy.</p>
+<h4 id="sec-4-9-7">4.9.7. Conduct</h4>
+<p>Users of the RV Park will not disturb their neighbors and shall not make or allow loud or offensive noises.</p>
+<h4 id="sec-4-9-8">4.9.8. Parking Pass</h4>
+<p>Any vehicle parked on a RV Park Site</p>
+<p>must display a valid parking pass for that date and RV Park Site. Non-complying vehicles may be towed at owner's expense.</p>
+<h4 id="sec-4-9-9">4.9.9. Unassigned RV Site</h4>
+<p>No person shall use an RV Park Site not assigned to them as evidenced by a valid parking pass for that date and RV Park Site. This includes, but is not limited to: water, sewer, power, and TV hookups; the parking pad and its associated amenities and lawn area; or personal property offered for use on the Site by ECR. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-10">4.9.10. &quot;Y&quot; Hose Connection</h4>
+<p>A &quot;Y&quot; Hose Connection may not be used in the RV Park. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-11">4.9.11. No Carpeting</h4>
+<p>No carpeting, mats, plastic sheets or other coverings may be placed on the grass. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-12">4.9.12. Sewer Connections</h4>
+<p>A secure sewer boot is required. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-13">4.9.13. Portable Fire Pits</h4>
+<p>Portable Fire pits may be used only on provided pads or the graveled area and may not damage grass or landscaping. See Appendix A for penalty.</p>
+<h4 id="sec-4-9-14">4.9.14. Winter RV Storage</h4>
+<p>There is no winter storage in the RV Park.</p>
+<h3 id="sec-4-10">4.10. Drones</h3>
+<p>Operation or use of drones is prohibited within 500 feet of any developed area of the resort. Drone use is prohibited on all ECR property during the hunting</p>
+<p>season of August - February.</p>
+<h3 id="sec-4-11">4.11. Guests</h3>
+<p>One (1) Guest may stay up to three (3) nights in the RV Park (fee applicable) and up to three (3) tents in the tent area (fee applicable) only if the inviting Member is also staying overnight in the Developed Area. Guest(s) shall always be accompanied by the Member when accessing ECR gates and Wilderness Areas. Failure to be accompanied by the Member may result in removal from the property and a fine being assessed. See Appendix A for penalty and Appendix B for fee.</p>
+<h2 id="sec-5">5. CONDO RESERVATIONS</h2>
+<h3 id="sec-5-1">5.1. Regular Time</h3>
+<h4 id="sec-5-1-1">5.1.1. Good Standing</h4>
+<p>A Condo Member in Good Standing may reserve Condos for Regular Time on a first come-first served basis, subject to the following restrictions:</p>
+<h4 id="sec-5-1-2">5.1.2. Reservations</h4>
+<p>Reservations may be made Three Hundred and Sixty-Five (365) days in advance by the Primary Member only. However, Reservations are limited to one (1) weekend in the Winter and one (1) weekend in the Summer. Members wanting Reservations for the same time period the following year must make that Reservation any time after check-out.</p>
+<h4 id="sec-5-1-3">5.1.3. Reservations 21 Days or Less</h4>
+<p>Reservations made 21 days or less in advance may be made for any available time regardless of whether a Weekend is included or not.</p>
+<h4 id="sec-5-1-4">5.1.4. Members with 14 Days</h4>
+<p>Rescinded 5/24/22</p>
+<h4 id="sec-5-1-5">5.1.5. Special Allowance for Trade Weeks</h4>
+<p>Certain weeks may be Reserved only for trade through RCI or Trading Places Legacy up to 24 months prior to the desired Reservation start date and according to the rules of the banking organization. Any members wishing to bank time must be current on their maintenance fees at the time of the request or it will not be approved. To bank time for any future year, at the time of the deposit request all Maintenance Fees must be prepaid for that year at the current Maintenance Fee rate. Any difference in cost when the Maintenance Fees for that future year are decided by the Board of Directors will be billed according to normal procedure and must be paid immediately.</p>
+<h4 id="sec-5-1-6">5.1.6. Regular Time Condo Cleaning</h4>
+<p>Members' first regular time stay of the financial year will have a free cleaning fee. Every regular time stay after will be charged a cleaning fee. See Appendix B for fee. Amended February 2024.</p>
+<h4 id="sec-5-1-7">5.1.7. Summer/Winter Split</h4>
+<p>Members may use half of their Regular Time in the Summer Season. All of the Regular Time may be used in the Winter Season. Members who have only four (4) days of Regular Time may use their full number of days anytime during the year.</p>
+<h4 id="sec-5-1-8">5.1.8. No Carry-Over</h4>
+<p>When the Reservation Year ends all remaining unused Regular Time is cancelled. There is no accrual of time from one Reservation Year to the next.</p>
+<h4 id="sec-5-1-9">5.1.9. No Show- Failure to occupy a Condo reserved for</h4>
+<p>Regular Time by 9:00 pm on the SECOND day of the Reservation, unless arrangements are made with ECR for later arrival, will result in Cancellation of the Reservation. The full period of the Reservation will be considered as used Regular Time for that Reservation Year and will be counted as a stay. Amended March 21, 2024.</p>
+<h4 id="sec-5-1-10">5.1.10. Cancellation</h4>
+<p>A Regular Time Reservation must be canceled at least two (2) days prior to the start of the Reservation period in order to avoid the Cancellation Fee. Cancellations less than two (2) calendar days before the scheduled Check In time will result in the Late Cancellation Fee being assessed. When any reserved Regular Time days are cancelled, the Member must wait three (3) business days before making a Bonus Time Reservation. See Appendix A for penalty.</p>
+<h3 id="sec-5-2">5.2. Bonus Time</h3>
+<h4 id="sec-5-2-1">5.2.1. Restrictions and Fee</h4>
+<p>A Full Member in Good Standing entitled to Bonus Time may request Bonus Time use of a Condo. Bonus Time may be reserved up to 28 days in advance for a two (2) to seven (7) day stay. See Appendix B for Bonus Time fee.</p>
+<h4 id="sec-5-2-2">5.2.2. - Rescinded 10/22/15</h4>
+<h4 id="sec-5-2-3">5.2.3. No Show- Failure to occupy a Condo reserved for</h4>
+<p>Bonus Time by 9:00 pm on the first day of the Reservation, unless arrangements are made with ECR for later arrival, will result in cancellation of the Reservation and a No Show Fee will be assessed. See Appendix A for penalty.</p>
+<h4 id="sec-5-2-4">5.2.4. Cancellation</h4>
+<p>A Bonus Time Reservation may be</p>
+<p>cancelled more than two (2) days prior to the start of the Reservation period without charge. Cancellations two (2) or less calendar days before the scheduled check in time will result in the Late Cancellation Fee being assessed. See Appendix A for penalty.</p>
+<h4 id="sec-5-2-5">5.2.5. Bonus Time May Not Be Rented or Given Away -</h4>
+<p>If the Full Member is absent from the condo, a fine will be assessed. See Appendix A for penalty.</p>
+<h3 id="sec-5-3">5.3. Waiting Lists</h3>
+<p>On request, a Member in Good Standing can be put on a Waiting List for Bonus Time or Regular Time for a specific date(s) if he leaves a phone number. ECR will attempt to contact the Member at that number should a Unit become available. Requests for Regular Time are given priority over Bonus Time or multiple Condo requests. If the Member cannot be reached or does not confirm a Reservation within an hour of the notification, the Member's name will be taken off the Waiting List.</p>
+<h3 id="sec-5-4">5.4. RCI/VRI Exchange</h3>
+<p>Rescinded 04/01/2021</p>
+<h2 id="sec-6">6. RV PARK RESERVATIONS</h2>
+<h3 id="sec-6-1">6.1. Advanced Reservations</h3>
+<p>A Member in Good Standing with RV use may reserve an RV Park Site for up to seven (7) consecutive days. Reservations may be made 60 days in advance. Members are allowed to make Advanced Guest Reservations 5 days in advance in the RV Park. Amended November 14, 2024.</p>
+<h4 id="sec-6-1-1">6.1.1. Advanced Relative Rights Reservations</h4>
+<p>Relative</p>
+<p>Rights in Good Standing may reserve an RV Park Site fourteen (14) days in advance of check-in date for up to seven (7) consecutive days, which is considered one (1) reservation, for the same date(s) as a Full Member's reservation. Amended November 14, 2024.</p>
+<h3 id="sec-6-2">6.2. Rescinded 10/22/16</h3>
+<h3 id="sec-6-3">6.3. Occupancy Length</h3>
+<p>After fourteen (14) consecutive days of occupancy in the RV Park a Member must vacate all ECR property until at least seven (7) days have elapsed regardless of number of Memberships owned, including use by Relative Rights.</p>
+<h3 id="sec-6-4">6.4. Limitations</h3>
+<p>A Membership Unit may have no more than two (2) Advanced RV Park Reservations at any given time. During a stay in the RV Park, a Membership Unit may have only one (1) Advanced RV Park Reservation. Members with two (2) Advanced Reservations may use RV Park Bonus Time. (See Rule 6.12) Multiple Reservations for the same time period are not allowed for a single Membership Unit.</p>
+<h3 id="sec-6-5">6.5. Unoccupied Site</h3>
+<p>If anyone has been checked into a site and that site is left vacant overnight without prior arrangements with ECR, the remainder of the Reservation may be canceled by ECR without notice and a fine may be assessed. See Appendix A for penalty.</p>
+<h3 id="sec-6-6">6.6. No Show</h3>
+<p>Failure to check in and occupy a reserved RV Park Site by 9:00 pm on the first day of the Reservation, unless 1) prior arrangements are made with ECR for later arrival and 2) the Member is checked in by 10:00 am the following morning, may result in cancellation of the</p>
+<p>Reservation and a No Show Fee will be assessed. See Appendix A for penalty.</p>
+<h3 id="sec-6-7">6.7. Cancellation</h3>
+<p>An RV Park Reservation must be cancelled at least two (2) days prior to the start of the Reservation period in order to avoid the cancellation fee. Cancellations less than two (2) calendar days before the scheduled check in time may result in the Late Cancellation Fee being assessed. See Appendix A for penalty.</p>
+<h3 id="sec-6-8">6.8. Waiting List</h3>
+<p>On request, a Member in Good Standing can be put on a waiting list for an RV site for a specific date(s) if they leave a phone number. ECR will attempt to contact the Member at that number should a site become available. If the Member cannot be reached, the next Member on the waitlist will be called. If the Member cannot be reached or does not confirm a Reservation within an hour of the notification the Member's name will be taken off the waiting list. When Full Members are on the waiting list, Guest Reservations will not be accepted. Amended November 14, 2024.</p>
+<h3 id="sec-6-9">6.9. Holiday Reservation</h3>
+<p>Any request to reduce the length of stay for a Holiday Reservation will result in cancellation of the entire Reservation. The Member may call back after three (3) business days to make a new Reservation.</p>
+<h3 id="sec-6-10">6.10. RV Member Rental of Condos</h3>
+<p>RV Members may rent the Condos at the specified rental rate. Rental of the Condos may be requested twenty-one (21) days in advance. RV Member must be present during the rental time. Reservation may be a two (2) to seven (7) day stay. See</p>
+<p>Appendix B for fee. 6.11 - Rescinded 2/27/2020</p>
+<h3 id="sec-6-12">6.12. RV Park Bonus Time</h3>
+<p>If a Member has two (2) Advanced Reservations and wants to get an RV spot using Bonus Time, a Reservation can be made the day of occupancy for no more than three (3) days in length and is subject to the RV Park Bonus Time fee. RV Park Bonus Time cannot be given away and a Guest Reservation may not be made during an RV Park Bonus Time stay. See Appendix B for fee.</p>
+<h2 id="sec-7">7. RV STORAGE AREAS</h2>
+<h3 id="sec-7-1">7.1. Long Term</h3>
+<p>Based on space availability and first come-first served, Members may park one (1) RV and one (1) utility trailer or boat with trailer per Membership Unit in the Long Term Storage Area as long as the vehicle(s) have a current state license, are in working condition, have an ECR sticker and an ECR Long Term Parking Permit. Ownership papers will be required. If the Unit has not been utilized and/or moved during the period of March 31st to April 1st of the following year, the Member may be subject to a fine and notice requiring removal of the Unit. Any noncomplying equipment or vehicle may be removed for salvage or auction. See Appendix A for fee. Amended November 14, 2024.</p>
+<h3 id="sec-7-2">7.2. Winter Storage</h3>
+<p>It is recommended that all boats and RVs be removed from the Long Term Storage Area before Winter because of the harsh winter conditions at the Resort. The Resort is not obligated to remove snow from</p>
+<p>the RV Storage Area access road to permit owner's access to their RV, boat, or other property stored in the area.</p>
+<h3 id="sec-7-3">7.3. Liability</h3>
+<p>ECR is not liable for any damage, loss or theft which may occur to property stored in any storage area or parked anywhere on ECR property.</p>
+<h3 id="sec-7-4">7.4. Short Term</h3>
+<p>Members may use Short Term Storage for up to seven (7) consecutive nights with no charge. A Daily Short Term Storage Fee will be charged for every additional consecutive night after the first seven (7) days. After fourteen (14) consecutive days, all non-complying vehicles/equipment may be towed at owner's expense. See Appendix A for penalty. See Appendix B for fee.</p>
+<h3 id="sec-7-5">7.5. Parking Pass</h3>
+<p>All vehicles parked in Short Term Storage or Long Term Storage must display a valid Parking Pass for that date and location. Non-complying vehicles/equipment may be towed at owner's expense, or impounded with a tire locking device. See Appendix A for penalty.</p>
+<h2 id="sec-8">8. FAMILY REUNION AREAS (FRA)</h2>
+<h3 id="sec-8-1">8.1. Family/Special Events</h3>
+<p>A Member in Good Standing may reserve an FRA. The limit on the number of RVs allowed in each FRA is as follows: FRA #1 and #2 - 2 RVs without hookups; Druby - 8 RVs without hookups; and Cottonwood Meadows - 3 RVs without hookups. See Schedule A for penalty.</p>
+<h3 id="sec-8-2">8.2. Frequency</h3>
+<p>Reservations for FRAs may be made up to one (1) year prior to the date of the desired Reservation. RV</p>
+<p>Members may also make an RV Reservation up to a year (365 days) in advance for the same period of time provided they have a FRA reservation. This RV reservation will not count against the members limit of two (2) RV reservations on the books at a time. If a FRA reservation is cancelled or changed, the RV Reservation will be cancelled and a new RV Reservation cannot be made until at least three (3) days has elapsed. Reservations may be made no more frequently than every other year per Membership Unit. After January 2nd any Member may make a FRA Reservation for the same calendar year regardless of when his last Reservation was made. Amended May 2024.</p>
+<h3 id="sec-8-3">8.3. Fee</h3>
+<p>A FRA Fee will be charged for each Family Reunion Area reserved. The areas should be left free of litter and food waste. See Appendix B for FRA fee and maximum capacity. See Appendix A for penalty.</p>
+<h3 id="sec-8-4">8.4. Cancellation</h3>
+<p>Reservations may be cancelled up to twenty-one (21) days in advance of the check-in date without any penalty. If it's within the twenty-one (21) days a fine may be assessed for the cancellation. See Appendix A for penalty.</p>
+<h4 id="sec-8-4-1">8.4.1. No Show</h4>
+<p>A No Show fine may be assessed if the FRA site goes unused any night reserved. See Appendix A for penalty.</p>
+<h3 id="sec-8-5">8.5. Special Events</h3>
+<p>Social and Special Events are to be booked in the designated Special Events areas. Special events shall not be held in the FRA.</p>
+<h3 id="sec-8-6">8.6. RV Power Use</h3>
+<p>Power outlets in the FRA are not to</p>
+<p>be used by RV in the FRA at any time. See Appendix A for penalty.</p>
+<h2 id="sec-9">9. WILDERNESS AREA</h2>
+<h3 id="sec-9-1">9.1. Wilderness Area Campsite</h3>
+<p>A Campsite is considered occupied if any Tent, RV, or Motor Vehicle is present on the Campsite.</p>
+<h4 id="sec-9-1-1">9.1.1. Unattended</h4>
+<p>Occupied wilderness campsites may not be left unattended overnight without prior approval of management. ECR will not be liable for damage to or loss of unattended property. See Appendix A for penalty.</p>
+<h3 id="sec-9-2">9.2. Parking Pass</h3>
+<p>Any vehicle parked in the Wilderness Area must be in a Designated Wilderness Campsite, and must display a valid Parking Pass for that date and Wilderness Campsite. Non-complying vehicles may be towed at owner's expense or impounded with a tire locking device.</p>
+<h3 id="sec-9-3">9.3. Occupancy Limit</h3>
+<p>Up to two motor vehicles and one RV may occupy a Wilderness Campsite and must display a valid Parking Pass for that date and Wilderness Campsite. A Wilderness Campsite is limited to eight (8) persons, except that up to twelve (12) may occupy a Wilderness Campsite overnight if the twelve (12) people are immediate family, Member, Member's spouse and Member's children (No other guests). See Appendix A for penalty.</p>
+<h4 id="sec-9-3-1">9.3.1. Exceptions</h4>
+<p>Up to two (2) RV and two (2) vehicles may occupy Bernice Canyon spaces 3, 4, 5, 7, and 8 and</p>
+<p>Druby Canyon 5, 14, and 18. Up to three RV's and three vehicles may occupy Bernice Canyon 1 and 2 subject to the other provisions of Rule 9.3.</p>
+<h4 id="sec-9-3-2">9.3.2. Personal Items</h4>
+<p>No personal items may be left in a Wilderness Area Campsite without first obtaining a permit to occupy the Campsite.</p>
+<h3 id="sec-9-4">9.4. Tents</h3>
+<p>Each Membership may have up to three (3) tents (fee applicable) in the Wilderness Area. Any Tent must be in a designated Wilderness Campsite and must display a valid Tent Permit for that date and Wilderness Campsite. Non-complying tents may be removed at owner's expense. See Appendix B for fee.</p>
+<h3 id="sec-9-5">9.5. Special Events</h3>
+<p>Social and Special Events are to be booked in the Designated Special Events areas. Special events shall not be held in Wilderness Campsites.</p>
+<h3 id="sec-9-6">9.6. Wilderness Area Use</h3>
+<h4 id="sec-9-6-1">9.6.1. Same Day Reservation</h4>
+<p>A Member in Good Standing may use a Wilderness Area Campsite for up to fourteen (14) consecutive days. Check-in at the Resort office is required. Only Walk-up check-in is permitted in the Wilderness Area and is first-come-first served. No specific Campsite can be reserved.</p>
+<h4 id="sec-9-6-2">9.6.2. Unoccupied</h4>
+<p>If the assigned Campsite is vacated at any time during the use period the remainder of the use period is immediately forfeited.</p>
+<h4 id="sec-9-6-3">9.6.3. Occupancy Length</h4>
+<p>After fourteen (14)</p>
+<p>consecutive days or two (2) consecutive Weekend occupancies of the Wilderness Area, a Member must vacate all ECR property until at least seven (7) days have elapsed. An RV site in the Developed area cannot be occupied until the same seven (7) days have elapsed.</p>
+<h3 id="sec-9-7">9.7. Developed Area Tent Camping</h3>
+<h4 id="sec-9-7-1">9.7.1. Designated Area</h4>
+<p>Tents are permitted only in Designated Areas.</p>
+<h4 id="sec-9-7-2">9.7.2. Permit</h4>
+<p>Tents must display a permit valid for that date and area.</p>
+<h4 id="sec-9-7-3">9.7.3. Member Tent Site Allocation/Occupancy</h4>
+<p>A Full Member or Relative Rights may have one (1) tent at no charge if occupied by the Full Member or Relative Rights. If the Member has a tent and RV spot on the same night, the tent fee must be paid. See Appendix B for fee.</p>
+<h4 id="sec-9-7-4">9.7.4. Guest Tent Site Allocation/Occupancy</h4>
+<p>After paying a tent fee for each tent, a Membership Unit is allowed up to three (3) tent sites in the immediate Resort area on first come- first served basis. Each tent must be occupied overnight. Any more than three (3) tents require a family reunion area reservation. See Appendix B for fee.</p>
+<h2 id="sec-10">10. GUEST POLICY</h2>
+<h3 id="sec-10-1">10.1. Guests</h3>
+<p>A Guest may use Resort facilities only when accompanied by the Inviting Member or when using Member's Time in the Condos. A Guest may only camp overnight in Druby or Bernice Canyon if the Inviting Member</p>
+<p>is also camping overnight in the same campground. Member shall accompany the Guest in the Wilderness Area and through the gates of the Wilderness Area at all times. A Guest may stay overnight in the Developed Area of the Resort (including RV Park, Condos, tent area and FRA) only if the Inviting Member is also staying overnight in the Developed Area. Members may bring Guests with them to use the facilities. Regular time in the Condos may be rented or given away to anyone 21 years of age or older or a married couple.</p>
+<h3 id="sec-10-2">10.2. Special Events Guest Fees</h3>
+<p>Use of amenities and facilities of the Resort may be assessed a fee as determined by the Board of Directors.</p>
+<h3 id="sec-10-3">10.3. Same Day Reservation</h3>
+<p>A Member in Good Standing with RV Use may make a Same Day Reservation for a Guest to use an RV Park Site or a Tent Site for up to (3) nights. The Member must occupy an RV Park Site or a Condo while the Guest occupies an RV Park Site. An RV Guest Daily Fee, for each day of the Reservation, must be paid at the beginning of the occupancy. See Appendix B for fee.</p>
+<h3 id="sec-10-4">10.4. Guest Use With Member</h3>
+<p>Members who have both Regular Time and RV Use may have Guests use one RV Park Site with a guest daily fee only while the Member is occupying a Condo during Regular Time.</p>
+<h3 id="sec-10-5">10.5. Member Responsibility</h3>
+<p>Members are responsible for the actions of their Guests and are financially responsible for the Fees and Fines of their Guests. (See Rule 3.4)</p>
+<h3 id="sec-10-6">10.6. Wilderness Guests</h3>
+<p>Using a Walk-Up Reservation, Members may have one (1) Wilderness Campsite or three (3) Guest tents. A Wilderness Guest Fee must be paid. See Appendix B for fee.</p>
+<h2 id="sec-11">11. CONDO RENTAL</h2>
+<h3 id="sec-11-1">11.1. Condos</h3>
+<h4 id="sec-11-1-1">11.1.1. Availability</h4>
+<p>ECR may rent Condos to Members or the General Public (Renters) subject to availability and policies as may be determined by the Board.</p>
+<h3 id="sec-11-2">11.2. Fee</h3>
+<p>A Condo Daily Rental fee will be charged. The Reservation must be paid in advance or guaranteed with a credit card. If the reservation is cancelled less than three days in advance, the renter will be charged for one night's rental.</p>
+<h3 id="sec-11-3">11.3. Policies</h3>
+<p>All Renters are subject to ECR Administrative Policies and Procedures and to the Rules and Regulations.</p>
+<h2 id="sec-12">12. PET POLICY</h2>
+<h3 id="sec-12-1">12.1. Prohibited Areas</h3>
+<p>No pets of any kind are permitted in the Lodge, on the Lodge Deck, in the Event Center or on the Event Center deck and walkways, in the Store or on the walkway in front of the Store, in any pool or bathhouse, in any Condo, Condo parking or Condo back porch, except medically authorized service animals which have been declared as such at check-in. See Appendix A for penalty.</p>
+<h3 id="sec-12-2">12.2. Permitted Areas and Restrictions</h3>
+<p>Pets are permitted in the RV Park and Wilderness Area only, and with the following restrictions:</p>
+<h4 id="sec-12-2-1">12.2.1. Number</h4>
+<p>Only three (3) pets are allowed per RV Park Site or Wilderness Area campsite. See Appendix A for penalty. Trial change May 23, 2024. Fully Amended March 27, 2025.</p>
+<h4 id="sec-12-2-2">12.2.2. Type</h4>
+<p>Only dogs and cats are permitted as pets with the exception of medically authorized service animals.</p>
+<h4 id="sec-12-2-3">12.2.3. Confinement</h4>
+<p>The pet must be confined under the control of the Member or Visitor at all times. The pet must be on a leash of ten (10) feet or less while out of doors.</p>
+<h4 id="sec-12-2-4">12.2.4. Clean-up</h4>
+<p>Members and Visitors must clean up after their pets. See Appendix A for penalty.</p>
+<h4 id="sec-12-2-5">12.2.5. Behavior</h4>
+<p>Members and Visitors must not permit their pets to annoy others by barking or any aggressive behavior.</p>
+<h4 id="sec-12-2-6">12.2.6. Playground</h4>
+<p>No pets are permitted in or around the Children's Playground.</p>
+<h2 id="sec-13">13. OHV/ATV/UTV POLICY</h2>
+<h3 id="sec-13-1">13.1. Licensing and Permits</h3>
+<h4 id="sec-13-1-1">13.1.1. State Registrations</h4>
+<p>Rescinded March 21, 2024</p>
+<h4 id="sec-13-1-2">13.1.2. ECR Inspection</h4>
+<p>All OHV/ATV/UTVs will be</p>
+<p>subject to an annual inspection by ECR for which an OHV/ATV/UTV Inspection Fee will be charged. Vehicles passing inspection will receive an ECR Authorized OHV/ATV/UTV sticker to be displayed on the vehicle. OHV/ATV/UTVs not displaying this sticker may not be operated or parked on Resort Property. The inspection will include items of compliance with ECR regulations. To pass inspection each vehicle requires: No oil or gas leaks, the vehicle must start at the time of inspection, a spark arrestor, and a fire extinguisher for each vehicle. Amended March 21, 2024.</p>
+<h4 id="sec-13-1-2-1">13.1.2.1. Unregistered OHV/ATV/UHV</h4>
+<p>If anyone is found on ECR Resort property with an OHV/ATV/UHV that has not been inspected and issued an ECR Tag they will be fined. Vehicles that have been inspected but are not displaying proper stickers or tags will be considered unregistered. See Appendix A for penalty. Amended March 21, 2024.</p>
+<h3 id="sec-13-2">13.2. Utah State Laws</h3>
+<p>Any ATV/OHV/UTV user must adhere to the Utah State OHV/ATV/UTV Laws.</p>
+<h3 id="sec-13-3">13.3. Use Restrictions</h3>
+<p>No OHV/ATV/UTVs may be operated in or around the Lodge, Condos, or RV Park areas from March 1st to September 30th except snowmobiles and OHVs in snowmobile use period. Temporary 30 minute parking for OHV/ATV/UTVs for the Lodge Area is located on the East side of the paved Lodge parking area. Loading or unloading of ATVs is allowed North of the Condos where designated. See Appendix A for penalty. Amended March 21st, 2024.</p>
+<h4 id="sec-13-3-1">13.3.1. OHV/ATV/UTV Storage and Parking -</h4>
+<p>OHV/ATV/UTVs, not on trailers, are to be parked in the Designated OHV/ATV/UTV fenced storage area across the river next to the gaming courts while Member is at the Resort. Long term OHV/ATV/UTV storage is located in the Kurzy OHV/ATV/UTV storage area while members are not on site. 13.3.1(a) Long Term OHV/ATV/UTV Storage Long term ATV trailer storage must be used if Member is not on site. Long term OHV/ATV/UTV storage is allowed only in the Kurzy OHV/ATV/UTV area. Obtain gate combination from the front desk. All OHV/ATV/UTV vehicles must display a current ECR tag showing the date and parking location. If the unit has not been utilized and/or moved during the period of March 31st to April 1st of the following year, the member may be subject to a fine and notice requiring removal of the unit. Any non-complying equipment or vehicle may be removed for salvage or auction. See Appendix A for penalty. Amended November 14, 2024.</p>
+<h4 id="sec-13-3-2">13.3.2. Allowed Access</h4>
+<p>OHV/ATV/UTVs may be driven to or from the Designated Storage Area on the access road running north of the South Bathhouse and the access road east of the Main Lodge. The driver must observe the 10 MPH speed limit. See Appendix A for penalty.</p>
+<h3 id="sec-13-4">13.4. Spark Arrestors</h3>
+<p>All combustion-engine vehicles must have mufflers and spark arrestors.</p>
+<h3 id="sec-13-5">13.5. OHV/ATV/UTV Use</h3>
+<p>Only licensed drivers are allowed to operate OHV/ATV/UTVs on the Resort. For this</p>
+<p>section a &quot;license&quot; is either a valid license to operate a motor vehicle, recognized by the State of Utah, or an OHV/ATV/UTV safety certificate issued by the Utah Division of Parks and Recreation. Riders use the OHV/ATV/UTVs at their own risk.</p>
+<h4 id="sec-13-5-1">13.5.1. Member OHV/ATV/UTV Tag Limit</h4>
+<p>Each Member is limited to three (3) annual OHV/ATV/UTV stickers per membership. Amended March 27, 2025. 13.5.2 Member's Guests OHV/ATV/UTV Tag Limit Each Member shall be allowed a total of five (5) OHV/ATV/UTV Temporary Tags per Membership at any given time. The Tags will be issued upon inspection of the OHV/ATV/UTV by the Resort Staff and upon payment of the inspection fee, as stated in rule 13.1.2. Inspection fees apply per Guest OHV/ATV/UTV per use. All Guests must be with an ECR Member at all times while utilizing the trails. It is the Member responsibility to add their Guests to the Waivers List with regard to OHV/ATV/UTV and obtain the proper signatures to indemnify all parties under said waiver.</p>
+<h3 id="sec-13-6">13.6. Designated Trails</h3>
+<p>Wheeled vehicles are restricted to Designated Unimproved Roads or Designated ATV Trails. No motorized wheeled vehicle of any kind is permitted off the roads or off Designated ATV/OHV/UTV Trails. See Appendix A for penalty.</p>
+<h3 id="sec-13-7">13.7. North of Condo Parking Area</h3>
+<p>Parking in this area is by Permit and while the Member is On Site only. ATVs must be on a trailer and no vehicle without a trailer is allowed to park in North of Condo area. All parking must be on the pavement. No horse trailers or RV are allowed. Any</p>
+<p>exceptions must be authorized by ECR Management. See Appendix A for penalty.</p>
+<h2 id="sec-14">14. CONDUCT</h2>
+<h3 id="sec-14-1">14.1. Disorderly Conduct</h3>
+<p>A person is considered disorderly who creates a hazardous or physically offensive condition; intends to cause or causes public inconvenience, annoyance or alarm; recklessly creates a risk by engaging in fighting, violent, tumultuous or threatening behavior; makes unreasonable noises and/or engages in abusive or obscene language/gestures which can be heard/seen on the Resort Property. See Appendix A for penalty.</p>
+<h3 id="sec-14-2">14.2. Alcohol/Drug Policy</h3>
+<p>No intoxicated person is permitted on the Resort Property except inside a Condo, RV or Tent. Use of illegal drugs is not permitted anywhere on the Resort. ECR may authorize law enforcement agencies to search any area of the Resort, including Condos. Members and Visitors have no expectation of privacy from search and seizure. See Appendix A for penalty.</p>
+<h2 id="sec-15">15. FINES, FEES, AND ASSESSMENTS</h2>
+<h3 id="sec-15-1">15.1. Payment Due</h3>
+<p>Fines, Fees and Assessments must be paid within 30 days. Failure to do so will result in the Member being considered not In Good Standing and denied the use of Resort facilities and all current reservations may be cancelled until the fee is paid.</p>
+<h3 id="sec-15-2">15.2. Collection</h3>
+<p>Unpaid Fines and Fees or any other Assessments may be added to the Maintenance Fee Assessment for collection purposes.</p>
+<h4 id="sec-15-2-1">15.2.1. Rescinded 02/27/2016</h4>
+<h4 id="sec-15-2-2">15.2.2. Unpaid Fees and Fines</h4>
+<p>When a Membership is forfeited or withdrawn with unpaid fees or fines, these unpaid amounts may be applied to any other Membership owned by the same Member or Members.</p>
+<h3 id="sec-15-3">15.3. Assessment Billing and Collection (ABC Policy)</h3>
+<h4 id="sec-15-3-1">15.3.1. Administration</h4>
+<p>The Assessment Billing and Collection Policy (ABC) of ECR will be administered by ECR or by a company contracted to perform such services.</p>
+<h4 id="sec-15-3-2">15.3.2. Billing Statement</h4>
+<p>An annual Billing Statement for the next year's Assessment will be mailed to each Member approximately March 1st each year. The Member has an option to pay the assessment in full upon receipt of the billing statement or pay the assessment quarterly, semiannually or in twelve (12) equal monthly installments which will include a Processing Fee.</p>
+<h4 id="sec-15-3-3">15.3.3. Payment Selection</h4>
+<p>If payment in full is not received or satisfactory arrangements are not made by April 15th, a monthly invoice will be sent to the Member and the Member becomes liable for the additional processing fee.</p>
+<h4 id="sec-15-3-4">15.3.4. Rescinded 1/23/2014</h4>
+<h4 id="sec-15-3-5">15.3.5. Payment Due</h4>
+<p>The first monthly payment will be due April 1st with each subsequent payment being due the first of each month thereafter.</p>
+<h3 id="sec-15-4">15.4. Delinquency</h3>
+<h4 id="sec-15-4-1">15.4.1. Late Fee</h4>
+<p>Except for the month of April, any payments made after the 15th of the month due are considered late. A late fee of 10% of the payment will be added to the Member's account. If any portion of the Member's account becomes more than six (6) months past due, an additional charge of 1% of the entire past due amount will be added to the account monthly until the account is brought current or forfeited.</p>
+<h4 id="sec-15-4-2">15.4.2. Thirty (30) Days</h4>
+<p>if a Member becomes thirty (30) days past due, the Member will not be permitted to make a Reservation nor use the Resort facilities. The Member will receive an invoice stating that any Reservations or Exchange(s) will be cancelled if any past due amount is not received within thirty (30) days.</p>
+<h4 id="sec-15-4-3">15.4.3. Sixty (60) Days</h4>
+<p>If any payment becomes sixty (60) days delinquent, existing Reservations (including Exchanges) may be canceled without notice and Exchange requests will not be confirmed.</p>
+<h4 id="sec-15-4-4">15.4.4. Ninety (90) Days</h4>
+<p>If a Member becomes ninety (90) days delinquent, they will receive a Demand Letter requesting immediate payment for all past due amounts and actions to cancel the ECR Membership certificate may commence.</p>
+<h4 id="sec-15-4-5">15.4.5. Reinstatement</h4>
+<p>For a period of one (1) year after a Membership has been cancelled, Members will be granted the opportunity to acquire a Membership of the same class as the Forfeited Membership, if such stock is available from the Resort's unsold inventory, upon payment of the</p>
+<p>following: An amount equal to the total of all assessments, late fees, billing fees and all other charges that would have been made against the account up to the date of payment if the ECR Stock Certificate had not been canceled.</p>
+<h4 id="sec-15-4-6">15.4.6. Collections</h4>
+<p>The Board of Directors may, at its discretion, implement any of the following actions. Any related costs for these actions will be added to the delinquent owner's account. a. Engage professional collection agencies to collect payment. b. Institute a Small Claims suit or other legal action. c. Proceed to forfeit your stock certificate to the Resort and terminate your membership.</p>
+<h2 id="sec-16">16. APPEAL OR CONTEST</h2>
+<h3 id="sec-16-1">16.1. Time Frame</h3>
+<p>Any appeal or contest of a Penalty must be served to the Board of Directors directly or by Certified Mail within ten (10) days of receipt of citation. A hearing by no less than three (3) Members of the Board of Directors appointed by the Chairman for this purpose shall be held regarding the citation within forty (40) days from the date of the Appeal or Contest.</p>
+<h3 id="sec-16-2">16.2. Service of Appeal</h3>
+<p>Any Appeal or Contest to these Rules and Regulations must be served to the Board of Directors directly, by email, or by Certified Mail.</p>
+<h3 id="sec-16-3">16.3. Final</h3>
+<p>Decisions of the Board of Directors in such appeals are final.</p>
+<h2 id="sec-17">17. RIGHT TO IMPOSE FINES</h2>
+<h3 id="sec-17-1">17.1. Right to Impose Fines</h3>
+<p>ECR reserves the right to impose a fine regarding any alleged violation of the Rules outlined in this Rule Book regardless of whether or not the fine is outlined in the Fee Schedule.</p>
+<p>See <a href="policy-appendix.html#appendix-a">Appendix A - Penalty Summary</a> for listed fines.</p>
+<h2 id="sec-1">1. A member eligible to hunt cow elk on East Canyon Resort</h2>
+<p>property, may begin hunting the following day after the archery hunt ends and hunt throughout the legal season. The following exceptions apply: • There is no cow elk hunting on the opening weekend of the 1st rifle bull elk hunt (regardless of weapon), the 2nd rifle elk hunt (regardless of weapon), and the muzzleloader bull elk hunt (regardless of weapon). • Archery cow hunters will begin after the archery bull hunt. Amended March 21, 2024 C-16: Elk Bonus Point System: East Canyon Resort has implemented an internal Bull &amp; Cow Elk Bonus Point</p>
+<p>System. If you applied for the previous year and were not drawn, you will receive one (1) point. If you have any questions, please contact the Outdoor Committee Chair or Vice Chair. C-17: Bear Hunting: Baiting is allowed when followed by state guidelines and with ECR Outdoor Committee Chair and Resort Manager's approval. All hunters must attend a hunter safety meeting as outlined in C-1. C-18: Moose hunting: If you draw a State Permit to hunt Moose at ECR, please contact the Outdoor Committee Chair or Vice Chair. All hunters must attend a hunter safety meeting as outlined in C-1. C-19: Forest Grouse: Harvesting of forest grouse is limited to two grouse per hunter per day. No grouse hunting will be allowed during archery deer and archery elk seasons. All hunters must attend a hunter safety meeting as outlined in C-1. C-20: Deer Hunting: 2025 Regulation-Eligible members may apply for one (1) Deer permit, per membership. These permits may be given to an immediate family member. All state tags are open for this permit. Amended March 21,</p>
+<p>C-20-1: Immediate family member includes:</p>
+<p>Member's parents, children, children's spouse, or grandchildren. All hunters must be accompanied by the ECR member they applied with. C-21: Utah Hunting Mentoring Program (UHMP): If you will be participating in the UHMP, please contact the Outdoor Committee Chair or Vice Chair. Must follow all state rules for UHMP. Amended March 21, 2024 C-22: Accompanying Family Members and Guests: All hunter's family members and Guests must be accompanied (meaning within voice range) by the primary member they applied to hunt with while Hunting ECR properties. C-23: Access to Forest Service and Salt Lake City Corporation Properties: It is PROHIBITED to aid or assist any person(s) access through East Canyon Resort property without the hunter/person(s) having correct East Canyon Resort hunting permit for species and gender of the current hunt or being a member of East Canyon Resort. C-24: Tree Stands: Tree Stands may be placed after August 1st, and must be removed by Dec. 1st of the hunting season. Each hunter is limited to ONE tree stand. ECR will not be responsible for stolen or damaged hunting equipment. C-25: ATV Registration: Every ATV/OHV must be inspected &amp; registered by ECR before accessing any ECR property. Registration and waivers must be renewed</p>
+<p>annually. All drivers and passengers must sign a waiver at the general store. C-26: Saddlerock Property: No hunting is allowed on Saddlerock property. C-27: Relative Rights: Relative Rights Member(s) are not allowed to hunt as a Relative Rights Member or hunt on their own. All Relative Rights Member(s) must hunt using one of the Full Members deer tags, which includes archery, muzzle or rifle tags, and must comply with Rule C-22 (above). C-28: Salt / Mineral Blocks: The Resort Board has approved a moratorium on any placement of salt, commercial supplement or mineral block. Does not include those approved by Outdoors Committee Chair and Resort Manager. C-29 Hunter Orange: All hunters and non-hunters MUST wear DNR approved hunter organe during any centerfire rifle hunts C-30: Hunting Violation: All violations including poaching, trespassing or rules need to be reported to ECR Management, Security or Outdoors Committee Chair. Morgan County Sheriff's Office Dispatch: NON- EMERGENCY: 801- 829-0590</p>
+<p>(If this is concerning a wildlife issue ask them to dispatch the on-call DNR Wildlife Officer) Any wildlife wounded that crosses neighboring properties requires DWR authorization, along with neighboring landowner authority. Resort staff, members or committee members cannot authorize any action. And follow C-30. Please see our website for changes, updates, or additional information (or call). www.eastcanyon.com</p>
+      </article>
+      <p><a href="member-home.html">Back to Members</a></p>
+    </div>
+  </main>
+  <script src="js/policy-search.js?v=1"></script>
+</body>
+</html>

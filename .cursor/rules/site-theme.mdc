@@ -1,0 +1,37 @@
+---
+description: Keep the East Canyon Resort visual theme on every page and future change
+alwaysApply: true
+---
+
+# East Canyon Resort site theme
+
+Match the homepage look on every new or edited page. Do not introduce a second visual system (system fonts only, harsh black-on-white intranet look, hamburger menus, or the old “East Canyon RV Site” chrome).
+
+## Visual language
+
+- Cream page background `#f6f1e8`, text `#1c1916`, dark green accent `#1c3a32`, header/footer `#14110e`
+- Fonts: **Source Sans 3** for body, **Cormorant Garamond** for headings (loaded in `styles.css`)
+- Inner content sits in a white card (`page-content`, overview, link lists, board/policy cards) with a soft sand border and rounded corners — not a hard black box
+- Directory-style links (no outlined rectangles); keep the header’s stacked framed nav
+- Stylesheet: `styles.css?v=site2` (or the current site-wide cache token — keep it consistent)
+
+## Chrome on every inner page
+
+Body class `page-visitor` (add `page-visitor-home` only for the Visitors/Members two-column layout).
+
+1. Fire **alert bar** (same copy as the homepage, Details → `alerts.html`)
+2. Dark header: logo left; far-right stacked framed nav `class="header-nav"` with Main Page (`index.html`), Visitors (`visitors.html`), Members (`members.html`)
+3. Shared **home-footer**: address 8896 South Highway 65, Morgan, UT 84050; phone; Contact Information; Visitors / Members / Reservations / Alerts
+
+Homepage (`index.html`) keeps its own overlay header; do not put `header-nav` on the homepage.
+
+## Members
+
+`members.html` is the router (signed in → `member-home.html`, else → `login.html`). Header/footer Members links always go to `members.html`, never `login.html` directly.
+
+## Do not
+
+- Add centered `banner-title` headings in the header (they are hidden; use an `h1` in the content card)
+- Add “Back to Visitors/Members” when the header/footer already cover navigation
+- Link public pages to map-align, map-edit, photo-review, or other tool pages
+- Mix in DM Serif Display, `menu-toggle`, or `site-footer` / fake RV Site addresses
