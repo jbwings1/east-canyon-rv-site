@@ -188,7 +188,12 @@
             <p class="spot-detail-placeholder">Click any RV site, condo, or family reunion site to see bookings for the next 90 days.</p>
           </aside>
           <div class="reservation-submit">
-            <button type="submit" class="btn btn-primary btn-full" form="reservation-form">Complete Booking</button>
+            <p id="booking-signin-notice" class="stay-length-notice" hidden>
+              <a href="login.html?next=reservations.html">Sign in</a> to complete a booking.
+            </p>
+            <button type="submit" class="btn btn-primary btn-full" id="complete-booking-btn" form="reservation-form">Complete Booking</button>
+            <p id="booking-confirmed" class="booking-confirmed" hidden>Booking confirmed</p>
+            <button type="button" id="book-another-btn" class="btn btn-outline btn-full" hidden>Book another stay</button>
             <p id="reservation-message" class="form-message" role="status" aria-live="polite"></p>
           </div>
         </section>
@@ -199,7 +204,9 @@
   <script src="js/spots-data.js"></script>
   <script src="js/campground-map.js"></script>
   <script src="js/map-zoom.js"></script>
-  <script src="js/reservations.js?v=19"></script>
+  <script src="js/supabase-config.js?v=sb1"></script>
+  <script src="js/auth.js?v=sb1"></script>
+  <script src="js/reservations.js?v=20"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

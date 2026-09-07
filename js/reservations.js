@@ -15,6 +15,11 @@ const rigSelect = document.getElementById("res-rig");
 const stayLengthNotice = document.getElementById("stay-length-notice");
 const memberIdInput = document.getElementById("res-member-id");
 const memberReservationNotice = document.getElementById("member-reservation-notice");
+const completeBookingBtn = document.getElementById("complete-booking-btn");
+const bookingConfirmed = document.getElementById("booking-confirmed");
+const bookAnotherBtn = document.getElementById("book-another-btn");
+const bookingSigninNotice = document.getElementById("booking-signin-notice");
+let memberBookings = [];
 
 function syncDateLimits() {
   const today = window.SpotAvailability.getToday();
@@ -53,7 +58,7 @@ function isCondoReservationType(value) {
 }
 
 function isReunionReservationType(value) {
-  return value === "family-reunion" || value === "reunion";
+  return value === "family-reunion" || value === "reunion" || value === "family_reunion";
 }
 
 function getMapUnitFilter(type) {
@@ -166,11 +171,23 @@ function formatActiveReservationRanges(active) {
     .join("; ");
 }
 
+function getActiveMemberBookings() {
+  if (typeof Auth !== "undefined" && Auth.getActiveBookings) {
+    return Auth.getActiveBookings(memberBookings).map((b) => ({
+      checkIn: b.check_in,
+      checkOut: b.check_out,
+    }));
+  }
+  const memberId = window.SpotAvailability.normalizeMemberId(memberIdInput?.value);
+  return window.SpotAvailability.getActiveMemberReservations(memberId);
+}
+
 function updateMemberReservationNotice() {
   if (!memberReservationNotice) return;
 
+  const user = typeof Auth !== "undefined" ? Auth.getCurrentUser() : null;
   const memberId = window.SpotAvailability.normalizeMemberId(memberIdInput?.value);
-  if (!memberId) {
+  if (!user && !memberId) {
     memberReservationNotice.hidden = true;
     memberReservationNotice.textContent = "";
     memberReservationNotice.classList.remove("stay-length-notice--limit");
@@ -178,7 +195,7 @@ function updateMemberReservationNotice() {
   }
 
   const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
-  const active = window.SpotAvailability.getActiveMemberReservations(memberId);
+  const active = getActiveMemberBookings();
 
   if (active.length >= maxActive) {
     memberReservationNotice.hidden = false;
@@ -299,12 +316,92 @@ updateRvFields();
 updateMapAvailability();
 updateMemberReservationNotice();
 
-clearSpotBtn.addEventListener("click", clearPreferredSpot);
+function showConfirmedState(record) {
+  if (completeBookingBtn) completeBookingBtn.hidden = true;
+  if (bookingSigninNotice) bookingSigninNotice.hidden = true;
+  if (bookingConfirmed) bookingConfirmed.hidden = false;
+  if (bookAnotherBtn) bookAnotherBtn.hidden = false;
+  if (record?.detail) {
+    message.textContent = record.detail;
+    message.className = "form-message success";
+  }
+}
 
-form.addEventListener("submit", (e) => {
+function showBookingFormState() {
+  const signedIn = typeof Auth !== "undefined" && Auth.getCurrentUser();
+  if (bookingConfirmed) bookingConfirmed.hidden = true;
+  if (bookAnotherBtn) bookAnotherBtn.hidden = true;
+  if (completeBookingBtn) completeBookingBtn.hidden = !signedIn;
+  if (bookingSigninNotice) bookingSigninNotice.hidden = Boolean(signedIn);
+}
+
+function mergeUserBookingsIntoMap(bookings) {
+  if (!Array.isArray(window.SPOT_BOOKINGS)) window.SPOT_BOOKINGS = [];
+  bookings.forEach((b) => {
+    if (!b.spot || !b.check_in || !b.check_out) return;
+    const exists = window.SPOT_BOOKINGS.some(
+      (row) =>
+        row.spotId === b.spot && row.checkIn === b.check_in && row.checkOut === b.check_out
+    );
+    if (!exists) {
+      window.SPOT_BOOKINGS.push({
+        spotId: b.spot,
+        checkIn: b.check_in,
+        checkOut: b.check_out,
+      });
+    }
+  });
+}
+
+function prefillFromProfile(user) {
+  if (!user) return;
+  if (document.getElementById("res-name") && !document.getElementById("res-name").value) {
+    document.getElementById("res-name").value = user.name || "";
+  }
+  if (document.getElementById("res-email") && !document.getElementById("res-email").value) {
+    document.getElementById("res-email").value = user.profileEmail || user.email || "";
+  }
+  if (document.getElementById("res-phone") && !document.getElementById("res-phone").value) {
+    document.getElementById("res-phone").value = user.phone || "";
+  }
+  if (memberIdInput && !memberIdInput.value) {
+    memberIdInput.value = user.email || user.id || "";
+  }
+  if (typeSelect && user.reservationType && !typeSelect.value) {
+    typeSelect.value = user.reservationType;
+    updateRvFields();
+  }
+}
+
+clearSpotBtn.addEventListener("click", clearPreferredSpot);
+bookAnotherBtn?.addEventListener("click", () => {
+  Auth.clearLastBooking();
+  message.textContent = "";
+  message.className = "form-message";
+  form.reset();
+  syncDateLimits();
+  typeSelect.value = "";
+  clearPreferredSpot();
+  updateRvFields();
+  updateMapAvailability();
+  showBookingFormState();
+  const user = Auth.getCurrentUser();
+  prefillFromProfile(user);
+  updateMemberReservationNotice();
+});
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   message.textContent = "";
   message.className = "form-message";
+
+  const user = typeof Auth !== "undefined" ? Auth.getCurrentUser() : null;
+  if (!user) {
+    message.textContent = "Sign in to complete a booking.";
+    message.className = "form-message error";
+    showBookingFormState();
+    return;
+  }
 
   if (checkOut.value <= checkIn.value) {
     message.textContent = "Check-out must be after check-in.";
@@ -333,11 +430,11 @@ form.addEventListener("submit", (e) => {
   }
 
   const data = Object.fromEntries(new FormData(form).entries());
-  const memberId = window.SpotAvailability.normalizeMemberId(data.memberId);
+  const memberId = window.SpotAvailability.normalizeMemberId(data.memberId || user.email);
 
-  if (!window.SpotAvailability.canMemberAddReservation(memberId)) {
-    const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
-    const active = window.SpotAvailability.getActiveMemberReservations(memberId);
+  const active = getActiveMemberBookings();
+  const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
+  if (active.length >= maxActive) {
     message.textContent =
       `You already have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
       `${formatActiveReservationRanges(active)}. Once you check in, or after canceling one, you can book again.`;
@@ -351,6 +448,7 @@ form.addEventListener("submit", (e) => {
     condo: "Condo",
     rv: "RV",
     "family-reunion": "Family reunion",
+    family_reunion: "Family reunion",
     "travel-trailer": "Travel trailer",
     motorhome: "Motorhome",
     reunion: "Family reunion",
@@ -418,10 +516,30 @@ form.addEventListener("submit", (e) => {
     updateMapAvailability();
   }
 
-  const confirmationId = `ECR-${Date.now().toString(36).toUpperCase()}`;
+  let booking;
+  try {
+    booking = await Auth.createBooking({
+      reservationType: data.type,
+      spot: data.preferredSpot || null,
+      checkIn: data.checkIn,
+      checkOut: data.checkOut,
+      notes: data.notes || "",
+    });
+  } catch (err) {
+    message.textContent = err.message;
+    message.className = "form-message error";
+    return;
+  }
+
+  memberBookings.push(booking);
+  mergeUserBookingsIntoMap([booking]);
+
+  const confirmationId = booking.id
+    ? `ECR-${String(booking.id).replace(/-/g, "").slice(0, 8).toUpperCase()}`
+    : `ECR-${Date.now().toString(36).toUpperCase()}`;
 
   window.SpotAvailability.addMemberReservation({
-    memberId,
+    memberId: user.id,
     spotId: data.preferredSpot || null,
     checkIn: data.checkIn,
     checkOut: data.checkOut,
@@ -442,15 +560,50 @@ form.addEventListener("submit", (e) => {
     }
   }
 
-  message.textContent =
+  const detail =
     `You're booked, ${data.name.split(" ")[0]}! Your ${typeLabels[data.type] || "reservation"} for ` +
     `${data.checkIn} to ${data.checkOut} is confirmed.${unitNote} Confirmation #${confirmationId} was sent to ${data.email}.`;
-  message.className = "form-message success";
 
-  form.reset();
-  syncDateLimits();
-  typeSelect.value = "";
-  clearPreferredSpot();
-  updateRvFields();
+  const record = {
+    id: booking.id,
+    type: data.type,
+    checkIn: data.checkIn,
+    checkOut: data.checkOut,
+    spot: data.preferredSpot || null,
+    detail,
+  };
+  Auth.saveLastBooking(record);
+  showConfirmedState(record);
   updateMapAvailability();
+  updateMemberReservationNotice();
 });
+
+(async function initReservationAuth() {
+  if (typeof Auth === "undefined") {
+    showBookingFormState();
+    return;
+  }
+  try {
+    await Auth.ready();
+  } catch {
+    /* cached session is enough to book */
+  }
+  const user = Auth.getCurrentUser();
+  prefillFromProfile(user);
+  if (user) {
+    try {
+      memberBookings = await Auth.listBookings();
+      mergeUserBookingsIntoMap(memberBookings);
+      updateMapAvailability();
+    } catch {
+      memberBookings = [];
+    }
+  }
+  const last = Auth.getLastBooking();
+  if (last) {
+    showConfirmedState(last);
+  } else {
+    showBookingFormState();
+  }
+  updateMemberReservationNotice();
+})();

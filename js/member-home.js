@@ -1,26 +1,30 @@
-const user = Auth.redirectForAuth({ requireMember: true });
-if (!user) {
-  /* redirecting */
-} else {
-  const firstName = (user.name || "").trim().split(/\s+/)[0];
+(async function () {
+  const user = Auth.redirectForAuth({ requireMember: true });
+  if (!user) return;
+
+  try {
+    await Auth.ready();
+  } catch {
+    /* use cached profile */
+  }
+
+  const current = Auth.getCurrentUser() || user;
+  const firstName = (current.name || "").trim().split(/\s+/)[0];
   document.getElementById("member-greeting").textContent = firstName
     ? `Welcome, ${firstName}`
     : "Welcome";
 
   const summary = document.getElementById("member-profile-summary");
-  const cityLine = [user.city, user.state, user.zip].filter(Boolean).join(", ");
+  const cityLine = [current.city, current.state, current.zip].filter(Boolean).join(", ");
+  const typeLabel = Auth.reservationTypeLabel(current.reservationType || current.accountType);
   const rows = [
-    ["Name", user.name],
-    ["Login ID", user.email],
-    ["Email", user.profileEmail || user.email],
-    ["Phone", user.phone],
-    ["Address", user.address],
+    ["Name", current.name],
+    ["Email", current.profileEmail || current.email],
+    ["Phone", current.phone],
+    ["Address", current.address],
     ["City, state, zip", cityLine],
-    ["RV / rig", user.rv],
-    [
-      "Account",
-      user.accountType === "seasonal" ? "Seasonal member" : "Guest account",
-    ],
+    ["RV / rig", current.rv],
+    ["Type", typeLabel],
   ].filter(([, value]) => String(value || "").trim());
 
   summary.innerHTML = rows
@@ -33,4 +37,4 @@ if (!user) {
   document.getElementById("member-logout").addEventListener("click", () => {
     Auth.logout();
   });
-}
+})();
