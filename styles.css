@@ -1865,6 +1865,62 @@ a:hover {
   margin-right: 0.75rem;
 }
 
+.admin-back {
+  margin: 0 0 0.75rem;
+}
+
+.admin-back a {
+  color: var(--ec-green, #1c3a32);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-task-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+@media (min-width: 720px) {
+  .admin-task-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-task-btn {
+  display: block;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid rgba(28, 58, 50, 0.22);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.admin-task-btn:hover,
+.admin-task-btn:focus-visible {
+  border-color: #1c3a32;
+  transform: translateY(-1px);
+}
+
+.admin-task-btn-label {
+  display: block;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #1c3a32;
+  margin-bottom: 0.35rem;
+}
+
+.admin-task-btn-blurb {
+  display: block;
+  color: #5c564e;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
 .admin-help {
   margin: 0 0 1rem;
   color: #5c564e;
