@@ -769,6 +769,64 @@ const Auth = {
     return data;
   },
 
+  async updateOwnBooking(bookingId, { reservationType, spot, checkIn, checkOut, notes }) {
+    const user = this.getCurrentUser();
+    if (!user?.id) throw new Error("Sign in to update a booking.");
+    if (!bookingId) throw new Error("Booking is required.");
+    const dbType = toDbReservationType(reservationType);
+    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
+    if (!checkIn || !checkOut) throw new Error("Check-in and check-out are required.");
+    if (checkOut <= checkIn) throw new Error("Check-out must be after check-in.");
+
+    const { data: existing, error: existingError } = await getClient()
+      .from("bookings")
+      .select("id,user_id,status,check_out")
+      .eq("id", bookingId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    throwIfError(existingError);
+    if (!existing) throw new Error("Reservation not found.");
+    if (existing.status === "cancelled") {
+      throw new Error("That reservation was already cancelled.");
+    }
+
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update({
+        reservation_type: dbType,
+        spot: spot || null,
+        check_in: checkIn,
+        check_out: checkOut,
+        notes: notes || null,
+        status: "confirmed",
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq("id", bookingId)
+      .eq("user_id", user.id)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Reservation could not be updated.");
+    return data;
+  },
+
+  async cancelOwnBooking(bookingId) {
+    const user = this.getCurrentUser();
+    if (!user?.id) throw new Error("Sign in to cancel a booking.");
+    if (!bookingId) throw new Error("Booking is required.");
+
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update({ status: "cancelled" })
+      .eq("id", bookingId)
+      .eq("user_id", user.id)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Reservation could not be cancelled.");
+    return data;
+  },
+
   acceptRecoveryFromUrl() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const query = new URLSearchParams(window.location.search);
