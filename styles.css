@@ -1812,9 +1812,19 @@ a:hover {
   border-radius: 10px;
 }
 
-#book-another-btn {
+.my-reservations {
+  margin-bottom: 1.5rem;
+}
+
+.my-reservations .reservation-form-intro {
+  margin-top: 0;
+}
+
+#cancel-edit-btn {
+  margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
+
 
 .admin-intro {
   margin: 0 0 1.25rem;
