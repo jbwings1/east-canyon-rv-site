@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap");
 
 /* East Canyon Resort — shared styles */
 
@@ -317,33 +317,34 @@ a:hover {
 }
 
 .home-events-banner {
-  background: #f6f1e8;
-  border-bottom: 1px solid rgba(28, 58, 50, 0.14);
+  background: #243f37;
+  color: #f6f1e8;
+  border-bottom: 1px solid rgba(20, 17, 14, 0.35);
 }
 
 .home-events-banner-inner {
-  padding: 1.05rem 0;
+  padding: 1.15rem 1rem;
   text-align: center;
 }
 
 .home-events-banner p {
   margin: 0;
-  max-width: 46rem;
+  max-width: 48rem;
   margin-inline: auto;
-  font-size: 1.05rem;
+  font-size: clamp(1.02rem, 1.6vw, 1.15rem);
   line-height: 1.45;
-  color: #1c1916;
+  color: #f6f1e8;
 }
 
 .home-events-banner a {
-  color: #1c3a32;
+  color: #fff;
   font-weight: 700;
   text-decoration: underline;
-  text-underline-offset: 0.15em;
+  text-underline-offset: 0.18em;
 }
 
 .home-events-banner a:hover {
-  color: #14110e;
+  color: #f0e6d4;
 }
 
 .home-content {
