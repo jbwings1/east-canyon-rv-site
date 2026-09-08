@@ -94,8 +94,8 @@ Deno.serve(async (req) => {
   }
 
   const kind = String(body.kind || "member");
-  if (kind !== "member" && kind !== "admin") {
-    return json(400, { error: "kind must be member or admin" });
+  if (kind !== "member" && kind !== "admin" && kind !== "reset_password") {
+    return json(400, { error: "kind must be member, admin, or reset_password" });
   }
 
   if (kind === "member" && !can("members")) {
@@ -103,6 +103,65 @@ Deno.serve(async (req) => {
   }
   if (kind === "admin" && !can("staff")) {
     return json(403, { error: "You are not assigned the Staff task" });
+  }
+  if (kind === "reset_password" && !can("passwords")) {
+    return json(403, { error: "You are not assigned the Passwords task" });
+  }
+
+  if (kind === "reset_password") {
+    const userId = String(body.user_id || "").trim();
+    const password = String(body.temporary_password || body.password || "");
+    if (!userId) {
+      return json(400, { error: "Member is required" });
+    }
+    if (password.length < 8) {
+      return json(400, {
+        error: "Temporary password must be at least 8 characters",
+      });
+    }
+
+    const { data: memberProfile, error: memberError } = await adminClient
+      .from("profiles")
+      .select("id,email,account_kind,account_status")
+      .eq("id", userId)
+      .maybeSingle();
+    if (memberError || !memberProfile) {
+      return json(404, { error: "Member not found" });
+    }
+    if (memberProfile.account_kind !== "member") {
+      return json(400, { error: "Password reset here is for members only" });
+    }
+
+    const { error: passwordError } = await adminClient.auth.admin.updateUserById(
+      userId,
+      { password },
+    );
+    if (passwordError) {
+      return json(400, { error: passwordError.message });
+    }
+
+    const { error: profileError2 } = await adminClient
+      .from("profiles")
+      .update({
+        must_change_password: true,
+        account_status:
+          memberProfile.account_status === "closed"
+            ? "closed"
+            : "pending_activation",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+    if (profileError2) {
+      return json(500, { error: profileError2.message });
+    }
+
+    return json(200, {
+      ok: true,
+      kind: "reset_password",
+      user_id: userId,
+      email: memberProfile.email,
+      message: "Temporary password set. Member must change it after sign-in.",
+    });
   }
 
   const email = String(body.email || "").trim().toLowerCase();

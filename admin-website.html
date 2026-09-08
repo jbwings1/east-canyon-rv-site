@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin | East Canyon Resort</title>
+  <title>Admin Website | East Canyon Resort</title>
   <link rel="stylesheet" href="styles.css?v=site2">
 </head>
 <body class="page-visitor page-admin">
@@ -31,7 +31,8 @@
 
   <main>
     <div class="container page-content">
-      <h1>Admin</h1>
+      <p class="admin-back"><a href="admin.html">← Admin tasks</a></p>
+      <h1>Website</h1>
       <p id="admin-denied" class="form-message error" hidden>
         This area is for resort administrators.
         <a href="admin-login.html">Admin sign in</a>
@@ -40,10 +41,25 @@
       <div id="admin-app" hidden>
         <p class="admin-intro">
           <span id="admin-whoami"></span>
-          Choose a task. Admin work only — personal reservations need a member login.
           <button type="button" id="admin-logout" class="btn-link">Sign Out</button>
         </p>
-        <nav id="admin-task-grid" class="admin-task-grid" aria-label="Admin tasks"></nav>
+
+        <section class="admin-card">
+          <h2>Website alert</h2>
+          <form id="admin-alert-form" class="auth-form admin-form">
+            <div class="form-group">
+              <label for="alert-body">Alert text</label>
+              <textarea id="alert-body" rows="3" required></textarea>
+            </div>
+            <label class="admin-check">
+              <input type="checkbox" id="alert-active" checked>
+              Show alert on site pages
+            </label>
+            <button type="submit" class="btn btn-primary">Save alert</button>
+          </form>
+          <p id="admin-alert-result" class="form-message" role="status" aria-live="polite"></p>
+        </section>
+
         <p id="admin-message" class="form-message" role="status" aria-live="polite"></p>
       </div>
     </div>
@@ -54,7 +70,7 @@
   <script src="js/supabase-client.js?v=sb2"></script>
   <script src="js/auth.js?v=sb5"></script>
   <script src="js/admin-common.js?v=sb6"></script>
-  <script src="js/admin.js?v=sb6"></script>
+  <script src="js/admin-website.js?v=sb6"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>
