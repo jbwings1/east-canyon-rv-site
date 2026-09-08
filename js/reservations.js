@@ -1,1 +1,1 @@
-PLACEHOLDER_WILL_FAIL
+const form = document.getElementById("reservation-form");
