@@ -7,13 +7,17 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb2"></script>
+  <script src="js/auth.js?v=sb6"></script>
   <script>
     (function () {
       var next = location.search || "";
       try {
         var user = typeof Auth !== "undefined" && Auth.getCurrentUser();
-        if (user && !Auth.needsPasswordChange(user)) {
+        if (user && user.accountKind === "admin") {
+          location.replace("admin.html");
+          return;
+        }
+        if (user && Auth.canAccessMembers(user) && !Auth.needsPasswordChange(user)) {
           location.replace("member-home.html");
           return;
         }
