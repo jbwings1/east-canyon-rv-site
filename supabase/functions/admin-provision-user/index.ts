@@ -85,8 +85,8 @@ async function sendMemberWelcomeEmail(opts: {
       }
     </p>
     <p>
-      Enter your email, member ID, and temporary password, then choose your own password.
-      After that, sign in at ${
+      Enter your email, member ID, and temporary password, then choose a username and your own password.
+      After that, sign in with your username or email at ${
         appUrl ? `<a href="${loginUrl}">${loginUrl}</a>` : escapeHtml(loginUrl)
       }.
     </p>
@@ -104,8 +104,8 @@ async function sendMemberWelcomeEmail(opts: {
     `Temporary password: ${opts.temporaryPassword}`,
     "",
     `Activate: ${activateUrl}`,
-    "Enter your email, member ID, and temporary password, then choose your own password.",
-    `Then sign in at: ${loginUrl}`,
+    "Enter your email, member ID, and temporary password, then choose a username and your own password.",
+    `Then sign in with your username or email at: ${loginUrl}`,
     "",
     "If you did not expect this message, contact the resort office at (801) 359-9030.",
     "East Canyon Resort",
