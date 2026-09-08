@@ -18,6 +18,8 @@
   const cityLine = [current.city, current.state, current.zip].filter(Boolean).join(", ");
   const typeLabel = Auth.reservationTypeLabel(current.reservationType || current.accountType);
   const rows = [
+    ["Member ID", current.memberId],
+    ["Username", current.username],
     ["Name", current.name],
     ["Email", current.profileEmail || current.email],
     ["Phone", current.phone],

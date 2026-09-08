@@ -16,7 +16,9 @@
     : "My Account";
   document.getElementById("account-type-label").textContent = typeLabel;
 
+  document.getElementById("profile-member-id").value = user.memberId || "";
   document.getElementById("profile-login").value = user.email || "";
+  document.getElementById("profile-username").value = user.username || "";
   document.getElementById("profile-name").value = user.name || "";
   document.getElementById("profile-email").value = user.profileEmail || "";
   document.getElementById("profile-phone").value = user.phone || "";
