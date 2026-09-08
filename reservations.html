@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Reserve RV camping, condo stays, and group sites at East Canyon Resort near Morgan, Utah.">
   <title>Reservations | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site2">
+  <link rel="stylesheet" href="styles.css?v=site3">
 </head>
 <body class="page-visitor page-reservations">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -59,8 +59,36 @@
         </section>
       </div>
 
+        <section id="my-reservations" class="reservation-form-section my-reservations" hidden>
+          <h2>My reservations</h2>
+          <p class="reservation-form-intro">
+            All of your stays are listed here. Edit upcoming reservations to change dates or the site,
+            or delete one to cancel it.
+          </p>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="my-reservations-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Site / unit</th>
+                  <th>Dates</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="my-reservations-body">
+                <tr><td colspan="5">Sign in to see your reservations.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="my-reservations-message" class="form-message" role="status" aria-live="polite"></p>
+        </section>
+
         <section id="request-form" class="reservation-form-section">
-          <h2>Book your stay</h2>
+          <h2 id="booking-form-title">Book your stay</h2>
+          <p id="editing-banner" class="stay-length-notice" hidden role="status">
+            Editing an existing reservation. Save your changes below, or cancel editing.
+          </p>
 
           <form id="reservation-form" class="reservation-form reservation-form--compact" novalidate>
             <input type="hidden" id="res-preferred-spot" name="preferredSpot" value="">
@@ -192,6 +220,7 @@
               <a href="login.html?next=reservations.html">Sign in</a> to complete a booking.
             </p>
             <button type="submit" class="btn btn-primary btn-full" id="complete-booking-btn" form="reservation-form">Complete Booking</button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-outline btn-full" hidden>Cancel editing</button>
             <p id="booking-confirmed" class="booking-confirmed" hidden>Booking confirmed</p>
             <button type="button" id="book-another-btn" class="btn btn-outline btn-full" hidden>Clear form for another stay</button>
             <p id="reservation-message" class="form-message" role="status" aria-live="polite"></p>
@@ -207,8 +236,8 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb7"></script>
-  <script src="js/reservations.js?v=22"></script>
+  <script src="js/auth.js?v=sb8"></script>
+  <script src="js/reservations.js?v=23"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>
