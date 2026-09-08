@@ -17,8 +17,6 @@ form.addEventListener("submit", async (e) => {
   const name = document.getElementById("signup-name").value.trim();
   const email = document.getElementById("signup-email").value.trim();
   const phone = document.getElementById("signup-phone").value.trim();
-  const reservationType = document.getElementById("signup-type").value;
-  const rv = document.getElementById("signup-rv").value.trim();
   const password = document.getElementById("signup-password").value;
   const confirm = document.getElementById("signup-confirm").value;
 
@@ -26,16 +24,11 @@ form.addEventListener("submit", async (e) => {
     if (password !== confirm) {
       throw new Error("Passwords do not match.");
     }
-    if (!reservationType) {
-      throw new Error("Choose Condo, Family reunion, or RV.");
-    }
     const result = await Auth.signUp({
       email,
       password,
       name,
       phone,
-      reservationType,
-      rv,
     });
     if (result.needsEmailConfirmation) {
       showMessage(

@@ -398,9 +398,18 @@ const Auth = {
     const metadata = {
       full_name: name || "",
       phone: phone || "",
-      reservation_type: dbType,
-      rv_details: rv || "",
     };
+    if (dbType) metadata.reservation_type = dbType;
+    if (rv) metadata.rv_details = rv;
+
+    const pending = {
+      email,
+      full_name: name || "",
+      phone: phone || "",
+    };
+    if (dbType) pending.reservation_type = dbType;
+    if (rv) pending.rv_details = rv;
+
     const { data, error } = await getClient().auth.signUp({
       email,
       password,
@@ -412,16 +421,7 @@ const Auth = {
     throwIfError(error);
 
     try {
-      sessionStorage.setItem(
-        PENDING_PROFILE_KEY,
-        JSON.stringify({
-          email,
-          full_name: name || "",
-          phone: phone || "",
-          reservation_type: dbType,
-          rv_details: rv || "",
-        })
-      );
+      sessionStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(pending));
     } catch {
       /* ignore */
     }
@@ -435,13 +435,14 @@ const Auth = {
       try {
         const profile = await this._waitForProfile(data.user.id);
         if (profile) writeJson(PROFILE_CACHE_KEY, profile);
-        await this.updateProfile({
+        const profileUpdates = {
           name,
           phone,
-          reservationType,
-          rv,
           profileEmail: email,
-        });
+        };
+        if (reservationType) profileUpdates.reservationType = reservationType;
+        if (rv) profileUpdates.rv = rv;
+        await this.updateProfile(profileUpdates);
       } catch {
         /* profile trigger may still be running */
       }
