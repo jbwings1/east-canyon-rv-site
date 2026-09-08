@@ -30,6 +30,120 @@ function asTasks(value: unknown): Task[] {
   return value.filter((t): t is Task => ALL_TASKS.includes(t as Task));
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function sendMemberWelcomeEmail(opts: {
+  to: string;
+  fullName: string;
+  memberId: string;
+  temporaryPassword: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    return {
+      sent: false,
+      error:
+        "RESEND_API_KEY is not set in Supabase Edge Function secrets. Account was created; email was not sent.",
+    };
+  }
+
+  const from =
+    Deno.env.get("MEMBER_EMAIL_FROM") ||
+    "East Canyon Resort <onboarding@resend.dev>";
+  const appUrl = (Deno.env.get("MEMBER_APP_URL") || "").replace(/\/$/, "");
+  const activateUrl = appUrl
+    ? `${appUrl}/create-account.html`
+    : "create-account.html on the East Canyon website";
+  const loginUrl = appUrl ? `${appUrl}/login.html` : "the Members sign-in page";
+
+  const safeName = escapeHtml(opts.fullName || "Member");
+  const safeEmail = escapeHtml(opts.to);
+  const safeMemberId = escapeHtml(opts.memberId);
+  const safePassword = escapeHtml(opts.temporaryPassword);
+
+  const html = `
+    <p>Hello ${safeName},</p>
+    <p>East Canyon Resort has created your member website access.</p>
+    <p><strong>Sign-in information</strong></p>
+    <ul>
+      <li>Email: ${safeEmail}</li>
+      <li>Member ID: ${safeMemberId}</li>
+      <li>Temporary password: ${safePassword}</li>
+    </ul>
+    <p>
+      Activate your account here:
+      ${
+        appUrl
+          ? `<a href="${activateUrl}">${activateUrl}</a>`
+          : escapeHtml(activateUrl)
+      }
+    </p>
+    <p>
+      Enter your email, member ID, and temporary password, then choose your own password.
+      After that, sign in at ${
+        appUrl ? `<a href="${loginUrl}">${loginUrl}</a>` : escapeHtml(loginUrl)
+      }.
+    </p>
+    <p>If you did not expect this message, contact the resort office at (801) 359-9030.</p>
+    <p>East Canyon Resort</p>
+  `;
+
+  const text = [
+    `Hello ${opts.fullName || "Member"},`,
+    "",
+    "East Canyon Resort has created your member website access.",
+    "",
+    `Email: ${opts.to}`,
+    `Member ID: ${opts.memberId}`,
+    `Temporary password: ${opts.temporaryPassword}`,
+    "",
+    `Activate: ${activateUrl}`,
+    "Enter your email, member ID, and temporary password, then choose your own password.",
+    `Then sign in at: ${loginUrl}`,
+    "",
+    "If you did not expect this message, contact the resort office at (801) 359-9030.",
+    "East Canyon Resort",
+  ].join("\n");
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [opts.to],
+        subject: "Your East Canyon Resort member website access",
+        html,
+        text,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        sent: false,
+        error:
+          (data && (data.message || data.error)) ||
+          `Email provider returned ${response.status}`,
+      };
+    }
+    return { sent: true };
+  } catch (err) {
+    return {
+      sent: false,
+      error: err instanceof Error ? err.message : "Could not send email",
+    };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -251,6 +365,13 @@ Deno.serve(async (req) => {
       return json(500, { error: upsertError.message });
     }
 
+    const emailResult = await sendMemberWelcomeEmail({
+      to: email,
+      fullName,
+      memberId,
+      temporaryPassword: password,
+    });
+
     return json(200, {
       ok: true,
       kind: "member",
@@ -258,8 +379,13 @@ Deno.serve(async (req) => {
       email,
       member_id: memberId,
       temporary_password: password,
-      message:
-        "Member access created. Give the member their ID, email, and temporary password to activate on the website.",
+      email_sent: emailResult.sent,
+      email_error: emailResult.error || null,
+      message: emailResult.sent
+        ? "Member access created. A welcome email with sign-in information was sent."
+        : `Member access created, but the welcome email was not sent${
+            emailResult.error ? `: ${emailResult.error}` : "."
+          } Give them the member ID, email, and temporary password.`,
     });
   }
 
