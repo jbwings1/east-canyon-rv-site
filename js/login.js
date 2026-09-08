@@ -15,6 +15,7 @@ function showMessage(text, type) {
 function getSafeNextUrl() {
   const next = new URLSearchParams(window.location.search).get("next");
   if (next && /^[a-z0-9./_-]+\.html$/i.test(next) && !next.includes("..")) {
+    if (next === "admin.html" || next === "admin-login.html") return null;
     return next;
   }
   return null;
@@ -24,8 +25,7 @@ const nextUrl = getSafeNextUrl();
 const signedInContinue = document.getElementById("signed-in-continue");
 if (signedInContinue && nextUrl) {
   signedInContinue.href = nextUrl;
-  signedInContinue.textContent =
-    nextUrl === "admin.html" ? "Continue to Admin" : "Continue to Reservations";
+  signedInContinue.textContent = "Continue to Reservations";
 }
 
 function showSignedIn(user) {
@@ -43,6 +43,21 @@ function showSignInForm() {
   signedInPanel.hidden = true;
 }
 
+function routeSignedInMember(user) {
+  if (user.accountKind === "admin") {
+    Auth.signOutQuiet().finally(() => {
+      showMessage("Use Admin Sign In for staff accounts.", "error");
+      showSignInForm();
+    });
+    return;
+  }
+  if (Auth.needsPasswordChange(user)) {
+    window.location.href = "set-password.html";
+    return;
+  }
+  window.location.href = nextUrl || "member-home.html";
+}
+
 if (typeof Auth === "undefined") {
   showMessage("Login could not start. Make sure js/auth.js loaded correctly.", "error");
 } else if (!Auth.storageAvailable()) {
@@ -53,7 +68,7 @@ if (typeof Auth === "undefined") {
 } else {
   const currentUser = Auth.getCurrentUser();
   if (currentUser) {
-    window.location.href = nextUrl || "member-home.html";
+    routeSignedInMember(currentUser);
   }
 }
 
@@ -84,8 +99,8 @@ if (signinForm && typeof Auth !== "undefined") {
     }
 
     try {
-      await Auth.signIn(loginId, password);
-      window.location.href = nextUrl || "member-home.html";
+      const user = await Auth.signInAsMember(loginId, password);
+      routeSignedInMember(user);
     } catch (err) {
       showMessage(err.message, "error");
     }

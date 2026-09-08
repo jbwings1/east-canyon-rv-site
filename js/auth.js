@@ -79,6 +79,7 @@ function mapProfile(session, profile) {
   const authUser = session?.user || {};
   const email = profile?.email || authUser.email || "";
   const reservationType = toUiReservationType(profile?.reservation_type);
+  const adminTasks = Array.isArray(profile?.admin_tasks) ? profile.admin_tasks : [];
   return {
     id: authUser.id || profile?.id || "",
     email,
@@ -94,7 +95,15 @@ function mapProfile(session, profile) {
     accountType: reservationType || profile?.reservation_type || "",
     reservationType,
     profileComplete: profile?.profile_complete === true,
-    isAdmin: profile?.is_admin === true,
+    isAdmin: profile?.is_admin === true && profile?.account_kind === "admin",
+    accountKind: profile?.account_kind || "member",
+    accountStatus: profile?.account_status || "active",
+    memberId: profile?.member_id || "",
+    mustChangePassword: profile?.must_change_password === true,
+    adminLevel: profile?.admin_level || null,
+    adminSeat: profile?.admin_seat || "",
+    staffCode: profile?.staff_code || "",
+    adminTasks,
     accessToken: session?.access_token || "",
   };
 }
@@ -182,16 +191,29 @@ const Auth = {
     return mapProfile(session, cached);
   },
 
-  needsPasswordChange() {
-    return false;
+  needsPasswordChange(user = this.getCurrentUser()) {
+    return Boolean(user?.mustChangePassword);
   },
 
   canAccessMembers(user = this.getCurrentUser()) {
-    return Boolean(user);
+    if (!user) return false;
+    if (user.accountKind === "admin") return false;
+    if (user.accountStatus === "suspended" || user.accountStatus === "closed") return false;
+    return true;
+  },
+
+  isMemberAccount(user = this.getCurrentUser()) {
+    return Boolean(user && user.accountKind === "member");
   },
 
   isAdmin(user = this.getCurrentUser()) {
-    return Boolean(user?.isAdmin);
+    return Boolean(user?.isAdmin && user?.accountKind === "admin" && user?.accountStatus === "active");
+  },
+
+  hasAdminTask(task, user = this.getCurrentUser()) {
+    if (!this.isAdmin(user)) return false;
+    if (user.adminLevel === 1) return true;
+    return Array.isArray(user.adminTasks) && user.adminTasks.includes(task);
   },
 
   async verifyAdmin() {
@@ -220,10 +242,113 @@ const Auth = {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     const { data, error } = await getClient()
       .from("profiles")
-      .select("id,email,full_name,phone,reservation_type,assigned_spot,profile_complete,is_admin")
+      .select(
+        "id,email,full_name,phone,address,city,state,zip,reservation_type,assigned_spot,profile_complete,is_admin,account_kind,account_status,member_id,must_change_password,admin_level,admin_seat,staff_code,admin_tasks"
+      )
       .order("full_name", { ascending: true, nullsFirst: false });
     throwIfError(error);
     return data || [];
+  },
+
+  async listMemberProfiles() {
+    const rows = await this.listAllProfiles();
+    return rows.filter((p) => p.account_kind === "member");
+  },
+
+  async listStaffProfiles() {
+    const rows = await this.listAllProfiles();
+    return rows.filter((p) => p.account_kind === "admin");
+  },
+
+  async provisionUser(payload) {
+    if (!this.isAdmin()) throw new Error("Admin access required.");
+    const session = this.getSession();
+    if (!session?.access_token) throw new Error("Not signed in.");
+    const response = await fetch(
+      `${window.SUPABASE_CONFIG.url}/functions/v1/admin-provision-user`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: window.SUPABASE_CONFIG.anonKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+    if (!response.ok) {
+      throw new Error(data.error || "Could not create the account.");
+    }
+    return data;
+  },
+
+  async createBookingForMember({
+    memberUserId,
+    reservationType,
+    spot,
+    checkIn,
+    checkOut,
+    notes,
+  }) {
+    if (!this.hasAdminTask("reservations_manage")) {
+      throw new Error("You are not assigned the Reservations manage task.");
+    }
+    const admin = this.getCurrentUser();
+    if (!admin?.id) throw new Error("Admin sign in required.");
+    if (!memberUserId) throw new Error("Choose a member.");
+    if (memberUserId === admin.id) {
+      throw new Error("Admins cannot book for themselves. Use a member account.");
+    }
+    const dbType = toDbReservationType(reservationType);
+    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
+    const now = new Date().toISOString();
+    const { data, error } = await getClient()
+      .from("bookings")
+      .insert({
+        user_id: memberUserId,
+        reservation_type: dbType,
+        spot: spot || null,
+        check_in: checkIn,
+        check_out: checkOut,
+        status: "confirmed",
+        notes: notes || null,
+        confirmed_at: now,
+      })
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Booking could not be saved.");
+    return data;
+  },
+
+  async clearMustChangePassword() {
+    const { error } = await getClient().rpc("clear_must_change_password");
+    throwIfError(error);
+    await this.refreshProfile();
+    return this.getCurrentUser();
+  },
+
+  async activateMemberAccount({ email, memberId, temporaryPassword }) {
+    const user = await this.signIn(email, temporaryPassword);
+    if (!user || user.accountKind !== "member") {
+      await this.signOutQuiet();
+      throw new Error("This is not a member account. Use Admin Sign In for staff.");
+    }
+    if (String(user.memberId || "").trim() !== String(memberId || "").trim()) {
+      await this.signOutQuiet();
+      throw new Error("Member ID does not match this email.");
+    }
+    if (user.accountStatus === "suspended" || user.accountStatus === "closed") {
+      await this.signOutQuiet();
+      throw new Error("This member account is not active. Contact the office.");
+    }
+    return user;
   },
 
   async listAllBookings() {
@@ -397,7 +522,31 @@ const Auth = {
     } catch {
       writeJson(PROFILE_CACHE_KEY, null);
     }
-    return this.getCurrentUser();
+    const user = this.getCurrentUser();
+    if (user?.accountStatus === "suspended" || user?.accountStatus === "closed") {
+      await this.signOutQuiet();
+      throw new Error("This account is closed or suspended. Contact the office.");
+    }
+    return user;
+  },
+
+  async signInAsMember(email, password) {
+    const user = await this.signIn(email, password);
+    if (user?.accountKind === "admin") {
+      await this.signOutQuiet();
+      throw new Error("Use Admin Sign In for staff accounts. Member Sign In is for members only.");
+    }
+    return user;
+  },
+
+  async signInAsAdmin(email, password) {
+    const user = await this.signIn(email, password);
+    const isAdmin = await this.verifyAdmin();
+    if (!isAdmin || user?.accountKind !== "admin") {
+      await this.signOutQuiet();
+      throw new Error("This account does not have administrator access.");
+    }
+    return user;
   },
 
   async signUp({ email, password, name, phone, reservationType, rv }) {
@@ -532,7 +681,43 @@ const Auth = {
     }
     const { error } = await getClient().auth.updateUser({ password: newPassword });
     throwIfError(error);
+    try {
+      await this.clearMustChangePassword();
+    } catch {
+      /* profile flag may already be clear */
+    }
     return true;
+  },
+
+  async createBooking({ reservationType, spot, checkIn, checkOut, notes }) {
+    const user = this.getCurrentUser();
+    if (!user?.id) throw new Error("Sign in to complete a booking.");
+    if (user.accountKind === "admin") {
+      throw new Error("Admins cannot book while signed in as admin. Use a member account.");
+    }
+    if (!this.canAccessMembers(user)) {
+      throw new Error("Member access required to book.");
+    }
+    const dbType = toDbReservationType(reservationType);
+    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
+    const now = new Date().toISOString();
+    const { data, error } = await getClient()
+      .from("bookings")
+      .insert({
+        user_id: user.id,
+        reservation_type: dbType,
+        spot: spot || null,
+        check_in: checkIn,
+        check_out: checkOut,
+        status: "confirmed",
+        notes: notes || null,
+        confirmed_at: now,
+      })
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Booking could not be saved.");
+    return data;
   },
 
   acceptRecoveryFromUrl() {
@@ -575,31 +760,6 @@ const Auth = {
     return bookings.filter(
       (b) => b.status === "confirmed" && b.check_in && b.check_in > today
     );
-  },
-
-  async createBooking({ reservationType, spot, checkIn, checkOut, notes }) {
-    const user = this.getCurrentUser();
-    if (!user?.id) throw new Error("Sign in to complete a booking.");
-    const dbType = toDbReservationType(reservationType);
-    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
-    const now = new Date().toISOString();
-    const { data, error } = await getClient()
-      .from("bookings")
-      .insert({
-        user_id: user.id,
-        reservation_type: dbType,
-        spot: spot || null,
-        check_in: checkIn,
-        check_out: checkOut,
-        status: "confirmed",
-        notes: notes || null,
-        confirmed_at: now,
-      })
-      .select()
-      .maybeSingle();
-    throwIfError(error);
-    if (!data) throw new Error("Booking could not be saved.");
-    return data;
   },
 
   saveLastBooking(record) {

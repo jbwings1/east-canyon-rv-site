@@ -1,5 +1,5 @@
 if (!Auth.getCurrentUser()) {
-  window.location.replace("reset-password.html" + window.location.hash);
+  window.location.replace("login.html");
 } else {
   document.getElementById("password-login").value = Auth.getCurrentUser().email || "";
 }
@@ -18,7 +18,10 @@ document.getElementById("password-form").addEventListener("submit", async (e) =>
       throw new Error("New passwords do not match.");
     }
     await Auth.updatePassword(newPassword);
-    window.location.replace("member-home.html");
+    await Auth.signOutQuiet();
+    message.textContent = "Password saved. Sign in with your email and new password.";
+    message.className = "form-message success";
+    window.location.replace("login.html");
   } catch (err) {
     message.textContent = err.message;
     message.className = "form-message error";
