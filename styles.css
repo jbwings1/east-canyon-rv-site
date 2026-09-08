@@ -316,6 +316,36 @@ a:hover {
   opacity: 0.82;
 }
 
+.home-events-banner {
+  background: #f6f1e8;
+  border-bottom: 1px solid rgba(28, 58, 50, 0.14);
+}
+
+.home-events-banner-inner {
+  padding: 1.05rem 0;
+  text-align: center;
+}
+
+.home-events-banner p {
+  margin: 0;
+  max-width: 46rem;
+  margin-inline: auto;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: #1c1916;
+}
+
+.home-events-banner a {
+  color: #1c3a32;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.home-events-banner a:hover {
+  color: #14110e;
+}
+
 .home-content {
   width: min(1100px, 94vw);
   padding: 2.5rem 0 3rem;
