@@ -17,7 +17,7 @@
 
   const sessionUser = Auth.getCurrentUser();
   if (!sessionUser) {
-    window.location.replace("login.html?next=admin.html");
+    window.location.replace("admin-login.html");
     return;
   }
 
@@ -37,7 +37,9 @@
   denied.hidden = true;
   app.hidden = false;
   Auth.showAdminLinks();
-  document.getElementById("admin-logout")?.addEventListener("click", () => Auth.logout());
+  document.getElementById("admin-logout")?.addEventListener("click", () =>
+    Auth.logout("admin-login.html")
+  );
 
   let profiles = [];
   let bookings = [];

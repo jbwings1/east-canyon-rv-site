@@ -286,12 +286,19 @@ const Auth = {
     }
   },
 
-  logout() {
-    getClient()
-      .auth.signOut()
-      .catch(() => {});
+  async signOutQuiet() {
+    try {
+      await getClient().auth.signOut();
+    } catch {
+      /* ignore */
+    }
     this.clearSession();
-    window.location.href = "login.html";
+  },
+
+  logout(redirectTo = "login.html") {
+    this.signOutQuiet().finally(() => {
+      window.location.href = redirectTo || "login.html";
+    });
   },
 
   requireAuth(redirectTo = "login.html") {
