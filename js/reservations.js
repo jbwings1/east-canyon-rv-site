@@ -317,13 +317,15 @@ updateMapAvailability();
 updateMemberReservationNotice();
 
 function showConfirmedState(record) {
-  if (completeBookingBtn) {
-    completeBookingBtn.hidden = true;
-    completeBookingBtn.disabled = true;
-  }
+  const signedIn = typeof Auth !== "undefined" && Auth.getCurrentUser();
   if (bookingSigninNotice) bookingSigninNotice.hidden = true;
   if (bookingConfirmed) bookingConfirmed.hidden = false;
   if (bookAnotherBtn) bookAnotherBtn.hidden = false;
+  // Keep Complete Booking available so a second reservation is always possible
+  if (completeBookingBtn) {
+    completeBookingBtn.hidden = !signedIn;
+    completeBookingBtn.disabled = !signedIn;
+  }
   if (record?.detail) {
     message.textContent = record.detail;
     message.className = "form-message success";
@@ -339,6 +341,25 @@ function showBookingFormState() {
     completeBookingBtn.disabled = !signedIn;
   }
   if (bookingSigninNotice) bookingSigninNotice.hidden = Boolean(signedIn);
+}
+
+function startAnotherBooking() {
+  if (typeof Auth !== "undefined" && Auth.clearLastBooking) {
+    Auth.clearLastBooking();
+  }
+  message.textContent = "";
+  message.className = "form-message";
+  form.reset();
+  syncDateLimits();
+  typeSelect.value = "";
+  clearPreferredSpot();
+  updateRvFields();
+  updateMapAvailability();
+  showBookingFormState();
+  const user = typeof Auth !== "undefined" ? Auth.getCurrentUser() : null;
+  prefillFromProfile(user);
+  updateMemberReservationNotice();
+  checkIn?.focus();
 }
 
 
@@ -372,7 +393,7 @@ function prefillFromProfile(user) {
     document.getElementById("res-phone").value = user.phone || "";
   }
   if (memberIdInput && !memberIdInput.value) {
-    memberIdInput.value = user.email || user.id || "";
+    memberIdInput.value = user.memberId || user.email || user.id || "";
   }
   if (typeSelect && user.reservationType && !typeSelect.value) {
     typeSelect.value = user.reservationType;
@@ -381,21 +402,7 @@ function prefillFromProfile(user) {
 }
 
 clearSpotBtn.addEventListener("click", clearPreferredSpot);
-bookAnotherBtn?.addEventListener("click", () => {
-  Auth.clearLastBooking();
-  message.textContent = "";
-  message.className = "form-message";
-  form.reset();
-  syncDateLimits();
-  typeSelect.value = "";
-  clearPreferredSpot();
-  updateRvFields();
-  updateMapAvailability();
-  showBookingFormState();
-  const user = Auth.getCurrentUser();
-  prefillFromProfile(user);
-  updateMemberReservationNotice();
-});
+bookAnotherBtn?.addEventListener("click", startAnotherBooking);
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
