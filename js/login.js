@@ -91,7 +91,7 @@ if (signinForm && typeof Auth !== "undefined") {
     const password = document.getElementById("signin-password").value;
 
     if (!loginId || !password) {
-      showMessage("Enter your email and password.", "error");
+      showMessage("Enter your username or email and password.", "error");
       return;
     }
 

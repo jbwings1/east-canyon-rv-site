@@ -8,7 +8,7 @@
 
   function renderMembers() {
     if (!members.length) {
-      membersBody.innerHTML = `<tr><td colspan="6">No members yet.</td></tr>`;
+      membersBody.innerHTML = `<tr><td colspan="7">No members yet.</td></tr>`;
       return;
     }
     membersBody.innerHTML = members
@@ -18,6 +18,7 @@
         return `<tr>
           <td>${AdminCommon.escapeHtml(p.member_id || "—")}</td>
           <td>${AdminCommon.escapeHtml(p.full_name || "—")}</td>
+          <td>${AdminCommon.escapeHtml(p.username || "—")}</td>
           <td>${AdminCommon.escapeHtml(p.email || "—")}</td>
           <td>${AdminCommon.escapeHtml(p.phone || "—")}</td>
           <td>${AdminCommon.escapeHtml(status)}</td>
@@ -34,7 +35,7 @@
       renderMembers();
     } catch (err) {
       AdminCommon.showMessage(message, err.message, "error");
-      membersBody.innerHTML = `<tr><td colspan="6">${AdminCommon.escapeHtml(err.message)}</td></tr>`;
+      membersBody.innerHTML = `<tr><td colspan="7">${AdminCommon.escapeHtml(err.message)}</td></tr>`;
     }
   }
 
