@@ -436,10 +436,22 @@ const Auth = {
   },
 
   redirectForAuth(options = {}) {
-    const { requireMember = false, loginPage = "login.html" } = options;
+    const {
+      requireMember = false,
+      loginPage = "login.html",
+      adminPage = "admin.html",
+    } = options;
     const user = this.getCurrentUser();
     if (!requireMember) return user;
     if (!user) {
+      window.location.href = loginPage;
+      return null;
+    }
+    if (user.accountKind === "admin") {
+      window.location.href = adminPage;
+      return null;
+    }
+    if (!this.canAccessMembers(user)) {
       window.location.href = loginPage;
       return null;
     }
