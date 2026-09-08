@@ -6,40 +6,29 @@ function showMessage(text, type) {
   message.className = type ? `form-message ${type}` : "form-message";
 }
 
-if (Auth.getCurrentUser()) {
-  window.location.replace("member-home.html");
+if (typeof Auth !== "undefined" && Auth.getCurrentUser()) {
+  const user = Auth.getCurrentUser();
+  if (user.accountKind === "admin") {
+    window.location.replace("admin.html");
+  } else if (Auth.needsPasswordChange(user)) {
+    window.location.replace("set-password.html");
+  } else {
+    window.location.replace("member-home.html");
+  }
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   showMessage("", "");
 
-  const name = document.getElementById("signup-name").value.trim();
   const email = document.getElementById("signup-email").value.trim();
-  const phone = document.getElementById("signup-phone").value.trim();
-  const password = document.getElementById("signup-password").value;
-  const confirm = document.getElementById("signup-confirm").value;
+  const memberId = document.getElementById("signup-member-id").value.trim();
+  const temporaryPassword = document.getElementById("signup-password").value;
 
   try {
-    if (password !== confirm) {
-      throw new Error("Passwords do not match.");
-    }
-    const result = await Auth.signUp({
-      email,
-      password,
-      name,
-      phone,
-    });
-    if (result.needsEmailConfirmation) {
-      showMessage(
-        "Account created. Check your email to confirm the address, then sign in.",
-        "success"
-      );
-      form.reset();
-      return;
-    }
-    showMessage("Account created. Opening members…", "success");
-    window.location.replace("member-home.html");
+    await Auth.activateMemberAccount({ email, memberId, temporaryPassword });
+    showMessage("Verified. Opening create password…", "success");
+    window.location.replace("set-password.html");
   } catch (err) {
     showMessage(err.message, "error");
   }

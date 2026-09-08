@@ -54,13 +54,16 @@
           <button type="submit" class="btn btn-primary btn-full">Sign In</button>
         </form>
         <p class="login-links">
-          <a href="create-account.html">New account</a>
+          <a href="create-account.html">Activate new account</a>
           <a href="forgot-password.html">Forgot password</a>
           <a href="admin-login.html">Admin sign in</a>
         </p>
         <details class="demo-login-help">
           <summary>Sign-in help</summary>
-          <p>Use the email and password from <a href="create-account.html">New account</a>. Confirm the email if you have not already.</p>
+          <p>
+            Members use the personal email from the office. New members first
+            <a href="create-account.html">activate</a> with member ID and temporary password.
+          </p>
           <p><button type="button" id="reset-site-data" class="btn btn-outline btn-full">Clear saved sign-in data</button></p>
         </details>
         <p id="auth-message" class="form-message" role="status" aria-live="polite"></p>
@@ -71,8 +74,8 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb2"></script>
-  <script src="js/login.js?v=sb1"></script>
+  <script src="js/auth.js?v=sb5"></script>
+  <script src="js/login.js?v=sb5"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

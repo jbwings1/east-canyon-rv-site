@@ -28,8 +28,8 @@ function showSignedIn(user, isAdmin) {
       signedInContinue.textContent = "Continue to Admin";
     } else {
       signedInContinue.hidden = false;
-      signedInContinue.href = "member-home.html";
-      signedInContinue.textContent = "Go to Members";
+      signedInContinue.href = "login.html";
+      signedInContinue.textContent = "Go to Member Sign In";
     }
   }
 }
@@ -62,13 +62,20 @@ async function ensureAdminSession() {
     /* use cached profile */
   }
 
+  const user = Auth.getCurrentUser() || currentUser;
+  if (user.accountKind === "member") {
+    showSignedIn(user, false);
+    showMessage("Member accounts use Member Sign In. Staff use Admin Sign In with an office email.", "error");
+    return;
+  }
+
   const isAdmin = await Auth.verifyAdmin();
   if (isAdmin) {
     window.location.replace("admin.html");
     return;
   }
 
-  showSignedIn(Auth.getCurrentUser() || currentUser, false);
+  showSignedIn(user, false);
 }
 
 if (signedInLogout) {
@@ -92,18 +99,11 @@ if (form && typeof Auth !== "undefined") {
     if (submitBtn) submitBtn.disabled = true;
 
     try {
-      await Auth.signIn(email, password);
-      const isAdmin = await Auth.verifyAdmin();
-      if (!isAdmin) {
-        await Auth.signOutQuiet();
-        showSignInForm();
-        showMessage("This account does not have administrator access.", "error");
-        form.reset();
-        return;
-      }
+      await Auth.signInAsAdmin(email, password);
       showMessage("Signed in. Opening admin…", "success");
       window.location.replace("admin.html");
     } catch (err) {
+      showSignInForm();
       showMessage(err.message, "error");
     } finally {
       if (submitBtn) submitBtn.disabled = false;
