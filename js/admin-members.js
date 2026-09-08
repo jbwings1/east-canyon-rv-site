@@ -59,8 +59,11 @@
       });
       AdminCommon.showMessage(
         result,
-        `Created ${created.email} (ID ${created.member_id}). Give them the temporary password to activate.`,
-        "success"
+        created.message ||
+          (created.email_sent
+            ? `Created ${created.email} (ID ${created.member_id}). Welcome email sent.`
+            : `Created ${created.email} (ID ${created.member_id}). Welcome email was not sent — give them the temporary password.`),
+        created.email_sent === false ? "error" : "success"
       );
       e.target.reset();
       await load();

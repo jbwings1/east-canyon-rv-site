@@ -45,10 +45,7 @@ function showSignInForm() {
 
 function routeSignedInMember(user) {
   if (user.accountKind === "admin") {
-    Auth.signOutQuiet().finally(() => {
-      showMessage("Use Admin Sign In for staff accounts.", "error");
-      showSignInForm();
-    });
+    window.location.replace("admin.html");
     return;
   }
   if (Auth.needsPasswordChange(user)) {
