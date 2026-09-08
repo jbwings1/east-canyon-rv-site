@@ -48,7 +48,8 @@
           <h2>Create member access</h2>
           <p class="admin-help">
             Use after office buy-in and paperwork. Creates website access and emails the member
-            their email, member ID, and temporary password so they can activate online.
+            their email, member ID, and temporary password. They activate online, then choose a
+            username and password (they can sign in with username or email).
           </p>
           <form id="admin-create-member-form" class="auth-form admin-form">
             <div class="form-group">
@@ -102,6 +103,7 @@
                 <tr>
                   <th>Member ID</th>
                   <th>Name</th>
+                  <th>Username</th>
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Status</th>
@@ -109,7 +111,7 @@
                 </tr>
               </thead>
               <tbody id="admin-members-body">
-                <tr><td colspan="6">Loading…</td></tr>
+                <tr><td colspan="7">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -123,9 +125,9 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb5"></script>
+  <script src="js/auth.js?v=sb7"></script>
   <script src="js/admin-common.js?v=sb6"></script>
-  <script src="js/admin-members.js?v=sb7"></script>
+  <script src="js/admin-members.js?v=sb8"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>
