@@ -1,0 +1,108 @@
+(async function () {
+  const summary = document.getElementById("delete-summary");
+  const message = document.getElementById("delete-message");
+  const actions = document.getElementById("delete-actions");
+  const confirmBtn = document.getElementById("confirm-delete-btn");
+  const bookingId = new URLSearchParams(window.location.search).get("id");
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function showMessage(text, type) {
+    message.textContent = text || "";
+    message.className = type ? `form-message ${type}` : "form-message";
+  }
+
+  function formatSpotLabel(spotId) {
+    if (!spotId) return "—";
+    const unit = window.SpotAvailability?.findUnit?.(spotId);
+    if (!unit) return spotId;
+    if (unit.category === "condo") return `Condo ${unit.label}`;
+    if (unit.category === "reunion") return unit.name || `Family site ${unit.label}`;
+    return `Site ${unit.label}`;
+  }
+
+  const user = Auth.redirectForAuth({ requireMember: true });
+  if (!user) return;
+
+  if (!bookingId) {
+    showMessage("Missing reservation.", "error");
+    summary.innerHTML = `<div><dt>Error</dt><dd>No reservation selected.</dd></div>`;
+    return;
+  }
+
+  try {
+    await Auth.ready();
+  } catch {
+    /* cached session */
+  }
+
+  let bookings = [];
+  try {
+    bookings = await Auth.listBookings();
+  } catch (err) {
+    showMessage(err.message, "error");
+    return;
+  }
+
+  const booking = bookings.find((b) => b.id === bookingId);
+  if (!booking) {
+    showMessage("Reservation not found.", "error");
+    summary.innerHTML = `<div><dt>Error</dt><dd>That reservation is not on your account.</dd></div>`;
+    return;
+  }
+
+  if (booking.status === "cancelled") {
+    showMessage("This reservation is already cancelled.", "error");
+  }
+
+  const today = window.SpotAvailability.getToday();
+  const canDelete = booking.status !== "cancelled" && booking.check_out >= today;
+
+  const rows = [
+    ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
+    ["Site / unit", formatSpotLabel(booking.spot)],
+    [
+      "Dates",
+      booking.check_in && booking.check_out
+        ? window.SpotAvailability.formatDateRange(booking.check_in, booking.check_out)
+        : "—",
+    ],
+    ["Status", booking.status || "—"],
+    ["Notes", booking.notes || ""],
+  ].filter(([, value]) => String(value || "").trim());
+
+  summary.innerHTML = rows
+    .map(
+      ([label, value]) =>
+        `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`
+    )
+    .join("");
+
+  if (!canDelete) {
+    showMessage("Past or cancelled reservations cannot be deleted here.", "error");
+    return;
+  }
+
+  actions.hidden = false;
+  confirmBtn.addEventListener("click", async () => {
+    const ok = window.confirm(
+      "Delete this reservation? This cancels it and frees the dates."
+    );
+    if (!ok) return;
+    confirmBtn.disabled = true;
+    try {
+      await Auth.cancelOwnBooking(bookingId);
+      Auth.clearLastBooking?.();
+      window.location.replace("reservations.html?ok=deleted");
+    } catch (err) {
+      showMessage(err.message, "error");
+      confirmBtn.disabled = false;
+    }
+  });
+})();

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="View and manage your East Canyon Resort reservations.">
-  <title>My Reservations | East Canyon Resort</title>
+  <meta name="description" content="Cancel a reservation at East Canyon Resort.">
+  <title>Delete Reservation | East Canyon Resort</title>
   <link rel="stylesheet" href="styles.css?v=site6">
 </head>
 <body class="page-visitor page-reservations">
@@ -32,48 +32,21 @@
 
   <main>
     <div class="container page-content">
-      <p class="admin-back"><a href="member-home.html">← Members home</a></p>
-      <h1>My reservations</h1>
+      <p class="admin-back"><a href="reservations.html">← My reservations</a></p>
+      <h1>Delete reservation</h1>
       <p class="reservation-form-intro">
-        Review your stays below. Book a new reservation, or open a stay to edit or delete it.
+        Deleting a reservation cancels it and frees those dates for other members.
       </p>
 
-      <p id="hub-status" class="form-message" role="status" aria-live="polite"></p>
-
-      <p class="reservation-hub-actions">
-        <a href="reservation-book.html" class="btn btn-primary" id="hub-book-link">Book a new stay</a>
-      </p>
-
-      <section class="reservation-form-section my-reservations" id="hub-list-section">
-        <h2>Your stays</h2>
-        <div id="hub-signed-out" class="stay-length-notice" hidden>
-          <a href="login.html?next=reservations.html">Sign in</a> to see and manage your reservations.
+      <section class="reservation-form-section" id="delete-card">
+        <dl class="member-profile-summary" id="delete-summary">
+          <div><dt>Loading</dt><dd>…</dd></div>
+        </dl>
+        <p id="delete-message" class="form-message" role="status" aria-live="polite"></p>
+        <div class="reservation-hub-actions" id="delete-actions" hidden>
+          <button type="button" class="btn btn-primary" id="confirm-delete-btn">Delete this reservation</button>
+          <a href="reservations.html" class="btn btn-outline">Keep reservation</a>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="hub-reservations-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Site / unit</th>
-                <th>Dates</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="hub-reservations-body">
-              <tr><td colspan="5">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="reservation-steps" aria-label="How reservations work">
-        <h2>How it works</h2>
-        <ol>
-          <li><strong>Book</strong> a new stay and choose an open unit on the map.</li>
-          <li><strong>Edit</strong> an upcoming reservation if your plans change.</li>
-          <li><strong>Delete</strong> a reservation to cancel it and free those dates.</li>
-        </ol>
       </section>
     </div>
   </main>
@@ -84,7 +57,7 @@
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
   <script src="js/auth.js?v=sb8"></script>
-  <script src="js/reservation-hub.js?v=1"></script>
+  <script src="js/reservation-delete.js?v=1"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

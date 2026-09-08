@@ -46,7 +46,7 @@
   } else {
     spotContent.innerHTML = `
       <p>No assigned spot — book a Condo, Family reunion, or RV stay on the map.</p>
-      <a href="reservations.html" class="btn btn-primary">Make a Reservation</a>
+      <a href="reservation-book.html" class="btn btn-primary">Make a Reservation</a>
     `;
   }
 

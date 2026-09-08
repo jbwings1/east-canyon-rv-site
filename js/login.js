@@ -14,8 +14,12 @@ function showMessage(text, type) {
 
 function getSafeNextUrl() {
   const next = new URLSearchParams(window.location.search).get("next");
-  if (next && /^[a-z0-9./_-]+\.html$/i.test(next) && !next.includes("..")) {
-    if (next === "admin.html" || next === "admin-login.html") return null;
+  if (
+    next &&
+    /^[a-z0-9./_-]+\.html(?:\?id=[a-z0-9-]+)?$/i.test(next) &&
+    !next.includes("..")
+  ) {
+    if (next.startsWith("admin.html") || next.startsWith("admin-login.html")) return null;
     return next;
   }
   return null;

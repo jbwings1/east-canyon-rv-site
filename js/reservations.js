@@ -27,6 +27,13 @@ const editingBanner = document.getElementById("editing-banner");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 let memberBookings = [];
 let editingBookingId = null;
+const reservationMode = document.body?.dataset?.reservationMode || "book";
+const editIdFromUrl = new URLSearchParams(window.location.search).get("id");
+
+function goToReservationHub(ok) {
+  const q = ok ? `?ok=${encodeURIComponent(ok)}` : "";
+  window.location.href = `reservations.html${q}`;
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -485,6 +492,10 @@ function startAnotherBooking() {
   if (typeof Auth !== "undefined" && Auth.clearLastBooking) {
     Auth.clearLastBooking();
   }
+  if (reservationMode === "edit") {
+    goToReservationHub();
+    return;
+  }
   clearEditingMode();
   message.textContent = "";
   message.className = "form-message";
@@ -559,53 +570,12 @@ function prefillFromProfile(user) {
 
 clearSpotBtn.addEventListener("click", clearPreferredSpot);
 bookAnotherBtn?.addEventListener("click", startAnotherBooking);
-cancelEditBtn?.addEventListener("click", () => {
-  startAnotherBooking();
-  showMyReservationsMessage("", "");
-});
-
-myReservationsBody?.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-action]");
-  if (!button) return;
-  const bookingId = button.getAttribute("data-id");
-  const action = button.getAttribute("data-action");
-  const booking = memberBookings.find((b) => b.id === bookingId);
-  if (!booking) return;
-
-  if (action === "edit") {
-    if (!bookingIsEditable(booking)) {
-      showMyReservationsMessage("That reservation can no longer be edited.", "error");
-      return;
-    }
+if (cancelEditBtn && cancelEditBtn.tagName === "BUTTON") {
+  cancelEditBtn.addEventListener("click", () => {
+    startAnotherBooking();
     showMyReservationsMessage("", "");
-    prefillFromProfile(Auth.getCurrentUser());
-    loadBookingIntoForm(booking);
-    return;
-  }
-
-  if (action === "delete") {
-    const type = Auth.reservationTypeLabel(booking.reservation_type) || "reservation";
-    const dates =
-      booking.check_in && booking.check_out
-        ? window.SpotAvailability.formatDateRange(booking.check_in, booking.check_out)
-        : "these dates";
-    const ok = window.confirm(
-      `Delete this ${type} for ${dates}? This cancels the reservation and frees the dates.`
-    );
-    if (!ok) return;
-    button.disabled = true;
-    try {
-      await Auth.cancelOwnBooking(bookingId);
-      if (editingBookingId === bookingId) startAnotherBooking();
-      Auth.clearLastBooking?.();
-      showMyReservationsMessage("Reservation deleted (cancelled).", "success");
-      await refreshMemberBookings();
-    } catch (err) {
-      showMyReservationsMessage(err.message, "error");
-      button.disabled = false;
-    }
-  }
-});
+  });
+}
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -817,12 +787,7 @@ form.addEventListener("submit", async (e) => {
   };
   Auth.saveLastBooking(record);
   clearEditingMode();
-  showConfirmedState(record);
-  await refreshMemberBookings();
-  showMyReservationsMessage(
-    wasEditing ? "Reservation updated." : "Reservation added to your list.",
-    "success"
-  );
+  goToReservationHub(wasEditing ? "updated" : "created");
 });
 
 (async function initReservationAuth() {
@@ -830,6 +795,18 @@ form.addEventListener("submit", async (e) => {
     showBookingFormState();
     return;
   }
+
+  const gate = Auth.redirectForAuth({
+    requireMember: true,
+    loginPage:
+      reservationMode === "edit"
+        ? `login.html?next=${encodeURIComponent(
+            `reservation-edit.html${editIdFromUrl ? `?id=${editIdFromUrl}` : ""}`
+          )}`
+        : "login.html?next=reservation-book.html",
+  });
+  if (!gate) return;
+
   try {
     await Auth.ready();
   } catch {
@@ -839,12 +816,26 @@ form.addEventListener("submit", async (e) => {
   prefillFromProfile(user);
   if (user) {
     await refreshMemberBookings();
-  } else if (myReservationsSection) {
-    myReservationsSection.hidden = true;
   }
-  const last = Auth.getLastBooking();
-  if (last) {
-    showConfirmedState(last);
+
+  if (reservationMode === "edit") {
+    if (!editIdFromUrl) {
+      message.textContent = "Missing reservation to edit.";
+      message.className = "form-message error";
+      return;
+    }
+    const booking = memberBookings.find((b) => b.id === editIdFromUrl);
+    if (!booking) {
+      message.textContent = "Reservation not found.";
+      message.className = "form-message error";
+      return;
+    }
+    if (!bookingIsEditable(booking)) {
+      message.textContent = "That reservation can no longer be edited.";
+      message.className = "form-message error";
+      return;
+    }
+    loadBookingIntoForm(booking);
   } else {
     showBookingFormState();
   }
