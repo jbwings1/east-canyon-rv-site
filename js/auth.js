@@ -320,6 +320,8 @@ const Auth = {
         status: "confirmed",
         notes: notes || null,
         confirmed_at: now,
+        booked_by_kind: "admin",
+        booked_by_user_id: admin.id,
       })
       .select()
       .maybeSingle();
@@ -381,10 +383,31 @@ const Auth = {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     const { data, error } = await getClient()
       .from("bookings")
-      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at")
+      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at,booked_by_kind,booked_by_user_id")
       .order("check_in", { ascending: false });
     throwIfError(error);
     return data || [];
+  },
+
+  async getSiteOccupancy(fromDate, toDate) {
+    const user = this.getCurrentUser();
+    if (!user) throw new Error("Sign in required.");
+    const { data, error } = await getClient().rpc("get_site_occupancy", {
+      p_from: fromDate,
+      p_to: toDate,
+    });
+    throwIfError(error);
+    return Array.isArray(data) ? data : [];
+  },
+
+  bookingConfirmationId(bookingOrId) {
+    const id = typeof bookingOrId === "string" ? bookingOrId : bookingOrId?.id;
+    if (!id) return "—";
+    return `ECR-${String(id).replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+  },
+
+  datesOverlap(aStart, aEnd, bStart, bEnd) {
+    return Boolean(aStart && aEnd && bStart && bEnd && aStart < bEnd && bStart < aEnd);
   },
 
   async updateBookingStatus(bookingId, status) {
@@ -761,6 +784,8 @@ const Auth = {
         status: "confirmed",
         notes: notes || null,
         confirmed_at: now,
+        booked_by_kind: "member",
+        booked_by_user_id: user.id,
       })
       .select()
       .maybeSingle();
@@ -773,14 +798,12 @@ const Auth = {
     const user = this.getCurrentUser();
     if (!user?.id) throw new Error("Sign in to update a booking.");
     if (!bookingId) throw new Error("Booking is required.");
-    const dbType = toDbReservationType(reservationType);
-    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
     if (!checkIn || !checkOut) throw new Error("Check-in and check-out are required.");
     if (checkOut <= checkIn) throw new Error("Check-out must be after check-in.");
 
     const { data: existing, error: existingError } = await getClient()
       .from("bookings")
-      .select("id,user_id,status,check_out")
+      .select("id,user_id,status,check_in,check_out,reservation_type,spot")
       .eq("id", bookingId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -790,10 +813,23 @@ const Auth = {
       throw new Error("That reservation was already cancelled.");
     }
 
+    const existingUiType = toUiReservationType(existing.reservation_type);
+    const requestedUiType = toUiReservationType(reservationType) || reservationType;
+    if (requestedUiType && existingUiType && requestedUiType !== existingUiType) {
+      throw new Error("You cannot change reservation type. Delete and book a new stay instead.");
+    }
+    if (
+      !this.datesOverlap(checkIn, checkOut, existing.check_in, existing.check_out)
+    ) {
+      throw new Error(
+        "Edited dates must keep at least some of your current stay days. To move to completely different dates, delete this reservation and book a new one."
+      );
+    }
+
     const { data, error } = await getClient()
       .from("bookings")
       .update({
-        reservation_type: dbType,
+        reservation_type: existing.reservation_type,
         spot: spot || null,
         check_in: checkIn,
         check_out: checkOut,

@@ -1855,6 +1855,92 @@ a:hover {
   text-decoration: none;
 }
 
+.reservation-card-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.reservation-booking-card {
+  border: 1px solid rgba(28, 58, 50, 0.18);
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem 1.15rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.reservation-booking-card.is-manageable {
+  cursor: pointer;
+}
+
+.reservation-booking-card.is-manageable:hover,
+.reservation-booking-card.is-selected {
+  border-color: rgba(28, 58, 50, 0.45);
+  box-shadow: 0 2px 10px rgba(28, 28, 20, 0.08);
+}
+
+.reservation-booking-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.reservation-booking-card-top h3 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.35rem;
+  color: #1c3a32;
+}
+
+.reservation-booking-details {
+  margin: 0;
+}
+
+.reservation-card-tap {
+  margin: 0.75rem 0 0;
+  font-size: 0.92rem;
+  color: rgba(28, 25, 22, 0.65);
+}
+
+.reservation-booking-card.is-selected .reservation-card-tap {
+  display: none;
+}
+
+.reservation-booking-card-panel {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(28, 58, 50, 0.12);
+}
+
+.reservation-card-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+  color: rgba(28, 25, 22, 0.65);
+}
+
+.occupancy-date-row {
+  margin-top: 0.75rem;
+  align-items: end;
+}
+
+.occupancy-check-wrap .btn {
+  width: 100%;
+}
+
+.occupancy-map-wrap {
+  margin-top: 1rem;
+}
+
+.occupancy-date-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.occupancy-legend {
+  margin: 0.75rem 0;
+}
 
 .my-reservations .reservation-form-intro {
   margin-top: 0;

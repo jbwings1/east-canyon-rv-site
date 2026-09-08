@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Book an RV site, condo, or family reunion stay at East Canyon Resort.">
   <title>Edit Reservation | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site6">
+  <link rel="stylesheet" href="styles.css?v=site9">
 </head>
 <body class="page-visitor page-reservations" data-reservation-mode="edit">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -37,10 +37,11 @@
       <section id="request-form" class="reservation-form-section">
         <h1 id="booking-form-title">Edit reservation</h1>
         <p class="reservation-form-intro">
-          Update your dates, type, or site, then save your changes.
+          You can change stay dates and site. Reservation type cannot change.
+          Edited dates must keep at least some of your current stay days — otherwise delete and book a new reservation.
         </p>
         <p id="editing-banner" class="stay-length-notice" role="status">
-          You are editing an existing reservation.
+          Editing: dates must overlap your current stay. Site can change; type cannot.
         </p>
 
         <form id="reservation-form" class="reservation-form reservation-form--compact" novalidate>
@@ -57,12 +58,13 @@
             </div>
             <div class="form-group">
               <label for="res-type">Reservation type</label>
-              <select id="res-type" name="type" required>
+              <select id="res-type" required disabled aria-disabled="true">
                 <option value="">Select type</option>
                 <option value="condo">Condo</option>
                 <option value="family-reunion">Family reunion</option>
                 <option value="rv">RV</option>
               </select>
+              <input type="hidden" id="res-type-locked" name="type" value="">
             </div>
             <div class="form-group">
               <label for="res-guests">Guests</label>
@@ -189,8 +191,8 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb8"></script>
-  <script src="js/reservations.js?v=24"></script>
+  <script src="js/auth.js?v=sb9"></script>
+  <script src="js/reservations.js?v=26"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>

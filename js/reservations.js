@@ -141,6 +141,11 @@ function loadBookingIntoForm(booking) {
   checkOut.value = booking.check_out || "";
   syncCheckoutMin();
   typeSelect.value = Auth.toUiReservationType(booking.reservation_type) || "";
+  const lockedType = document.getElementById("res-type-locked");
+  if (lockedType) lockedType.value = typeSelect.value;
+  if (reservationMode === "edit") {
+    typeSelect.disabled = true;
+  }
   updateRvFields();
   if (booking.spot) {
     preferredSpotInput.value = booking.spot;
@@ -619,9 +624,27 @@ form.addEventListener("submit", async (e) => {
   const data = Object.fromEntries(new FormData(form).entries());
   const memberId = window.SpotAvailability.normalizeMemberId(data.memberId || user.email);
 
+  if (editingBookingId) {
+    const existing = memberBookings.find((b) => b.id === editingBookingId);
+    if (!existing) {
+      message.textContent = "Reservation not found.";
+      message.className = "form-message error";
+      return;
+    }
+    data.type = Auth.toUiReservationType(existing.reservation_type) || data.type;
+    if (
+      !Auth.datesOverlap(data.checkIn, data.checkOut, existing.check_in, existing.check_out)
+    ) {
+      message.textContent =
+        "Edited dates must keep at least some of your current stay days. To move to completely different dates, delete this reservation and book a new one.";
+      message.className = "form-message error";
+      return;
+    }
+  }
+
   const active = getActiveMemberBookings();
   const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
-  if (active.length >= maxActive) {
+  if (!editingBookingId && active.length >= maxActive) {
     message.textContent =
       `You already have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
       `${formatActiveReservationRanges(active)}. Once you check in, or after canceling one, you can book again.`;
