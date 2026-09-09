@@ -898,21 +898,20 @@ const Auth = {
   },
 
   /**
-   * Member list order: confirmed originals → confirmed edited → cancelled.
-   * Within each group: non-past stays by soonest check-in, then past stays
-   * (most recent check-in first), then created_at / id.
+   * Member list order: active (non-cancelled) first by stay date, then cancelled.
+   * Active: upcoming/current by soonest check_in, then past (most recent check_in first).
+   * Cancelled: same date rules (upcoming cancelled ascending, then past descending).
+   * Same check_in: original before edited, then created_at / id.
    */
   sortBookingsForDisplay(bookings = []) {
     const today = new Date().toISOString().split("T")[0];
-    const groupRank = (b) => {
-      if (b?.status === "cancelled") return 2;
-      if (b?.status === "confirmed" && this.bookingWasEdited(b)) return 1;
-      return 0;
-    };
+    const isCancelled = (b) => b?.status === "cancelled";
     const isPast = (b) => Boolean(b?.check_out && b.check_out < today);
+    const editedRank = (b) => (this.bookingWasEdited(b) ? 1 : 0);
     return [...bookings].sort((a, b) => {
-      const byGroup = groupRank(a) - groupRank(b);
-      if (byGroup !== 0) return byGroup;
+      const cancelA = isCancelled(a) ? 1 : 0;
+      const cancelB = isCancelled(b) ? 1 : 0;
+      if (cancelA !== cancelB) return cancelA - cancelB;
       const pastA = isPast(a) ? 1 : 0;
       const pastB = isPast(b) ? 1 : 0;
       if (pastA !== pastB) return pastA - pastB;
@@ -922,6 +921,8 @@ const Auth = {
         if (pastA) return checkInA > checkInB ? -1 : 1;
         return checkInA < checkInB ? -1 : 1;
       }
+      const byEdited = editedRank(a) - editedRank(b);
+      if (byEdited !== 0) return byEdited;
       const createdA = a?.created_at || "";
       const createdB = b?.created_at || "";
       if (createdA !== createdB) return createdA < createdB ? -1 : 1;
