@@ -1030,11 +1030,10 @@ window.CampgroundMap = {
     }
 
     this._detailPanel.hidden = false;
-    // Hub occupancy lookup omits the booking CTA / guidance note.
-    const noteHtml =
-      this._lookupOnly || !statusNote
-        ? ""
-        : `<p class="detail-note">${statusNote}</p>`;
+    // Hub occupancy lookup omits the booking CTA / guidance note; book/edit keep it.
+    const noteHtml = this._lookupOnly
+      ? ""
+      : `<p class="detail-note">${statusNote}</p>`;
     this._detailPanel.innerHTML = `
       <p class="map-detail-label">${this._unitKindLabel(unit)} ${unit.label}</p>
       <h3 class="map-detail-title">${typeLabel}</h3>
