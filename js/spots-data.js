@@ -116,10 +116,38 @@ window.SpotAvailability = {
     return bookings.some((b) => night >= b.checkIn && night < b.checkOut);
   },
 
-  getStatusForDates(unit, checkIn, checkOut) {
+  /** Drop one stay from a SPOT_BOOKINGS-style list (used while editing that stay). */
+  excludeStay(bookings, spotId, checkIn, checkOut) {
+    if (!spotId || !checkIn || !checkOut || !Array.isArray(bookings)) return bookings || [];
+    let removed = false;
+    return bookings.filter((b) => {
+      if (
+        !removed &&
+        String(b.spotId) === String(spotId) &&
+        b.checkIn === checkIn &&
+        b.checkOut === checkOut
+      ) {
+        removed = true;
+        return false;
+      }
+      return true;
+    });
+  },
+
+  getStatusForDates(unit, checkIn, checkOut, options = {}) {
     if (!checkIn || !checkOut || checkOut <= checkIn) return "unknown";
 
-    const unitBookings = (window.SPOT_BOOKINGS || []).filter((b) => b.spotId === unit.id);
+    let unitBookings = (window.SPOT_BOOKINGS || []).filter(
+      (b) => String(b.spotId) === String(unit.id)
+    );
+    if (options.excludeSpotId && options.excludeCheckIn && options.excludeCheckOut) {
+      unitBookings = this.excludeStay(
+        unitBookings,
+        options.excludeSpotId,
+        options.excludeCheckIn,
+        options.excludeCheckOut
+      );
+    }
     const nights = this.eachNight(checkIn, checkOut);
     let bookedNights = 0;
 
@@ -186,18 +214,27 @@ window.SpotAvailability = {
     const today = this.getToday();
     const windowEnd = this.addDays(today, daysAhead);
     return (window.SPOT_BOOKINGS || [])
-      .filter((b) => b.spotId === unitId)
+      .filter((b) => String(b.spotId) === String(unitId))
       .filter((b) => b.checkOut > today && b.checkIn < windowEnd)
       .map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   },
 
   /** Booked date ranges for a unit — never includes who made the booking. */
-  getBookingsForUnit(unitId, checkIn, checkOut) {
-    const bookings = (window.SPOT_BOOKINGS || [])
-      .filter((b) => b.spotId === unitId)
+  getBookingsForUnit(unitId, checkIn, checkOut, options = {}) {
+    let bookings = (window.SPOT_BOOKINGS || [])
+      .filter((b) => String(b.spotId) === String(unitId))
       .map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+
+    if (options.excludeSpotId && options.excludeCheckIn && options.excludeCheckOut) {
+      bookings = this.excludeStay(
+        bookings,
+        options.excludeSpotId,
+        options.excludeCheckIn,
+        options.excludeCheckOut
+      );
+    }
 
     if (!checkIn || !checkOut || checkOut <= checkIn) {
       return bookings;

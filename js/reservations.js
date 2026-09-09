@@ -27,12 +27,29 @@ const editingBanner = document.getElementById("editing-banner");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 let memberBookings = [];
 let editingBookingId = null;
+let occupancyRows = [];
+let occupancyFetchToken = 0;
 const reservationMode = document.body?.dataset?.reservationMode || "book";
 const editIdFromUrl = new URLSearchParams(window.location.search).get("id");
 
 function goToReservationHub(ok) {
   const q = ok ? `?ok=${encodeURIComponent(ok)}` : "";
   window.location.href = `reservations.html${q}`;
+}
+
+function getEditingBooking() {
+  if (!editingBookingId) return null;
+  return memberBookings.find((b) => b.id === editingBookingId) || null;
+}
+
+function editingExcludeOptions() {
+  const editing = getEditingBooking();
+  if (!editing?.spot || !editing.check_in || !editing.check_out) return {};
+  return {
+    excludeSpotId: editing.spot,
+    excludeCheckIn: editing.check_in,
+    excludeCheckOut: editing.check_out,
+  };
 }
 
 function escapeHtml(value) {
@@ -84,6 +101,7 @@ async function refreshMemberBookings() {
   const user = typeof Auth !== "undefined" ? Auth.getCurrentUser() : null;
   if (!user) {
     memberBookings = [];
+    occupancyRows = [];
     if (myReservationsSection) myReservationsSection.hidden = true;
     return;
   }
@@ -95,7 +113,7 @@ async function refreshMemberBookings() {
     showMyReservationsMessage(err.message, "error");
   }
   renderMyReservations();
-  rebuildSpotBookingsFromMembers();
+  await refreshOccupancyForSelectedDates();
   updateMapAvailability();
   updateMemberReservationNotice();
 }
@@ -147,13 +165,13 @@ function loadBookingIntoForm(booking) {
     typeSelect.disabled = true;
   }
   updateRvFields();
+  setEditingMode(booking);
   if (booking.spot) {
     preferredSpotInput.value = booking.spot;
     const unit = window.SpotAvailability.findUnit(booking.spot);
     if (unit) {
       selectedSpotLabel.textContent = formatSelectedUnit(unit);
       preferredSpotDisplay.hidden = false;
-      CampgroundMap.selectUnit(booking.spot, { force: true });
     } else {
       selectedSpotLabel.textContent = booking.spot;
       preferredSpotDisplay.hidden = false;
@@ -163,10 +181,13 @@ function loadBookingIntoForm(booking) {
   }
   const notesField = document.getElementById("res-notes");
   if (notesField) notesField.value = booking.notes || "";
-  updateMapAvailability();
-  setEditingMode(booking);
   showBookingFormState();
   document.getElementById("request-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  syncAvailabilityFromDates().then(() => {
+    if (booking.spot && preferredSpotInput.value === booking.spot) {
+      CampgroundMap.selectUnit(booking.spot, { force: true });
+    }
+  });
 }
 
 function syncDateLimits() {
@@ -378,6 +399,7 @@ function updateMapAvailability() {
   const isCondo = isCondoReservationType(type);
   const isReunion = isReunionReservationType(type);
   const filter = getMapUnitFilter(type);
+  const excludeOpts = editingExcludeOptions();
 
   CampgroundMap.setUnitFilter(filter);
 
@@ -435,7 +457,7 @@ function updateMapAvailability() {
   if (preferredSpotInput.value) {
     const unit = window.SpotAvailability.findUnit(preferredSpotInput.value);
     const status = unit
-      ? window.SpotAvailability.getStatusForDates(unit, inDate, outDate)
+      ? window.SpotAvailability.getStatusForDates(unit, inDate, outDate, excludeOpts)
       : "booked";
     const wrongCategory = unit && type && !unitMatchesReservationType(unit, type);
 
@@ -447,12 +469,19 @@ function updateMapAvailability() {
   }
 }
 
+async function syncAvailabilityFromDates() {
+  await refreshOccupancyForSelectedDates();
+  updateMapAvailability();
+}
+
 checkIn.addEventListener("change", () => {
   syncDateLimits();
-  updateMapAvailability();
+  syncAvailabilityFromDates();
 });
 
-checkOut.addEventListener("change", updateMapAvailability);
+checkOut.addEventListener("change", () => {
+  syncAvailabilityFromDates();
+});
 memberIdInput?.addEventListener("input", updateMemberReservationNotice);
 memberIdInput?.addEventListener("change", updateMemberReservationNotice);
 typeSelect.addEventListener("change", () => {
@@ -520,18 +549,57 @@ function startAnotherBooking() {
 
 function rebuildSpotBookingsFromMembers() {
   if (!window.BASE_SPOT_BOOKINGS) {
+    // Seed once from static demo rows, then prefer live occupancy when available.
     window.BASE_SPOT_BOOKINGS = Array.isArray(window.SPOT_BOOKINGS)
       ? window.SPOT_BOOKINGS.slice()
       : [];
   }
-  const fromMembers = (memberBookings || [])
+
+  const keyOf = (row) => `${row.spotId}|${row.checkIn}|${row.checkOut}`;
+  const merged = new Map();
+
+  const addRow = (row) => {
+    if (!row?.spotId || !row.checkIn || !row.checkOut) return;
+    merged.set(keyOf(row), {
+      spotId: String(row.spotId),
+      checkIn: row.checkIn,
+      checkOut: row.checkOut,
+    });
+  };
+
+  if (occupancyRows.length) {
+    occupancyRows.forEach((r) =>
+      addRow({
+        spotId: r.spot,
+        checkIn: r.check_in,
+        checkOut: r.check_out,
+      })
+    );
+  } else {
+    (window.BASE_SPOT_BOOKINGS || []).forEach(addRow);
+  }
+
+  (memberBookings || [])
     .filter((b) => b.status !== "cancelled" && b.spot && b.check_in && b.check_out)
-    .map((b) => ({
-      spotId: b.spot,
-      checkIn: b.check_in,
-      checkOut: b.check_out,
-    }));
-  window.SPOT_BOOKINGS = window.BASE_SPOT_BOOKINGS.concat(fromMembers);
+    .forEach((b) =>
+      addRow({
+        spotId: b.spot,
+        checkIn: b.check_in,
+        checkOut: b.check_out,
+      })
+    );
+
+  let rows = Array.from(merged.values());
+  const editing = getEditingBooking();
+  if (editing?.spot && editing.check_in && editing.check_out) {
+    rows = window.SpotAvailability.excludeStay(
+      rows,
+      editing.spot,
+      editing.check_in,
+      editing.check_out
+    );
+  }
+  window.SPOT_BOOKINGS = rows;
 }
 
 function mergeUserBookingsIntoMap(bookings) {
@@ -541,16 +609,57 @@ function mergeUserBookingsIntoMap(bookings) {
     if (!b.spot || !b.check_in || !b.check_out || b.status === "cancelled") return;
     const exists = window.SPOT_BOOKINGS.some(
       (row) =>
-        row.spotId === b.spot && row.checkIn === b.check_in && row.checkOut === b.check_out
+        row.spotId === String(b.spot) &&
+        row.checkIn === b.check_in &&
+        row.checkOut === b.check_out
     );
     if (!exists) {
       window.SPOT_BOOKINGS.push({
-        spotId: b.spot,
+        spotId: String(b.spot),
         checkIn: b.check_in,
         checkOut: b.check_out,
       });
     }
   });
+  const editing = getEditingBooking();
+  if (editing?.spot && editing.check_in && editing.check_out) {
+    window.SPOT_BOOKINGS = window.SpotAvailability.excludeStay(
+      window.SPOT_BOOKINGS,
+      editing.spot,
+      editing.check_in,
+      editing.check_out
+    );
+  }
+}
+
+async function refreshOccupancyForSelectedDates() {
+  const inDate = checkIn.value;
+  const outDate = checkOut.value;
+  const token = ++occupancyFetchToken;
+
+  if (
+    !inDate ||
+    !outDate ||
+    outDate <= inDate ||
+    typeof Auth === "undefined" ||
+    !Auth.getSiteOccupancy ||
+    !Auth.getCurrentUser()
+  ) {
+    occupancyRows = [];
+    rebuildSpotBookingsFromMembers();
+    return;
+  }
+
+  try {
+    const rows = await Auth.getSiteOccupancy(inDate, outDate);
+    if (token !== occupancyFetchToken) return;
+    occupancyRows = Array.isArray(rows) ? rows : [];
+  } catch {
+    if (token !== occupancyFetchToken) return;
+    // Keep prior rows if a refresh fails mid-typing; fall back to member/demo merge.
+    occupancyRows = occupancyRows || [];
+  }
+  rebuildSpotBookingsFromMembers();
 }
 
 function prefillFromProfile(user) {
@@ -695,27 +804,21 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    const editingBooking = editingBookingId
-      ? memberBookings.find((b) => b.id === editingBookingId)
-      : null;
-    let removedMapRow = null;
-    if (editingBooking?.spot && Array.isArray(window.SPOT_BOOKINGS)) {
-      const idx = window.SPOT_BOOKINGS.findIndex(
-        (row) =>
-          row.spotId === editingBooking.spot &&
-          row.checkIn === editingBooking.check_in &&
-          row.checkOut === editingBooking.check_out
-      );
-      if (idx >= 0) removedMapRow = window.SPOT_BOOKINGS.splice(idx, 1)[0];
-    }
-
-    const status = window.SpotAvailability.getStatusForDates(unit, data.checkIn, data.checkOut);
+    // Live occupancy + member rows already exclude the stay being edited.
+    await refreshOccupancyForSelectedDates();
+    const excludeOpts = editingExcludeOptions();
+    const status = window.SpotAvailability.getStatusForDates(
+      unit,
+      data.checkIn,
+      data.checkOut,
+      excludeOpts
+    );
     if (status !== "available") {
-      if (removedMapRow) window.SPOT_BOOKINGS.push(removedMapRow);
       const conflicts = window.SpotAvailability.getBookingsForUnit(
         unit.id,
         data.checkIn,
-        data.checkOut
+        data.checkOut,
+        excludeOpts
       );
       const datesNote = conflicts.length
         ? ` Booked ${conflicts.map((b) => window.SpotAvailability.formatDateRange(b.checkIn, b.checkOut)).join("; ")}.`
@@ -761,6 +864,10 @@ form.addEventListener("submit", async (e) => {
       });
     }
   } catch (err) {
+    // Roll back optimistic map hold and resync occupancy.
+    rebuildSpotBookingsFromMembers();
+    await refreshOccupancyForSelectedDates();
+    updateMapAvailability();
     message.textContent = err.message;
     message.className = "form-message error";
     return;

@@ -167,6 +167,9 @@ function formatClientError(error) {
   if (code === "over_email_send_rate_limit") {
     return "Too many emails were sent. Wait a minute and try again.";
   }
+  if (/already booked for overlapping dates/i.test(msg)) {
+    return "That site is already booked for overlapping dates. Choose different dates or another open site.";
+  }
   return msg || "Request failed.";
 }
 
