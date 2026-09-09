@@ -118,22 +118,24 @@
       notice.classList.remove("stay-length-notice--limit");
       return;
     }
-    const confs = active.map((b) => confirmationId(b)).join(", ");
-    const ranges = active
-      .map((b) => window.SpotAvailability.formatDateRange(b.check_in, b.check_out))
+    const bookingLines = active
+      .map((b) => {
+        const range = window.SpotAvailability.formatDateRange(b.check_in, b.check_out);
+        return `Confirmation #${confirmationId(b)} · ${range}`;
+      })
       .join("; ");
     notice.hidden = false;
     if (active.length >= maxActive) {
       notice.classList.add("stay-length-notice--limit");
       notice.textContent =
-        `You have ${active.length} upcoming reservations (maximum ${maxActive}): ${ranges}. ` +
-        `Confirmation #: ${confs}. Once you check in, or after deleting one, you can book again.`;
+        `You have ${active.length} upcoming reservations (maximum ${maxActive}): ${bookingLines}. ` +
+        `Once you check in, or after deleting one, you can book again.`;
     } else {
       notice.classList.remove("stay-length-notice--limit");
       const remaining = maxActive - active.length;
       notice.textContent =
         `You have ${active.length} upcoming reservation${active.length === 1 ? "" : "s"} ` +
-        `(${ranges}). Confirmation #: ${confs}. You may book ${remaining} more before check-in.`;
+        `(${bookingLines}). You may book ${remaining} more before check-in.`;
     }
   }
 
