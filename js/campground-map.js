@@ -628,9 +628,10 @@ window.CampgroundMap = {
    * Selected RV length in feet. Sites with sizeFeet below this render as tooShort (black).
    * Pass null/"" to clear. Condo/reunion maps should clear this.
    */
-  setRigLength(feet) {
+  setRigLength(feet, { render = true } = {}) {
     const n = feet === "" || feet == null ? null : Number(feet);
     this._rigLength = Number.isFinite(n) && n > 0 ? n : null;
+    if (!render) return;
     this.render();
     if (this._selectedId) this.selectUnit(this._selectedId, { force: true });
     else if (this._focusedId) this.focusUnit(this._focusedId);

@@ -2285,6 +2285,7 @@ a:hover {
 .page-reservations .legend-swatch.available { background: #4a9b6e; }
 .page-reservations .legend-swatch.partial { background: #e6b800; }
 .page-reservations .legend-swatch.booked { background: #c0392b; }
+.page-reservations .legend-swatch.tooShort { background: #1a1a1a; }
 .page-reservations .legend-swatch.member { background: #4a7a9b; }
 .page-reservations .legend-swatch.maintenance { background: #c45c26; }
 
@@ -2316,6 +2317,10 @@ a:hover {
 
 .page-reservations .legend-item[data-status="booked"].legend-item--active .legend-swatch {
   box-shadow: 0 0 0 2px #fff, 0 0 0 3px #c0392b;
+}
+
+.page-reservations .legend-item[data-status="tooShort"].legend-item--active .legend-swatch {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px #1a1a1a;
 }
 
 .page-reservations .legend-item[data-status="member"].legend-item--active .legend-swatch {
@@ -2685,6 +2690,7 @@ a:hover {
 .page-reservations .status-pill.available { background: #4a9b6e; }
 .page-reservations .status-pill.partial { background: #e6b800; }
 .page-reservations .status-pill.booked { background: #c0392b; }
+.page-reservations .status-pill.tooShort { background: #1a1a1a; }
 .page-reservations .status-pill.member { background: #4a7a9b; }
 .page-reservations .status-pill.maintenance { background: #c45c26; }
 
@@ -3237,6 +3243,7 @@ img.logo {
 .legend-swatch.available { background: #4a9b6e; }
 .legend-swatch.partial { background: #e6b800; }
 .legend-swatch.booked { background: #c0392b; }
+.legend-swatch.tooShort { background: #1a1a1a; }
 .legend-swatch.member { background: #4a7a9b; }
 .legend-swatch.maintenance { background: #c45c26; }
 
@@ -3261,6 +3268,10 @@ img.logo {
 
 .legend-item[data-status="booked"].legend-item--active .legend-swatch {
   box-shadow: 0 0 0 2px #fff, 0 0 0 3px #c0392b;
+}
+
+.legend-item[data-status="tooShort"].legend-item--active .legend-swatch {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px #1a1a1a;
 }
 
 .legend-item[data-status="member"].legend-item--active .legend-swatch {
@@ -3371,6 +3382,7 @@ img.logo {
 .status-pill.available { background: #4a9b6e; }
 .status-pill.partial { background: #e6b800; }
 .status-pill.booked { background: #c0392b; }
+.status-pill.tooShort { background: #1a1a1a; }
 .status-pill.member { background: #4a7a9b; }
 .status-pill.maintenance { background: #c45c26; }
 
