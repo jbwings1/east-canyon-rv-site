@@ -32,6 +32,7 @@ window.STATUS_LABELS = {
   available: "Available",
   partial: "Partially booked",
   booked: "Booked",
+  tooShort: "Too short for your RV",
   unknown: "Select dates",
   previewOpen: "Open (next 90 days)",
   previewBooked: "Bookings scheduled",
@@ -112,42 +113,98 @@ window.SpotAvailability = {
     return nights;
   },
 
-  isNightBooked(night, bookings) {
-    return bookings.some((b) => night >= b.checkIn && night < b.checkOut);
+  /** Normalize date-like values to YYYY-MM-DD for reliable comparisons. */
+  normalizeDate(value) {
+    if (!value) return "";
+    const s = String(value).trim();
+    return s.length >= 10 ? s.slice(0, 10) : s;
   },
 
-  /** Drop one stay from a SPOT_BOOKINGS-style list (used while editing that stay). */
-  excludeStay(bookings, spotId, checkIn, checkOut) {
-    if (!spotId || !checkIn || !checkOut || !Array.isArray(bookings)) return bookings || [];
-    let removed = false;
+  isNightBooked(night, bookings) {
+    const n = this.normalizeDate(night);
+    return bookings.some((b) => {
+      const start = this.normalizeDate(b.checkIn);
+      const end = this.normalizeDate(b.checkOut);
+      return n >= start && n < end;
+    });
+  },
+
+  /**
+   * Drop the stay being edited from a SPOT_BOOKINGS-style list.
+   * Prefer bookingId when present; also drop anonymous rows that match spot + dates.
+   */
+  excludeStay(bookings, spotId, checkIn, checkOut, bookingId = null) {
+    if (!Array.isArray(bookings)) return [];
+    const excludeId = bookingId ? String(bookingId) : null;
+    const spot = spotId != null && spotId !== "" ? String(spotId) : null;
+    const start = this.normalizeDate(checkIn);
+    const end = this.normalizeDate(checkOut);
+    let removedDateMatch = false;
     return bookings.filter((b) => {
-      if (
-        !removed &&
-        String(b.spotId) === String(spotId) &&
-        b.checkIn === checkIn &&
-        b.checkOut === checkOut
-      ) {
-        removed = true;
+      if (excludeId && b.bookingId != null && String(b.bookingId) === excludeId) {
+        return false;
+      }
+      const dateMatch =
+        Boolean(spot && start && end) &&
+        String(b.spotId) === spot &&
+        this.normalizeDate(b.checkIn) === start &&
+        this.normalizeDate(b.checkOut) === end;
+      if (dateMatch && !removedDateMatch && (!excludeId || b.bookingId == null)) {
+        removedDateMatch = true;
         return false;
       }
       return true;
     });
   },
 
+  applyExcludeOptions(bookings, options = {}) {
+    if (!options || !Array.isArray(bookings)) return bookings || [];
+    if (
+      options.excludeBookingId ||
+      (options.excludeSpotId && options.excludeCheckIn && options.excludeCheckOut)
+    ) {
+      return this.excludeStay(
+        bookings,
+        options.excludeSpotId,
+        options.excludeCheckIn,
+        options.excludeCheckOut,
+        options.excludeBookingId || null
+      );
+    }
+    return bookings;
+  },
+
+  /**
+   * Max RV length for a site (feet). From map legend `sizeFeet` on RV units
+   * (see scripts/apply-rv-meta.js). Non-RV units return null.
+   */
+  getUnitMaxLength(unit) {
+    if (!unit || unit.category !== "rv") return null;
+    const feet = Number(unit.sizeFeet);
+    return Number.isFinite(feet) && feet > 0 ? feet : null;
+  },
+
+  /** True when the site can hold the selected RV length (or length is unset). */
+  unitFitsRigLength(unit, rigFeet) {
+    if (rigFeet == null || rigFeet === "") return true;
+    const needed = Number(rigFeet);
+    if (!Number.isFinite(needed) || needed <= 0) return true;
+    if (!unit || unit.category !== "rv") return true;
+    const max = this.getUnitMaxLength(unit);
+    if (max == null) return true;
+    return max >= needed;
+  },
+
   getStatusForDates(unit, checkIn, checkOut, options = {}) {
+    // Length filter applies even before dates are chosen (black = unusable for this RV).
+    if (!this.unitFitsRigLength(unit, options.rigLength)) return "tooShort";
+
     if (!checkIn || !checkOut || checkOut <= checkIn) return "unknown";
 
     let unitBookings = (window.SPOT_BOOKINGS || []).filter(
       (b) => String(b.spotId) === String(unit.id)
     );
-    if (options.excludeSpotId && options.excludeCheckIn && options.excludeCheckOut) {
-      unitBookings = this.excludeStay(
-        unitBookings,
-        options.excludeSpotId,
-        options.excludeCheckIn,
-        options.excludeCheckOut
-      );
-    }
+    unitBookings = this.applyExcludeOptions(unitBookings, options);
     const nights = this.eachNight(checkIn, checkOut);
     let bookedNights = 0;
 
@@ -160,13 +217,15 @@ window.SpotAvailability = {
     return "partial";
   },
 
-  countAvailable(checkIn, checkOut, category = null) {
+  countAvailable(checkIn, checkOut, category = null, options = {}) {
     if (!checkIn || !checkOut || checkOut <= checkIn) return null;
     let available = 0;
     const units = window.MAP_UNITS || [];
     units.forEach((unit) => {
       if (category && unit.category !== category) return;
-      if (this.getStatusForDates(unit, checkIn, checkOut) === "available") available += 1;
+      if (this.getStatusForDates(unit, checkIn, checkOut, options) === "available") {
+        available += 1;
+      }
     });
     return available;
   },
@@ -216,7 +275,12 @@ window.SpotAvailability = {
     return (window.SPOT_BOOKINGS || [])
       .filter((b) => String(b.spotId) === String(unitId))
       .filter((b) => b.checkOut > today && b.checkIn < windowEnd)
-      .map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut }))
+      .map((b) => ({
+        bookingId: b.bookingId || null,
+        spotId: String(b.spotId),
+        checkIn: this.normalizeDate(b.checkIn),
+        checkOut: this.normalizeDate(b.checkOut),
+      }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   },
 
@@ -224,25 +288,24 @@ window.SpotAvailability = {
   getBookingsForUnit(unitId, checkIn, checkOut, options = {}) {
     let bookings = (window.SPOT_BOOKINGS || [])
       .filter((b) => String(b.spotId) === String(unitId))
+      .map((b) => ({
+        bookingId: b.bookingId || null,
+        spotId: String(b.spotId),
+        checkIn: this.normalizeDate(b.checkIn),
+        checkOut: this.normalizeDate(b.checkOut),
+      }));
+
+    bookings = this.applyExcludeOptions(bookings, options)
       .map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-
-    if (options.excludeSpotId && options.excludeCheckIn && options.excludeCheckOut) {
-      bookings = this.excludeStay(
-        bookings,
-        options.excludeSpotId,
-        options.excludeCheckIn,
-        options.excludeCheckOut
-      );
-    }
 
     if (!checkIn || !checkOut || checkOut <= checkIn) {
       return bookings;
     }
 
-    return bookings.filter((b) =>
-      this.datesOverlap(checkIn, checkOut, b.checkIn, b.checkOut)
-    );
+    const start = this.normalizeDate(checkIn);
+    const end = this.normalizeDate(checkOut);
+    return bookings.filter((b) => this.datesOverlap(start, end, b.checkIn, b.checkOut));
   },
 };
 

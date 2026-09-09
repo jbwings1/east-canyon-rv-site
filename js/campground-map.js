@@ -2,6 +2,7 @@ const STATUS_COLORS = {
   available: { fill: "#4a9b6e", stroke: "#3d8060" },
   partial: { fill: "#e6b800", stroke: "#b89200" },
   booked: { fill: "#c0392b", stroke: "#922b21" },
+  tooShort: { fill: "#1a1a1a", stroke: "#000000" },
   member: { fill: "#4a7a9b", stroke: "#3d6580" },
   maintenance: { fill: "#c45c26", stroke: "#9a4518" },
   unknown: { fill: "#c8c4be", stroke: "#a8a4a0" },
@@ -12,6 +13,8 @@ window.CampgroundMap = {
   _focusedId: null,
   _checkIn: "",
   _checkOut: "",
+  _availabilityExclude: {},
+  _rigLength: null,
   _unitFilter: "all",
   _layer: null,
   _svg: null,
@@ -612,6 +615,27 @@ window.CampgroundMap = {
     else if (this._focusedId) this.focusUnit(this._focusedId);
   },
 
+  /** While editing a reservation, ignore that stay for map availability/detail. */
+  setAvailabilityExclude(options = {}, { render = true } = {}) {
+    this._availabilityExclude = options && typeof options === "object" ? options : {};
+    if (!render) return;
+    this.render();
+    if (this._selectedId) this.selectUnit(this._selectedId, { force: true });
+    else if (this._focusedId) this.focusUnit(this._focusedId);
+  },
+
+  /**
+   * Selected RV length in feet. Sites with sizeFeet below this render as tooShort (black).
+   * Pass null/"" to clear. Condo/reunion maps should clear this.
+   */
+  setRigLength(feet) {
+    const n = feet === "" || feet == null ? null : Number(feet);
+    this._rigLength = Number.isFinite(n) && n > 0 ? n : null;
+    this.render();
+    if (this._selectedId) this.selectUnit(this._selectedId, { force: true });
+    else if (this._focusedId) this.focusUnit(this._focusedId);
+  },
+
   setUnitFilter(filter) {
     this._unitFilter = filter || "all";
     if (this._selectedId) {
@@ -626,7 +650,15 @@ window.CampgroundMap = {
   },
 
   getUnitStatus(unit) {
-    return window.SpotAvailability.getStatusForDates(unit, this._checkIn, this._checkOut);
+    return window.SpotAvailability.getStatusForDates(
+      unit,
+      this._checkIn,
+      this._checkOut,
+      {
+        ...this._availabilityExclude,
+        rigLength: this._rigLength,
+      }
+    );
   },
 
   _setHover(id, status) {
@@ -696,13 +728,22 @@ window.CampgroundMap = {
 
       const scaledPoints = this._scalePoints(unitPoints);
       const bounds = this._unitBounds(scaledPoints);
-      const status = hasDates ? this.getUnitStatus(unit) : "unknown";
-      const colors = STATUS_COLORS[status];
+      const lengthBlocked =
+        Boolean(this._rigLength) &&
+        unit.category === "rv" &&
+        !window.SpotAvailability.unitFitsRigLength(unit, this._rigLength);
+      const status = lengthBlocked
+        ? "tooShort"
+        : hasDates
+          ? this.getUnitStatus(unit)
+          : "unknown";
+      const colors = STATUS_COLORS[status] || STATUS_COLORS.unknown;
       const isCondo = unit.category === "condo";
       const isReunion = unit.category === "reunion";
       const isSelectedAlign =
         this._isAlignCornerMode() && this._alignSelectedId === String(unit.id);
       const alignColors = this._alignEditColors(unit, isSelectedAlign);
+      const showStatusFill = status === "tooShort" || (hasDates && status !== "unknown");
 
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.classList.add("map-spot");
@@ -711,7 +752,8 @@ window.CampgroundMap = {
       else if (isReunion) g.classList.add("map-spot--reunion");
       else g.classList.add("map-spot--rv");
       if (status === "available") g.classList.add("map-spot--available");
-      if (hasDates && status !== "unknown") {
+      if (status === "tooShort") g.classList.add("map-spot--too-short");
+      if (showStatusFill) {
         g.classList.add("map-spot--dated");
       }
       if (isSelectedAlign) g.classList.add("map-spot--align-selected");
@@ -719,10 +761,11 @@ window.CampgroundMap = {
       g.dataset.status = status;
       g.dataset.category = unit.category;
       g.setAttribute("role", "button");
-      g.setAttribute("tabindex", "0");
+      g.setAttribute("tabindex", status === "tooShort" ? "-1" : "0");
+      g.setAttribute("aria-disabled", status === "tooShort" ? "true" : "false");
       g.setAttribute(
         "aria-label",
-        `${this._unitKindLabel(unit)} ${unit.label}, ${window.STATUS_LABELS[status]}`
+        `${this._unitKindLabel(unit)} ${unit.label}, ${window.STATUS_LABELS[status] || status}`
       );
 
       const shape = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -733,11 +776,14 @@ window.CampgroundMap = {
           shape.setAttribute("fill", alignColors.fill);
           shape.setAttribute("stroke", alignColors.stroke);
           shape.setAttribute("stroke-width", alignColors.width || (isSelectedAlign ? "2" : "1"));
-        } else if (hasDates && status !== "unknown") {
+        } else if (showStatusFill) {
           shape.setAttribute("fill", colors.fill);
           shape.setAttribute("stroke", colors.stroke);
           shape.setAttribute("stroke-width", "1.5");
-          shape.setAttribute("fill-opacity", isCondo || isReunion ? "0.72" : "0.68");
+          shape.setAttribute(
+            "fill-opacity",
+            status === "tooShort" ? "0.88" : isCondo || isReunion ? "0.72" : "0.68"
+          );
         } else {
           // Nearly invisible fill so SVG hit-testing works (fill="none" ignores clicks).
           shape.setAttribute("fill", "rgba(0, 0, 0, 0.01)");
@@ -747,7 +793,10 @@ window.CampgroundMap = {
         shape.setAttribute("fill", colors.fill);
         shape.setAttribute("stroke", colors.stroke);
         shape.setAttribute("stroke-width", "1.5");
-        shape.setAttribute("fill-opacity", isCondo || isReunion ? "0.82" : "0.78");
+        shape.setAttribute(
+          "fill-opacity",
+          status === "tooShort" ? "0.9" : isCondo || isReunion ? "0.82" : "0.78"
+        );
       }
 
       g.appendChild(shape);
@@ -838,18 +887,26 @@ window.CampgroundMap = {
     if (!unit) return;
 
     const status = this.getUnitStatus(unit);
-    if (status !== "available" && !force) return;
-
-    if (status === "available") {
-      this._selectedId = id;
-      document.querySelectorAll(".map-spot").forEach((el) => {
-        el.classList.toggle("selected", el.dataset.id === id);
-        el.classList.toggle("focused", false);
-      });
-
-      if (this._onSpotSelect) {
-        this._onSpotSelect(unit, status);
+    if (status !== "available") {
+      if (!force) return;
+      if (this._selectedId === id) {
+        this._selectedId = null;
+        document.querySelectorAll(".map-spot").forEach((el) => {
+          el.classList.remove("selected");
+        });
       }
+      this._renderDetail(unit, status);
+      return;
+    }
+
+    this._selectedId = id;
+    document.querySelectorAll(".map-spot").forEach((el) => {
+      el.classList.toggle("selected", el.dataset.id === id);
+      el.classList.toggle("focused", false);
+    });
+
+    if (this._onSpotSelect) {
+      this._onSpotSelect(unit, status);
     }
 
     this._renderDetail(unit, status);
@@ -885,13 +942,21 @@ window.CampgroundMap = {
 
     const hasDates = this._hasValidDates();
     const bookings = hasDates
-      ? window.SpotAvailability.getBookingsForUnit(unit.id, this._checkIn, this._checkOut)
-      : window.SpotAvailability.getUpcomingBookingsForUnit(unit.id, 90);
+      ? window.SpotAvailability.getBookingsForUnit(
+          unit.id,
+          this._checkIn,
+          this._checkOut,
+          this._availabilityExclude
+        )
+      : window.SpotAvailability.applyExcludeOptions(
+          window.SpotAvailability.getUpcomingBookingsForUnit(unit.id, 90),
+          this._availabilityExclude
+        ).map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut }));
 
     let displayStatus = status;
     let statusLabel = window.STATUS_LABELS[status] || status;
 
-    if (!hasDates) {
+    if (!hasDates && status !== "tooShort") {
       if (bookings.length === 0) {
         displayStatus = "available";
         statusLabel = window.STATUS_LABELS.previewOpen;
@@ -903,24 +968,30 @@ window.CampgroundMap = {
 
     const noun = this._detailNoun(unit);
     const nounAnother = this._detailNounAnother(unit);
+    const maxLength = window.SpotAvailability.getUnitMaxLength(unit);
 
     const canBook = status === "available";
-    const statusNote = hasDates
-      ? {
-          available: canBook
-            ? `This ${noun} is open for your entire stay. It has been added to your booking.`
-            : "",
-          partial: bookings.length
-            ? `This ${noun} is booked for part of your requested days. See the booked dates above and choose different dates or ${nounAnother}.`
-            : `This ${noun} is partially booked for your selected dates.`,
-          booked: bookings.length
-            ? `This ${noun} is booked for all of your selected dates. See the booked dates above.`
-            : `This ${noun} is booked for your entire stay.`,
-          unknown: "",
-        }[status]
-      : bookings.length
-        ? `Reservations scheduled in the next 90 days are listed above. Pick your dates above to see if this ${noun} is open for your stay.`
-        : `Nothing is booked for this ${noun} in the next 90 days. Pick your dates above to check availability and book.`;
+    const statusNote =
+      status === "tooShort"
+        ? maxLength != null && this._rigLength
+          ? `This site allows up to ${maxLength}'. Your RV is ${this._rigLength}', so this site cannot be selected.`
+          : `This site is too short for your RV and cannot be selected.`
+        : hasDates
+          ? {
+              available: canBook
+                ? `This ${noun} is open for your entire stay. It has been added to your booking.`
+                : "",
+              partial: bookings.length
+                ? `This ${noun} is booked for part of your requested days. See the booked dates above and choose different dates or ${nounAnother}.`
+                : `This ${noun} is partially booked for your selected dates.`,
+              booked: bookings.length
+                ? `This ${noun} is booked for all of your selected dates. See the booked dates above.`
+                : `This ${noun} is booked for your entire stay.`,
+              unknown: "",
+            }[status]
+          : bookings.length
+            ? `Reservations scheduled in the next 90 days are listed above. Pick your dates above to see if this ${noun} is open for your stay.`
+            : `Nothing is booked for this ${noun} in the next 90 days. Pick your dates above to check availability and book.`;
 
     const extraRows = [];
     if (unit.category === "rv" && unit.sizeFeet) {

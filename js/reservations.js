@@ -44,11 +44,15 @@ function getEditingBooking() {
 
 function editingExcludeOptions() {
   const editing = getEditingBooking();
-  if (!editing?.spot || !editing.check_in || !editing.check_out) return {};
+  if (!editingBookingId && !editing) return {};
+  if (!editing?.spot || !editing.check_in || !editing.check_out) {
+    return editingBookingId ? { excludeBookingId: editingBookingId } : {};
+  }
   return {
+    excludeBookingId: editingBookingId || editing.id || null,
     excludeSpotId: editing.spot,
-    excludeCheckIn: editing.check_in,
-    excludeCheckOut: editing.check_out,
+    excludeCheckIn: window.SpotAvailability.normalizeDate(editing.check_in),
+    excludeCheckOut: window.SpotAvailability.normalizeDate(editing.check_out),
   };
 }
 
@@ -402,6 +406,9 @@ function updateMapAvailability() {
   const excludeOpts = editingExcludeOptions();
 
   CampgroundMap.setUnitFilter(filter);
+  if (typeof CampgroundMap.setAvailabilityExclude === "function") {
+    CampgroundMap.setAvailabilityExclude(excludeOpts, { render: false });
+  }
 
   if (mapTitle) {
     mapTitle.textContent = isCondo
@@ -437,18 +444,18 @@ function updateMapAvailability() {
   CampgroundMap.setDates(inDate, outDate);
 
   if (isRv) {
-    const available = window.SpotAvailability.countAvailable(inDate, outDate, "rv");
+    const available = window.SpotAvailability.countAvailable(inDate, outDate, "rv", excludeOpts);
     mapSummary.textContent = `${available} RV site${available === 1 ? "" : "s"} open for your full stay (${inDate} to ${outDate}). Green = available, yellow = partially booked, red = fully booked.`;
   } else if (isCondo) {
-    const available = window.SpotAvailability.countAvailable(inDate, outDate, "condo");
+    const available = window.SpotAvailability.countAvailable(inDate, outDate, "condo", excludeOpts);
     mapSummary.textContent = `${available} condo${available === 1 ? "" : "s"} open for your full stay (${inDate} to ${outDate}). Green = available, yellow = partially booked, red = fully booked.`;
   } else if (isReunion) {
-    const available = window.SpotAvailability.countAvailable(inDate, outDate, "reunion");
+    const available = window.SpotAvailability.countAvailable(inDate, outDate, "reunion", excludeOpts);
     mapSummary.textContent = `${available} family site${available === 1 ? "" : "s"} open for your full stay (${inDate} to ${outDate}). Green = available, yellow = partially booked, red = fully booked.`;
   } else {
-    const rvOpen = window.SpotAvailability.countAvailable(inDate, outDate, "rv");
-    const condoOpen = window.SpotAvailability.countAvailable(inDate, outDate, "condo");
-    const reunionOpen = window.SpotAvailability.countAvailable(inDate, outDate, "reunion");
+    const rvOpen = window.SpotAvailability.countAvailable(inDate, outDate, "rv", excludeOpts);
+    const condoOpen = window.SpotAvailability.countAvailable(inDate, outDate, "condo", excludeOpts);
+    const reunionOpen = window.SpotAvailability.countAvailable(inDate, outDate, "reunion", excludeOpts);
     mapSummary.textContent =
       `${rvOpen} RV site${rvOpen === 1 ? "" : "s"}, ${condoOpen} condo${condoOpen === 1 ? "" : "s"}, and ${reunionOpen} family site${reunionOpen === 1 ? "" : "s"} open for ${inDate} to ${outDate}. Click any unit to view its schedule, or choose a reservation type above to book.`;
     clearPreferredSpot();
@@ -555,21 +562,29 @@ function rebuildSpotBookingsFromMembers() {
       : [];
   }
 
-  const keyOf = (row) => `${row.spotId}|${row.checkIn}|${row.checkOut}`;
+  const editingId = editingBookingId ? String(editingBookingId) : null;
+  const keyOf = (row) =>
+    `${row.bookingId || ""}|${row.spotId}|${row.checkIn}|${row.checkOut}`;
   const merged = new Map();
 
   const addRow = (row) => {
     if (!row?.spotId || !row.checkIn || !row.checkOut) return;
-    merged.set(keyOf(row), {
+    const bookingId = row.bookingId != null && row.bookingId !== "" ? String(row.bookingId) : null;
+    if (editingId && bookingId && bookingId === editingId) return;
+    const normalized = {
+      bookingId,
       spotId: String(row.spotId),
-      checkIn: row.checkIn,
-      checkOut: row.checkOut,
-    });
+      checkIn: window.SpotAvailability.normalizeDate(row.checkIn),
+      checkOut: window.SpotAvailability.normalizeDate(row.checkOut),
+    };
+    if (!normalized.checkIn || !normalized.checkOut) return;
+    merged.set(keyOf(normalized), normalized);
   };
 
   if (occupancyRows.length) {
     occupancyRows.forEach((r) =>
       addRow({
+        bookingId: r.id || r.booking_id || null,
         spotId: r.spot,
         checkIn: r.check_in,
         checkOut: r.check_out,
@@ -580,9 +595,17 @@ function rebuildSpotBookingsFromMembers() {
   }
 
   (memberBookings || [])
-    .filter((b) => b.status !== "cancelled" && b.spot && b.check_in && b.check_out)
+    .filter(
+      (b) =>
+        b.status !== "cancelled" &&
+        b.spot &&
+        b.check_in &&
+        b.check_out &&
+        (!editingId || String(b.id) !== editingId)
+    )
     .forEach((b) =>
       addRow({
+        bookingId: b.id,
         spotId: b.spot,
         checkIn: b.check_in,
         checkOut: b.check_out,
@@ -590,14 +613,9 @@ function rebuildSpotBookingsFromMembers() {
     );
 
   let rows = Array.from(merged.values());
-  const editing = getEditingBooking();
-  if (editing?.spot && editing.check_in && editing.check_out) {
-    rows = window.SpotAvailability.excludeStay(
-      rows,
-      editing.spot,
-      editing.check_in,
-      editing.check_out
-    );
+  const excludeOpts = editingExcludeOptions();
+  if (excludeOpts.excludeBookingId || excludeOpts.excludeSpotId) {
+    rows = window.SpotAvailability.applyExcludeOptions(rows, excludeOpts);
   }
   window.SPOT_BOOKINGS = rows;
 }
@@ -605,29 +623,32 @@ function rebuildSpotBookingsFromMembers() {
 function mergeUserBookingsIntoMap(bookings) {
   rebuildSpotBookingsFromMembers();
   if (!Array.isArray(bookings)) return;
+  const editingId = editingBookingId ? String(editingBookingId) : null;
   bookings.forEach((b) => {
     if (!b.spot || !b.check_in || !b.check_out || b.status === "cancelled") return;
+    if (editingId && String(b.id) === editingId) return;
+    const spotId = String(b.spot);
+    const checkIn = window.SpotAvailability.normalizeDate(b.check_in);
+    const checkOut = window.SpotAvailability.normalizeDate(b.check_out);
     const exists = window.SPOT_BOOKINGS.some(
       (row) =>
-        row.spotId === String(b.spot) &&
-        row.checkIn === b.check_in &&
-        row.checkOut === b.check_out
+        (b.id && row.bookingId && String(row.bookingId) === String(b.id)) ||
+        (row.spotId === spotId && row.checkIn === checkIn && row.checkOut === checkOut)
     );
     if (!exists) {
       window.SPOT_BOOKINGS.push({
-        spotId: String(b.spot),
-        checkIn: b.check_in,
-        checkOut: b.check_out,
+        bookingId: b.id || null,
+        spotId,
+        checkIn,
+        checkOut,
       });
     }
   });
-  const editing = getEditingBooking();
-  if (editing?.spot && editing.check_in && editing.check_out) {
-    window.SPOT_BOOKINGS = window.SpotAvailability.excludeStay(
+  const excludeOpts = editingExcludeOptions();
+  if (excludeOpts.excludeBookingId || excludeOpts.excludeSpotId) {
+    window.SPOT_BOOKINGS = window.SpotAvailability.applyExcludeOptions(
       window.SPOT_BOOKINGS,
-      editing.spot,
-      editing.check_in,
-      editing.check_out
+      excludeOpts
     );
   }
 }
@@ -837,9 +858,10 @@ form.addEventListener("submit", async (e) => {
     }
 
     window.SPOT_BOOKINGS.push({
-      spotId: unit.id,
-      checkIn: data.checkIn,
-      checkOut: data.checkOut,
+      bookingId: editingBookingId || null,
+      spotId: String(unit.id),
+      checkIn: window.SpotAvailability.normalizeDate(data.checkIn),
+      checkOut: window.SpotAvailability.normalizeDate(data.checkOut),
     });
     updateMapAvailability();
   }
