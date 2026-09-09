@@ -429,7 +429,14 @@ function updateStayLengthNotice() {
 
 function formatActiveReservationRanges(active) {
   return active
-    .map((r) => window.SpotAvailability.formatDateRange(r.checkIn, r.checkOut))
+    .map((r) => {
+      const range = window.SpotAvailability.formatDateRange(r.checkIn, r.checkOut);
+      const conf =
+        typeof Auth !== "undefined" && typeof Auth.bookingConfirmationId === "function"
+          ? Auth.bookingConfirmationId(r.id || r)
+          : "";
+      return conf ? `Confirmation #${conf} · ${range}` : range;
+    })
     .join("; ");
 }
 
@@ -438,6 +445,7 @@ function getActiveMemberBookings() {
     return Auth.getActiveBookings(memberBookings)
       .filter((b) => b.id !== editingBookingId)
       .map((b) => ({
+        id: b.id,
         checkIn: b.check_in,
         checkOut: b.check_out,
       }));
@@ -465,8 +473,8 @@ function updateMemberReservationNotice() {
     memberReservationNotice.hidden = false;
     memberReservationNotice.classList.add("stay-length-notice--limit");
     memberReservationNotice.textContent =
-      `You already have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. Once you check in, or after canceling one, you can book again.`;
+      `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
+      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
     return;
   }
 
@@ -918,8 +926,8 @@ form.addEventListener("submit", async (e) => {
   const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
   if (!editingBookingId && active.length >= maxActive) {
     message.textContent =
-      `You already have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. Once you check in, or after canceling one, you can book again.`;
+      `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
+      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
     message.className = "form-message error";
     updateMemberReservationNotice();
     memberReservationNotice?.scrollIntoView({ behavior: "smooth", block: "nearest" });
