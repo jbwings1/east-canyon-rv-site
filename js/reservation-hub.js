@@ -78,6 +78,15 @@
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
   }
 
+  /** Hub/view status text. Pills use text-transform:uppercase → EDIT CONFIRMED. */
+  function bookingStatusLabel(booking) {
+    const status = booking?.status || "unknown";
+    if (status === "cancelled") return "Cancelled";
+    if (status === "confirmed" && bookingWasEdited(booking)) return "Edit confirmed";
+    if (status === "confirmed") return "Confirmed";
+    return status;
+  }
+
   function editChangeTooltip(booking) {
     if (!bookingWasEdited(booking)) return "Original booking";
     const summary = String(booking.last_edit_summary || "").trim();
@@ -157,12 +166,13 @@
           b.check_in && b.check_out
             ? window.SpotAvailability.formatDateRange(b.check_in, b.check_out)
             : "Dates unavailable";
-        const statusLabel = b.status || "unknown";
+        const status = b.status || "unknown";
+        const statusLabel = bookingStatusLabel(b);
         const editable = bookingIsEditable(b);
         const statusClass =
-          statusLabel === "confirmed"
+          status === "confirmed"
             ? "available"
-            : statusLabel === "cancelled"
+            : status === "cancelled"
               ? "booked"
               : "partial";
         const actions = `
@@ -178,7 +188,7 @@
           <p class="reservation-card-hint">${
             editable
               ? "Selected — choose View, Edit, or Delete."
-              : statusLabel === "cancelled"
+              : status === "cancelled"
                 ? "Cancelled — you can still view details."
                 : "Past stay — view only."
           }</p>`;

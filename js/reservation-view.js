@@ -50,6 +50,14 @@
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
   }
 
+  function bookingStatusLabel(booking) {
+    const status = booking?.status || "unknown";
+    if (status === "cancelled") return "Cancelled";
+    if (status === "confirmed" && bookingWasEdited(booking)) return "Edit confirmed";
+    if (status === "confirmed") return "Confirmed";
+    return status;
+  }
+
   function editChangeTooltip(booking) {
     if (!bookingWasEdited(booking)) return "Original booking";
     const summary = String(booking.last_edit_summary || "").trim();
@@ -110,7 +118,7 @@
 
   const rows = [
     ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
-    ["Status", booking.status || "—"],
+    ["Status", bookingStatusLabel(booking)],
     ["Booked by", bookedByLabel(booking)],
     ["Booked", formatBookedEditedLineHtml(booking), true],
     ["Confirmation #", Auth.bookingConfirmationId(booking)],

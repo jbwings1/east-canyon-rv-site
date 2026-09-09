@@ -48,6 +48,14 @@
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
   }
 
+  function bookingStatusLabel(booking) {
+    const status = booking?.status || "unknown";
+    if (status === "cancelled") return "Cancelled";
+    if (status === "confirmed" && bookingWasEdited(booking)) return "Edit confirmed";
+    if (status === "confirmed") return "Confirmed";
+    return status;
+  }
+
   function editChangeTooltip(booking) {
     if (!bookingWasEdited(booking)) return "Original booking";
     const summary = String(booking.last_edit_summary || "").trim();
@@ -115,7 +123,7 @@
         : "—",
     ],
     ["Booked", formatBookedEditedLineHtml(booking), true],
-    ["Status", booking.status || "—"],
+    ["Status", bookingStatusLabel(booking)],
     ["Notes", booking.notes || ""],
   ].filter(([, value]) => String(value || "").trim());
 
