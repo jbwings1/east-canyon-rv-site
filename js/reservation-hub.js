@@ -78,10 +78,24 @@
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
   }
 
-  function formatBookedEditedLine(booking) {
+  function editChangeTooltip(booking) {
+    if (!bookingWasEdited(booking)) return "Original booking";
+    const summary = String(booking.last_edit_summary || "").trim();
+    return summary || "Reservation was edited";
+  }
+
+  /** Same-line Booked · Edited with native title tooltips for the last change. */
+  function formatBookedEditedLineHtml(booking) {
     const booked = formatBookedOn(booking.created_at);
-    if (!bookingWasEdited(booking)) return booked;
-    return `${booked} · Edited — ${formatBookedOn(booking.edited_at)}`;
+    const tip = escapeHtml(editChangeTooltip(booking));
+    if (!bookingWasEdited(booking)) {
+      return `<span title="${tip}">${escapeHtml(booked)}</span>`;
+    }
+    const edited = formatBookedOn(booking.edited_at);
+    return (
+      `<span title="${tip}">${escapeHtml(booked)}</span>` +
+      ` · Edited — <span title="${tip}">${escapeHtml(edited)}</span>`
+    );
   }
 
   function confirmationId(booking) {
@@ -182,7 +196,7 @@
               </div>
               <dl class="member-profile-summary reservation-booking-details">
                 <div><dt>Booked by</dt><dd>${escapeHtml(bookedByLabel(b))}</dd></div>
-                <div><dt>Booked</dt><dd>${escapeHtml(formatBookedEditedLine(b))}</dd></div>
+                <div><dt>Booked</dt><dd>${formatBookedEditedLineHtml(b)}</dd></div>
                 <div><dt>Confirmation #</dt><dd>${escapeHtml(confirmationId(b))}</dd></div>
                 <div><dt>Stay dates</dt><dd>${escapeHtml(dates)}</dd></div>
                 <div><dt>Site</dt><dd>${escapeHtml(formatSiteDetails(b.spot))}</dd></div>

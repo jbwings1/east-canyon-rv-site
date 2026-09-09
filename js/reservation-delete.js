@@ -48,10 +48,24 @@
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
   }
 
-  function formatBookedEditedLine(booking) {
+  function editChangeTooltip(booking) {
+    if (!bookingWasEdited(booking)) return "Original booking";
+    const summary = String(booking.last_edit_summary || "").trim();
+    return summary || "Reservation was edited";
+  }
+
+  /** Same-line Booked · Edited with native title tooltips for the last change. */
+  function formatBookedEditedLineHtml(booking) {
     const booked = formatBookedOn(booking.created_at);
-    if (!bookingWasEdited(booking)) return booked;
-    return `${booked} · Edited — ${formatBookedOn(booking.edited_at)}`;
+    const tip = escapeHtml(editChangeTooltip(booking));
+    if (!bookingWasEdited(booking)) {
+      return `<span title="${tip}">${escapeHtml(booked)}</span>`;
+    }
+    const edited = formatBookedOn(booking.edited_at);
+    return (
+      `<span title="${tip}">${escapeHtml(booked)}</span>` +
+      ` · Edited — <span title="${tip}">${escapeHtml(edited)}</span>`
+    );
   }
 
   const user = Auth.redirectForAuth({ requireMember: true });
@@ -100,16 +114,16 @@
         ? window.SpotAvailability.formatDateRange(booking.check_in, booking.check_out)
         : "—",
     ],
-    ["Booked", formatBookedEditedLine(booking)],
+    ["Booked", formatBookedEditedLineHtml(booking), true],
     ["Status", booking.status || "—"],
     ["Notes", booking.notes || ""],
   ].filter(([, value]) => String(value || "").trim());
 
   summary.innerHTML = rows
-    .map(
-      ([label, value]) =>
-        `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`
-    )
+    .map(([label, value, isHtml]) => {
+      const dd = isHtml ? value : escapeHtml(value);
+      return `<div><dt>${escapeHtml(label)}</dt><dd>${dd}</dd></div>`;
+    })
     .join("");
 
   if (!canDelete) {
