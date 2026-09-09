@@ -263,7 +263,11 @@ function formatSelectedUnit(unit) {
   if (unit.category === "reunion") {
     return unit.name || `Family site ${unit.label}`;
   }
-  return `Site ${unit.label} (${window.SPOT_TYPE_LABELS[unit.type]})`;
+  const type = window.SPOT_TYPE_LABELS[unit.type] || unit.type;
+  const lengthBit = window.SpotAvailability?.formatUnitLengthBit?.(unit);
+  return lengthBit
+    ? `Site ${unit.label} (${type} · ${lengthBit})`
+    : `Site ${unit.label} (${type})`;
 }
 
 function unitMatchesReservationType(unit, type) {

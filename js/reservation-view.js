@@ -20,21 +20,10 @@
   }
 
   function formatSiteDetails(spotId) {
-    const unit = window.SpotAvailability?.findUnit?.(spotId);
-    if (!unit) return spotId ? `Site ID ${spotId}` : "No site selected";
-    const bits = [];
-    if (unit.category === "condo") {
-      bits.push(`Condo ${unit.label}`);
-      if (unit.bedrooms) bits.push(`${unit.bedrooms}-bedroom`);
-    } else if (unit.category === "reunion") {
-      bits.push(unit.name || `Family site ${unit.label}`);
-    } else {
-      bits.push(`Site ${unit.label}`);
-      if (unit.type && window.SPOT_TYPE_LABELS?.[unit.type]) {
-        bits.push(window.SPOT_TYPE_LABELS[unit.type]);
-      }
+    if (typeof window.SpotAvailability?.formatSiteDetails === "function") {
+      return window.SpotAvailability.formatSiteDetails(spotId);
     }
-    return bits.join(" · ");
+    return spotId ? `Site ID ${spotId}` : "No site selected";
   }
 
   function bookedByLabel(booking) {

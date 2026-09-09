@@ -46,21 +46,12 @@
   }
 
   function formatSiteDetails(spotId) {
+    if (typeof window.SpotAvailability?.formatSiteDetails === "function") {
+      return window.SpotAvailability.formatSiteDetails(spotId);
+    }
     const unit = window.SpotAvailability?.findUnit?.(spotId);
     if (!unit) return spotId ? `Site ID ${spotId}` : "No site selected";
-    const bits = [];
-    if (unit.category === "condo") {
-      bits.push(`Condo ${unit.label}`);
-      if (unit.bedrooms) bits.push(`${unit.bedrooms}-bedroom`);
-    } else if (unit.category === "reunion") {
-      bits.push(unit.name || `Family site ${unit.label}`);
-    } else {
-      bits.push(`Site ${unit.label}`);
-      if (unit.type && window.SPOT_TYPE_LABELS?.[unit.type]) {
-        bits.push(window.SPOT_TYPE_LABELS[unit.type]);
-      }
-    }
-    return bits.join(" · ");
+    return formatSpotLabel(spotId);
   }
 
   function bookedByLabel(booking) {
@@ -244,15 +235,17 @@
         r.spot === unit.id &&
         window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)
     );
+    const lengthBit = window.SpotAvailability?.formatUnitLengthBit?.(unit);
     const title =
       unit.category === "condo"
         ? `Condo ${unit.label}`
         : unit.category === "reunion"
           ? unit.name || `Family site ${unit.label}`
           : `Site ${unit.label}`;
+    const titleWithLength = lengthBit ? `${title} · ${lengthBit}` : title;
 
     if (!rows.length) {
-      occDetail.innerHTML = `<p><strong>${escapeHtml(title)}</strong> is open for ${escapeHtml(
+      occDetail.innerHTML = `<p><strong>${escapeHtml(titleWithLength)}</strong> is open for ${escapeHtml(
         window.SpotAvailability.formatDateRange(from, to)
       )}.</p>`;
       return;
@@ -279,7 +272,7 @@
       .join("");
 
     occDetail.innerHTML = `
-      <p><strong>${escapeHtml(title)}</strong> — booked dates in your range:</p>
+      <p><strong>${escapeHtml(titleWithLength)}</strong> — booked dates in your range:</p>
       <ul class="occupancy-date-list">${items}</ul>`;
   }
 

@@ -18,8 +18,11 @@
     message.className = type ? `form-message ${type}` : "form-message";
   }
 
-  function formatSpotLabel(spotId) {
+  function formatSiteDetails(spotId) {
     if (!spotId) return "—";
+    if (typeof window.SpotAvailability?.formatSiteDetails === "function") {
+      return window.SpotAvailability.formatSiteDetails(spotId);
+    }
     const unit = window.SpotAvailability?.findUnit?.(spotId);
     if (!unit) return spotId;
     if (unit.category === "condo") return `Condo ${unit.label}`;
@@ -90,7 +93,7 @@
 
   const rows = [
     ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
-    ["Site / unit", formatSpotLabel(booking.spot)],
+    ["Site / unit", formatSiteDetails(booking.spot)],
     [
       "Dates",
       booking.check_in && booking.check_out

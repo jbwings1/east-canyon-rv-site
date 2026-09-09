@@ -995,8 +995,8 @@ window.CampgroundMap = {
             : `Nothing is booked for this ${noun} in the next 90 days. Pick your dates above to check availability and book.`;
 
     const extraRows = [];
-    if (unit.category === "rv" && unit.sizeFeet) {
-      extraRows.push(`<div><dt>Max length</dt><dd>${unit.sizeFeet}'</dd></div>`);
+    if (maxLength != null) {
+      extraRows.push(`<div><dt>Length</dt><dd>${maxLength}′</dd></div>`);
     }
     if (isCondo && unit.bedrooms) {
       extraRows.push(`<div><dt>Bedrooms</dt><dd>${unit.bedrooms}</dd></div>`);

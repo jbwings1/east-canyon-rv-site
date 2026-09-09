@@ -184,6 +184,37 @@ window.SpotAvailability = {
     return Number.isFinite(feet) && feet > 0 ? feet : null;
   },
 
+  /** Site-details fragment, e.g. "Length 60′". Null for condo/reunion or missing size. */
+  formatUnitLengthBit(unit) {
+    const feet = this.getUnitMaxLength(unit);
+    if (feet == null) return null;
+    return `Length ${feet}′`;
+  },
+
+  /**
+   * Human-readable site details for hub cards / view / delete summaries.
+   * RV includes type and length; condo/reunion omit length.
+   */
+  formatSiteDetails(spotId) {
+    const unit = this.findUnit?.(spotId);
+    if (!unit) return spotId ? `Site ID ${spotId}` : "No site selected";
+    const bits = [];
+    if (unit.category === "condo") {
+      bits.push(`Condo ${unit.label}`);
+      if (unit.bedrooms) bits.push(`${unit.bedrooms}-bedroom`);
+    } else if (unit.category === "reunion") {
+      bits.push(unit.name || `Family site ${unit.label}`);
+    } else {
+      bits.push(`Site ${unit.label}`);
+      if (unit.type && window.SPOT_TYPE_LABELS?.[unit.type]) {
+        bits.push(window.SPOT_TYPE_LABELS[unit.type]);
+      }
+      const lengthBit = this.formatUnitLengthBit(unit);
+      if (lengthBit) bits.push(lengthBit);
+    }
+    return bits.join(" · ");
+  },
+
   /** True when the site can hold the selected RV length (or length is unset). */
   unitFitsRigLength(unit, rigFeet) {
     if (rigFeet == null || rigFeet === "") return true;
