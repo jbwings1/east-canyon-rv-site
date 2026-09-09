@@ -224,6 +224,7 @@
       svgId: "occupancy-campground-map",
       photoId: "occupancy-map-photo",
       requireDatesForSpots: true,
+      lookupOnly: true,
       unitFilter: "all",
       canBookSelect: () => true,
       onSpotSelect(unit) {
@@ -322,7 +323,7 @@
           '<p class="spot-detail-placeholder">Click a site to see booked dates in your selected range.</p>';
       }
       showOccMsg(
-        `${occupancyRows.length} overlapping booking${occupancyRows.length === 1 ? "" : "s"} in that range.`,
+        `${occupancyRows.length} booking${occupancyRows.length === 1 ? "" : "s"} in that range.`,
         "success"
       );
     } catch (err) {

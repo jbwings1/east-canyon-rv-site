@@ -27,6 +27,7 @@ window.CampgroundMap = {
   _viewHeight: window.MAP_CONFIG?.baseHeight || 782,
   _imageReady: false,
   _requireDatesForSpots: false,
+  _lookupOnly: false,
   _hoveredId: null,
   _hoveredStatus: null,
 
@@ -42,6 +43,7 @@ window.CampgroundMap = {
     onAlignChange,
     canBookSelect,
     requireDatesForSpots = false,
+    lookupOnly = false,
     unitFilter = "all",
   }) {
     this._layer = document.getElementById(layerId);
@@ -58,6 +60,7 @@ window.CampgroundMap = {
     this._canBookSelect = canBookSelect || null;
     this._alignSelectedId = null;
     this._requireDatesForSpots = requireDatesForSpots;
+    this._lookupOnly = !!lookupOnly;
     this._unitFilter = unitFilter;
 
     if (!this._layer || !this._svg) return;
@@ -1027,6 +1030,11 @@ window.CampgroundMap = {
     }
 
     this._detailPanel.hidden = false;
+    // Hub occupancy lookup omits the booking CTA / guidance note.
+    const noteHtml =
+      this._lookupOnly || !statusNote
+        ? ""
+        : `<p class="detail-note">${statusNote}</p>`;
     this._detailPanel.innerHTML = `
       <p class="map-detail-label">${this._unitKindLabel(unit)} ${unit.label}</p>
       <h3 class="map-detail-title">${typeLabel}</h3>
@@ -1037,7 +1045,7 @@ window.CampgroundMap = {
         </div>
         ${extraRows.join("")}
       </dl>
-      <p class="detail-note">${statusNote}</p>
+      ${noteHtml}
     `;
   },
 
