@@ -72,10 +72,20 @@
   }
 
   function bookingWasEdited(booking) {
+    if (typeof Auth?.bookingWasEdited === "function") {
+      return Auth.bookingWasEdited(booking);
+    }
     if (!booking?.edited_at || !booking?.created_at) return false;
     const edited = new Date(booking.edited_at).getTime();
     const created = new Date(booking.created_at).getTime();
     return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
+  }
+
+  function sortHubBookings(list) {
+    if (typeof Auth?.sortBookingsForDisplay === "function") {
+      return Auth.sortBookingsForDisplay(list);
+    }
+    return list;
   }
 
   /** Hub/view status text. Pills use text-transform:uppercase → EDIT CONFIRMED. */
@@ -150,6 +160,7 @@
 
   function renderBookings() {
     if (!list) return;
+    bookings = sortHubBookings(bookings);
     if (!bookings.length) {
       list.innerHTML = `
         <p class="dashboard-empty">

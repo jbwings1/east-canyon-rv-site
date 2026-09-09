@@ -889,6 +889,46 @@ const Auth = {
     return type === "recovery" || Boolean(accessToken);
   },
 
+  /** True when edited_at is set and later than created_at (matches hub/view badges). */
+  bookingWasEdited(booking) {
+    if (!booking?.edited_at || !booking?.created_at) return false;
+    const edited = new Date(booking.edited_at).getTime();
+    const created = new Date(booking.created_at).getTime();
+    return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
+  },
+
+  /**
+   * Member list order: confirmed originals → confirmed edited → cancelled.
+   * Within each group: non-past stays by soonest check-in, then past stays
+   * (most recent check-in first), then created_at / id.
+   */
+  sortBookingsForDisplay(bookings = []) {
+    const today = new Date().toISOString().split("T")[0];
+    const groupRank = (b) => {
+      if (b?.status === "cancelled") return 2;
+      if (b?.status === "confirmed" && this.bookingWasEdited(b)) return 1;
+      return 0;
+    };
+    const isPast = (b) => Boolean(b?.check_out && b.check_out < today);
+    return [...bookings].sort((a, b) => {
+      const byGroup = groupRank(a) - groupRank(b);
+      if (byGroup !== 0) return byGroup;
+      const pastA = isPast(a) ? 1 : 0;
+      const pastB = isPast(b) ? 1 : 0;
+      if (pastA !== pastB) return pastA - pastB;
+      const checkInA = a?.check_in || "";
+      const checkInB = b?.check_in || "";
+      if (checkInA !== checkInB) {
+        if (pastA) return checkInA > checkInB ? -1 : 1;
+        return checkInA < checkInB ? -1 : 1;
+      }
+      const createdA = a?.created_at || "";
+      const createdB = b?.created_at || "";
+      if (createdA !== createdB) return createdA < createdB ? -1 : 1;
+      return String(a?.id || "").localeCompare(String(b?.id || ""));
+    });
+  },
+
   async listBookings() {
     const user = this.getCurrentUser();
     if (!user?.id) return [];
@@ -896,9 +936,9 @@ const Auth = {
       .from("bookings")
       .select("*")
       .eq("user_id", user.id)
-      .order("check_in", { ascending: false });
+      .order("check_in", { ascending: true });
     throwIfError(error);
-    return data || [];
+    return this.sortBookingsForDisplay(data || []);
   },
 
   getActiveBookings(bookings = []) {
