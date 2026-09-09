@@ -117,6 +117,13 @@
     );
   }
 
+  function originalStayDisplay(booking) {
+    if (typeof Auth?.formatOriginalStayLabel === "function") {
+      return Auth.formatOriginalStayLabel(booking) || "";
+    }
+    return "";
+  }
+
   function confirmationId(booking) {
     return Auth.bookingConfirmationId(booking);
   }
@@ -220,6 +227,11 @@
               <dl class="member-profile-summary reservation-booking-details">
                 <div><dt>Booked by</dt><dd>${escapeHtml(bookedByLabel(b))}</dd></div>
                 <div><dt>Booked</dt><dd>${formatBookedEditedLineHtml(b)}</dd></div>
+                ${
+                  originalStayDisplay(b)
+                    ? `<div><dt>Original stay</dt><dd>${escapeHtml(originalStayDisplay(b))}</dd></div>`
+                    : ""
+                }
                 <div><dt>Confirmation #</dt><dd>${escapeHtml(confirmationId(b))}</dd></div>
                 <div><dt>Stay dates</dt><dd>${escapeHtml(dates)}</dd></div>
                 <div><dt>Site</dt><dd>${escapeHtml(formatSiteDetails(b.spot))}</dd></div>
@@ -244,6 +256,7 @@
       detailId: "occupancy-unit-detail",
       svgId: "occupancy-campground-map",
       photoId: "occupancy-map-photo",
+      legendId: "occupancy-map-legend",
       requireDatesForSpots: true,
       lookupOnly: true,
       unitFilter: "all",
@@ -264,13 +277,29 @@
     mapReady = true;
   }
 
+  /** Confirmed bookings only, unique by id (or spot+dates if id missing). */
+  function normalizeOccupancyRows(rows, from, to) {
+    const byKey = new Map();
+    (Array.isArray(rows) ? rows : []).forEach((r) => {
+      if (!r || !r.spot || !r.check_in || !r.check_out) return;
+      if (r.status && r.status !== "confirmed") return;
+      if (!window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)) return;
+      const key =
+        r.id != null && r.id !== ""
+          ? `id:${r.id}`
+          : `stay:${r.spot}|${r.check_in}|${r.check_out}`;
+      if (!byKey.has(key)) byKey.set(key, r);
+    });
+    return Array.from(byKey.values());
+  }
+
   function showOccupancyDetail(unit) {
     if (!occDetail || !unit) return;
     const from = occFrom.value;
     const to = occTo.value;
     const rows = occupancyRows.filter(
       (r) =>
-        r.spot === unit.id &&
+        String(r.spot) === String(unit.id) &&
         window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)
     );
     const lengthBit = window.SpotAvailability?.formatUnitLengthBit?.(unit);
@@ -281,11 +310,15 @@
           ? unit.name || `Family site ${unit.label}`
           : `Site ${unit.label}`;
     const titleWithLength = lengthBit ? `${title} · ${lengthBit}` : title;
+    const statusLabel = rows.length ? "Booked" : "Available";
+    const statusClass = rows.length ? "booked" : "available";
 
     if (!rows.length) {
-      occDetail.innerHTML = `<p><strong>${escapeHtml(titleWithLength)}</strong> is open for ${escapeHtml(
-        window.SpotAvailability.formatDateRange(from, to)
-      )}.</p>`;
+      occDetail.innerHTML = `
+        <p><strong>${escapeHtml(titleWithLength)}</strong></p>
+        <p><span class="status-pill ${statusClass}">${statusLabel}</span> for ${escapeHtml(
+          window.SpotAvailability.formatDateRange(from, to)
+        )}.</p>`;
       return;
     }
 
@@ -310,7 +343,9 @@
       .join("");
 
     occDetail.innerHTML = `
-      <p><strong>${escapeHtml(titleWithLength)}</strong> — booked dates in your range:</p>
+      <p><strong>${escapeHtml(titleWithLength)}</strong>
+        <span class="status-pill ${statusClass}">${statusLabel}</span></p>
+      <p>Booked dates in your range:</p>
       <ul class="occupancy-date-list">${items}</ul>`;
   }
 
@@ -324,13 +359,16 @@
     }
     occBtn.disabled = true;
     try {
-      occupancyRows = await Auth.getSiteOccupancy(from, to);
+      const rawRows = await Auth.getSiteOccupancy(from, to);
+      // Distinct confirmed stays only — do not count cancelled or duplicate rows.
+      occupancyRows = normalizeOccupancyRows(rawRows, from, to);
       if (!window.BASE_SPOT_BOOKINGS) {
         window.BASE_SPOT_BOOKINGS = Array.isArray(window.SPOT_BOOKINGS)
           ? window.SPOT_BOOKINGS.slice()
           : [];
       }
       window.SPOT_BOOKINGS = occupancyRows.map((r) => ({
+        bookingId: r.id || null,
         spotId: r.spot,
         checkIn: r.check_in,
         checkOut: r.check_out,
@@ -343,10 +381,8 @@
         occDetail.innerHTML =
           '<p class="spot-detail-placeholder">Click a site to see booked dates in your selected range.</p>';
       }
-      showOccMsg(
-        `${occupancyRows.length} booking${occupancyRows.length === 1 ? "" : "s"} in that range.`,
-        "success"
-      );
+      const n = occupancyRows.length;
+      showOccMsg(`${n} booking${n === 1 ? "" : "s"} in that range.`, "success");
     } catch (err) {
       showOccMsg(err.message, "error");
     } finally {

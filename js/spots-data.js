@@ -272,6 +272,23 @@ window.SpotAvailability = {
     return `${start.toLocaleDateString("en-US", opts)} \u2192 ${end.toLocaleDateString("en-US", opts)}`;
   },
 
+  /** Short stay label e.g. "Sep 10–14" or "Sep 28–Oct 2". */
+  formatOriginalStayRange(checkIn, checkOut) {
+    if (!checkIn || !checkOut) return "";
+    const start = new Date(`${checkIn}T12:00:00`);
+    const end = new Date(`${checkOut}T12:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
+    const sameMonth =
+      start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+    if (sameMonth) {
+      const mon = start.toLocaleDateString("en-US", { month: "short" });
+      return `${mon} ${start.getDate()}\u2013${end.getDate()}`;
+    }
+    const opts = { month: "short", day: "numeric" };
+    return `${start.toLocaleDateString("en-US", opts)}\u2013${end.toLocaleDateString("en-US", opts)}`;
+  },
+
+
   getStayNights(checkIn, checkOut) {
     if (!checkIn || !checkOut || checkOut <= checkIn) return 0;
     return this.eachNight(checkIn, checkOut).length;

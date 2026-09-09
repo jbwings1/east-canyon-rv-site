@@ -78,6 +78,13 @@
     );
   }
 
+  function originalStayDisplay(booking) {
+    if (typeof Auth?.formatOriginalStayLabel === "function") {
+      return Auth.formatOriginalStayLabel(booking) || "";
+    }
+    return "";
+  }
+
   const user = Auth.redirectForAuth({
     requireMember: true,
     loginPage: `login.html?next=${encodeURIComponent(
@@ -116,11 +123,13 @@
   const editable =
     booking.status !== "cancelled" && booking.check_out && booking.check_out >= today;
 
+  const originalStay = originalStayDisplay(booking);
   const rows = [
     ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
     ["Status", bookingStatusLabel(booking)],
     ["Booked by", bookedByLabel(booking)],
     ["Booked", formatBookedEditedLineHtml(booking), true],
+    ...(originalStay ? [["Original stay", originalStay]] : []),
     ["Confirmation #", Auth.bookingConfirmationId(booking)],
     [
       "Stay dates",

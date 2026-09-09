@@ -63,6 +63,12 @@ window.CampgroundMap = {
     this._lookupOnly = !!lookupOnly;
     this._unitFilter = unitFilter;
 
+    if (this._lookupOnly && this._legendRoot) {
+      this._legendRoot.querySelectorAll('.legend-item[data-status="partial"]').forEach((el) => {
+        el.hidden = true;
+      });
+    }
+
     if (!this._layer || !this._svg) return;
 
     this._setupMapImage();
@@ -654,7 +660,7 @@ window.CampgroundMap = {
   },
 
   getUnitStatus(unit) {
-    return window.SpotAvailability.getStatusForDates(
+    const status = window.SpotAvailability.getStatusForDates(
       unit,
       this._checkIn,
       this._checkOut,
@@ -663,6 +669,11 @@ window.CampgroundMap = {
         rigLength: this._rigLength,
       }
     );
+    // Hub Check bookings: binary occupancy only (any overlap → booked).
+    if (this._lookupOnly && status !== "tooShort" && status !== "unknown") {
+      return status === "available" ? "available" : "booked";
+    }
+    return status;
   },
 
   _setHover(id, status) {
@@ -875,6 +886,19 @@ window.CampgroundMap = {
       el.classList.toggle("focused", el.dataset.id === id && el.dataset.id !== this._selectedId);
     });
 
+    // Lookup mode: any site is inspectable (booked or available); keep status binary via getUnitStatus.
+    if (this._lookupOnly) {
+      if (this._onSpotSelect) this._onSpotSelect(unit, status);
+      else this._renderDetail(unit, status);
+      if (this._onUnitFocus) this._onUnitFocus(unit, status);
+      this._selectedId = id;
+      document.querySelectorAll(".map-spot").forEach((el) => {
+        el.classList.toggle("selected", el.dataset.id === id);
+        el.classList.toggle("focused", false);
+      });
+      return;
+    }
+
     this._renderDetail(unit, status);
 
     if (this._onUnitFocus) {
@@ -964,10 +988,19 @@ window.CampgroundMap = {
       if (bookings.length === 0) {
         displayStatus = "available";
         statusLabel = window.STATUS_LABELS.previewOpen;
+      } else if (this._lookupOnly) {
+        displayStatus = "booked";
+        statusLabel = window.STATUS_LABELS.booked;
       } else {
         displayStatus = "partial";
         statusLabel = window.STATUS_LABELS.previewBooked;
       }
+    } else if (this._lookupOnly && hasDates && status !== "tooShort") {
+      displayStatus = status === "available" ? "available" : "booked";
+      statusLabel =
+        displayStatus === "available"
+          ? window.STATUS_LABELS.available
+          : window.STATUS_LABELS.booked;
     }
 
     const noun = this._detailNoun(unit);
@@ -1068,7 +1101,9 @@ window.CampgroundMap = {
             : "click any RV site, condo, or family reunion site on the map to see upcoming bookings.";
 
     const msg = this._requireDatesForSpots
-      ? `Pick dates above, then ${filterHint} Green is available; yellow is partially booked; red is fully booked.`
+      ? this._lookupOnly
+        ? `Pick dates above, then ${filterHint} Green is available; red is booked.`
+        : `Pick dates above, then ${filterHint} Green is available; yellow is partially booked; red is fully booked.`
       : this._unitFilter === "all"
         ? "Click any RV site, condo, or family reunion site to see bookings for the next 90 days."
         : filterHint.charAt(0).toUpperCase() + filterHint.slice(1);

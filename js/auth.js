@@ -320,6 +320,8 @@ const Auth = {
         spot: spot || null,
         check_in: checkIn,
         check_out: checkOut,
+        original_check_in: checkIn,
+        original_check_out: checkOut,
         status: "confirmed",
         notes: notes || null,
         confirmed_at: now,
@@ -386,7 +388,7 @@ const Auth = {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     const { data, error } = await getClient()
       .from("bookings")
-      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,edited_at,last_edit_summary,confirmed_at,booked_by_kind,booked_by_user_id")
+      .select("id,user_id,reservation_type,spot,check_in,check_out,original_check_in,original_check_out,status,notes,created_at,edited_at,last_edit_summary,confirmed_at,booked_by_kind,booked_by_user_id")
       .order("check_in", { ascending: false });
     throwIfError(error);
     return data || [];
@@ -411,6 +413,31 @@ const Auth = {
 
   datesOverlap(aStart, aEnd, bStart, bEnd) {
     return Boolean(aStart && aEnd && bStart && bEnd && aStart < bEnd && bStart < aEnd);
+  },
+
+  /** Original stay window locked at create time (falls back to current dates if missing). */
+  getOriginalStayWindow(booking) {
+    if (!booking) return null;
+    const start = booking.original_check_in || booking.check_in;
+    const end = booking.original_check_out || booking.check_out;
+    if (!start || !end) return null;
+    return { start, end };
+  },
+
+  /** New stay must be fully inside the original booking window. */
+  stayWithinOriginal(checkIn, checkOut, booking) {
+    const win = this.getOriginalStayWindow(booking);
+    if (!win) return true;
+    return Boolean(checkIn && checkOut && checkIn >= win.start && checkOut <= win.end);
+  },
+
+  formatOriginalStayLabel(booking) {
+    const win = this.getOriginalStayWindow(booking);
+    if (!win) return "";
+    if (typeof window.SpotAvailability?.formatOriginalStayRange === "function") {
+      return window.SpotAvailability.formatOriginalStayRange(win.start, win.end);
+    }
+    return `${win.start} \u2192 ${win.end}`;
   },
 
   async updateBookingStatus(bookingId, status) {
@@ -784,6 +811,8 @@ const Auth = {
         spot: spot || null,
         check_in: checkIn,
         check_out: checkOut,
+        original_check_in: checkIn,
+        original_check_out: checkOut,
         status: "confirmed",
         notes: notes || null,
         confirmed_at: now,
@@ -806,7 +835,9 @@ const Auth = {
 
     const { data: existing, error: existingError } = await getClient()
       .from("bookings")
-      .select("id,user_id,status,check_in,check_out,reservation_type,spot")
+      .select(
+        "id,user_id,status,check_in,check_out,original_check_in,original_check_out,reservation_type,spot"
+      )
       .eq("id", bookingId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -821,11 +852,12 @@ const Auth = {
     if (requestedUiType && existingUiType && requestedUiType !== existingUiType) {
       throw new Error("You cannot change reservation type. Delete and book a new stay instead.");
     }
-    if (
-      !this.datesOverlap(checkIn, checkOut, existing.check_in, existing.check_out)
-    ) {
+    if (!this.stayWithinOriginal(checkIn, checkOut, existing)) {
+      const originalLabel = this.formatOriginalStayLabel(existing);
       throw new Error(
-        "Edited dates must keep at least some of your current stay days. To move to completely different dates, delete this reservation and book a new one."
+        originalLabel
+          ? `Edited dates must stay within your original booking (${originalLabel}). To book different dates, delete this reservation and book a new one.`
+          : "Edited dates must stay within your original booking window. To book different dates, delete this reservation and book a new one."
       );
     }
 

@@ -76,6 +76,13 @@
     );
   }
 
+  function originalStayDisplay(booking) {
+    if (typeof Auth?.formatOriginalStayLabel === "function") {
+      return Auth.formatOriginalStayLabel(booking) || "";
+    }
+    return "";
+  }
+
   const user = Auth.redirectForAuth({ requireMember: true });
   if (!user) return;
 
@@ -113,6 +120,7 @@
   const today = window.SpotAvailability.getToday();
   const canDelete = booking.status !== "cancelled" && booking.check_out >= today;
 
+  const originalStay = originalStayDisplay(booking);
   const rows = [
     ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
     ["Site / unit", formatSiteDetails(booking.spot)],
@@ -123,6 +131,7 @@
         : "—",
     ],
     ["Booked", formatBookedEditedLineHtml(booking), true],
+    ...(originalStay ? [["Original stay", originalStay]] : []),
     ["Status", bookingStatusLabel(booking)],
     ["Notes", booking.notes || ""],
   ].filter(([, value]) => String(value || "").trim());

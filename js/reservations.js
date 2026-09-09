@@ -105,7 +105,18 @@ function setEditingMode(booking) {
   if (bookingFormTitle) {
     bookingFormTitle.textContent = editingBookingId ? "Edit reservation" : "Book your stay";
   }
-  if (editingBanner) editingBanner.hidden = !editingBookingId;
+  if (editingBanner) {
+    editingBanner.hidden = !editingBookingId;
+    if (editingBookingId && booking) {
+      const originalLabel =
+        typeof Auth !== "undefined" && Auth.formatOriginalStayLabel
+          ? Auth.formatOriginalStayLabel(booking)
+          : "";
+      editingBanner.textContent = originalLabel
+        ? `Editing: new dates must stay within your original stay (${originalLabel}). Site can change; type cannot.`
+        : "Editing: new dates must stay within your original booking window. Site can change; type cannot.";
+    }
+  }
   if (cancelEditBtn) cancelEditBtn.hidden = !editingBookingId;
   if (completeBookingBtn) {
     completeBookingBtn.textContent = editingBookingId ? "Save changes" : "Complete Booking";
@@ -176,7 +187,6 @@ function loadBookingIntoForm(booking) {
   if (!booking) return;
   checkIn.value = booking.check_in || "";
   checkOut.value = booking.check_out || "";
-  syncCheckoutMin();
   typeSelect.value = Auth.toUiReservationType(booking.reservation_type) || "";
   const lockedType = document.getElementById("res-type-locked");
   if (lockedType) lockedType.value = typeSelect.value;
@@ -185,6 +195,7 @@ function loadBookingIntoForm(booking) {
   }
   updateRvFields();
   setEditingMode(booking);
+  syncDateLimits();
   if (booking.spot) {
     preferredSpotInput.value = booking.spot;
     const unit = window.SpotAvailability.findUnit(booking.spot);
@@ -202,6 +213,17 @@ function loadBookingIntoForm(booking) {
   if (notesField) notesField.value = booking.notes || "";
   showBookingFormState();
   document.getElementById("request-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const withinOriginal =
+    typeof Auth !== "undefined" && Auth.stayWithinOriginal
+      ? Auth.stayWithinOriginal(checkIn.value, checkOut.value, booking)
+      : true;
+  if (!withinOriginal) {
+    const originalLabel = Auth.formatOriginalStayLabel(booking);
+    message.textContent = originalLabel
+      ? `These dates are outside your original booking (${originalLabel}). Choose dates within that window.`
+      : "These dates are outside your original booking window. Choose dates within that window.";
+    message.className = "form-message error";
+  }
   syncAvailabilityFromDates().then(() => {
     if (booking.spot && preferredSpotInput.value === booking.spot) {
       CampgroundMap.selectUnit(booking.spot, { force: true });
@@ -212,9 +234,24 @@ function loadBookingIntoForm(booking) {
 function syncDateLimits() {
   const today = window.SpotAvailability.getToday();
   const maxCheckIn = window.SpotAvailability.getMaxCheckInDate();
-  checkIn.min = today;
-  checkIn.max = maxCheckIn;
-  if (checkIn.value && checkIn.value > maxCheckIn) {
+  const editing = getEditingBooking();
+  const win =
+    editing && typeof Auth !== "undefined" && Auth.getOriginalStayWindow
+      ? Auth.getOriginalStayWindow(editing)
+      : null;
+
+  let minIn = today;
+  let maxIn = maxCheckIn;
+  if (win?.start && win?.end) {
+    if (win.start > minIn) minIn = win.start;
+    const lastCheckIn = window.SpotAvailability.addDays(win.end, -1);
+    if (lastCheckIn < maxIn) maxIn = lastCheckIn;
+  }
+
+  checkIn.min = minIn;
+  checkIn.max = maxIn;
+  if (checkIn.value && checkIn.value < minIn) checkIn.value = minIn;
+  if (checkIn.value && checkIn.value > maxIn) {
     checkIn.value = "";
     checkOut.value = "";
   }
@@ -312,6 +349,21 @@ function syncCheckoutMin() {
   const next = new Date(checkIn.value + "T12:00:00");
   next.setDate(next.getDate() + 1);
   checkOut.min = next.toISOString().split("T")[0];
+
+  const editing = getEditingBooking();
+  const win =
+    editing && typeof Auth !== "undefined" && Auth.getOriginalStayWindow
+      ? Auth.getOriginalStayWindow(editing)
+      : null;
+  if (win?.end) {
+    checkOut.max = win.end;
+    if (checkOut.value && checkOut.value > win.end) {
+      checkOut.value = win.end;
+    }
+  } else {
+    checkOut.removeAttribute("max");
+  }
+
   if (checkOut.value && checkOut.value <= checkIn.value) {
     checkOut.value = "";
   }
@@ -826,11 +878,11 @@ form.addEventListener("submit", async (e) => {
       return;
     }
     data.type = Auth.toUiReservationType(existing.reservation_type) || data.type;
-    if (
-      !Auth.datesOverlap(data.checkIn, data.checkOut, existing.check_in, existing.check_out)
-    ) {
-      message.textContent =
-        "Edited dates must keep at least some of your current stay days. To move to completely different dates, delete this reservation and book a new one.";
+    if (!Auth.stayWithinOriginal(data.checkIn, data.checkOut, existing)) {
+      const originalLabel = Auth.formatOriginalStayLabel(existing);
+      message.textContent = originalLabel
+        ? `Edited dates must stay within your original booking (${originalLabel}). To book different dates, delete this reservation and book a new one.`
+        : "Edited dates must stay within your original booking window. To book different dates, delete this reservation and book a new one.";
       message.className = "form-message error";
       return;
     }
