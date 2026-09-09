@@ -6,6 +6,7 @@
   const adminNote = document.getElementById("hub-occupancy-admin-note");
   const occFrom = document.getElementById("occupancy-from");
   const occTo = document.getElementById("occupancy-to");
+  const occRig = document.getElementById("occupancy-rig");
   const occBtn = document.getElementById("occupancy-check-btn");
   const occMsg = document.getElementById("occupancy-message");
   const occWrap = document.getElementById("occupancy-map-wrap");
@@ -249,6 +250,20 @@
       .join("");
   }
 
+  function selectedOccupancyRigLength() {
+    const raw = occRig?.value;
+    if (raw === "" || raw == null) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  function applyOccupancyRigLength({ render = true } = {}) {
+    if (typeof CampgroundMap?.setRigLength !== "function") return;
+    CampgroundMap.setRigLength(selectedOccupancyRigLength(), {
+      render: Boolean(render && mapReady),
+    });
+  }
+
   function ensureOccupancyMap() {
     if (mapReady) return;
     CampgroundMap.init({
@@ -261,10 +276,11 @@
       lookupOnly: true,
       unitFilter: "all",
       canBookSelect: () => true,
-      onSpotSelect(unit) {
-        showOccupancyDetail(unit);
+      onSpotSelect(unit, status) {
+        showOccupancyDetail(unit, status);
       },
     });
+    applyOccupancyRigLength({ render: false });
     if (typeof MapZoom !== "undefined") {
       MapZoom.init({
         viewport: document.getElementById("occupancy-map-viewport"),
@@ -293,15 +309,15 @@
     return Array.from(byKey.values());
   }
 
-  function showOccupancyDetail(unit) {
+  function showOccupancyDetail(unit, status) {
     if (!occDetail || !unit) return;
     const from = occFrom.value;
     const to = occTo.value;
-    const rows = occupancyRows.filter(
-      (r) =>
-        String(r.spot) === String(unit.id) &&
-        window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)
-    );
+    const mapStatus =
+      status ||
+      (typeof CampgroundMap?.getUnitStatus === "function"
+        ? CampgroundMap.getUnitStatus(unit)
+        : null);
     const lengthBit = window.SpotAvailability?.formatUnitLengthBit?.(unit);
     const title =
       unit.category === "condo"
@@ -310,6 +326,26 @@
           ? unit.name || `Family site ${unit.label}`
           : `Site ${unit.label}`;
     const titleWithLength = lengthBit ? `${title} · ${lengthBit}` : title;
+
+    if (mapStatus === "tooShort") {
+      const max = window.SpotAvailability?.getUnitMaxLength?.(unit);
+      const rig = selectedOccupancyRigLength();
+      const note =
+        max != null && rig != null
+          ? `This site allows up to ${max}'. Your RV is ${rig}', so it is too short.`
+          : "This site is too short for the selected RV length.";
+      occDetail.innerHTML = `
+        <p><strong>${escapeHtml(titleWithLength)}</strong>
+          <span class="status-pill tooShort">Too short for your RV</span></p>
+        <p>${escapeHtml(note)}</p>`;
+      return;
+    }
+
+    const rows = occupancyRows.filter(
+      (r) =>
+        String(r.spot) === String(unit.id) &&
+        window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)
+    );
     const statusLabel = rows.length ? "Booked" : "Available";
     const statusClass = rows.length ? "booked" : "available";
 
@@ -374,6 +410,7 @@
         checkOut: r.check_out,
       }));
       ensureOccupancyMap();
+      applyOccupancyRigLength({ render: false });
       CampgroundMap.setDates(from, to);
       CampgroundMap.render?.();
       occWrap.hidden = false;
@@ -477,4 +514,11 @@
   });
 
   occBtn?.addEventListener("click", runOccupancyCheck);
+  occRig?.addEventListener("change", () => {
+    if (!mapReady || occWrap?.hidden) {
+      applyOccupancyRigLength({ render: false });
+      return;
+    }
+    applyOccupancyRigLength({ render: true });
+  });
 })();

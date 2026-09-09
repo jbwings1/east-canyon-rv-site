@@ -786,6 +786,11 @@ a:hover {
   width: min(1100px, 94vw);
 }
 
+/* Reservation map pages: use nearly full viewport width for the map canvas */
+.page-visitor .page-content.reservation-page {
+  width: min(1480px, 96vw);
+}
+
 .page-visitor .page-content h1 {
   margin-top: 0;
   font-size: clamp(1.85rem, 3vw, 2.45rem);
@@ -1922,6 +1927,19 @@ a:hover {
 .occupancy-date-row {
   margin-top: 0.75rem;
   align-items: end;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 960px) {
+  .occupancy-date-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .occupancy-date-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .occupancy-check-wrap .btn {
@@ -2126,6 +2144,23 @@ a:hover {
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+.page-reservations .reservation-map-viewport {
+  height: min(72vh, 860px);
+}
+
+.page-reservations .reservation-map-section,
+.page-reservations .occupancy-map-wrap,
+.page-reservations .reservation-map-layout,
+.page-reservations .reservation-map-layout .map-panel {
+  width: 100%;
+  max-width: none;
+}
+
+.page-reservations .occupancy-map-wrap .map-unit-detail,
+.page-reservations .reservation-map-section .map-unit-detail {
+  width: 100%;
 }
 
 .reservation-map-viewport.is-dragging {
