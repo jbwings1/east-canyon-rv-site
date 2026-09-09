@@ -80,6 +80,19 @@
     });
   }
 
+  function bookingWasEdited(booking) {
+    if (!booking?.edited_at || !booking?.created_at) return false;
+    const edited = new Date(booking.edited_at).getTime();
+    const created = new Date(booking.created_at).getTime();
+    return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
+  }
+
+  function formatBookedEditedLine(booking) {
+    const booked = formatBookedOn(booking.created_at);
+    if (!bookingWasEdited(booking)) return booked;
+    return `${booked} · Edited — ${formatBookedOn(booking.edited_at)}`;
+  }
+
   function confirmationId(booking) {
     return Auth.bookingConfirmationId(booking);
   }
@@ -178,7 +191,7 @@
               </div>
               <dl class="member-profile-summary reservation-booking-details">
                 <div><dt>Booked by</dt><dd>${escapeHtml(bookedByLabel(b))}</dd></div>
-                <div><dt>Date booked</dt><dd>${escapeHtml(formatBookedOn(b.created_at))}</dd></div>
+                <div><dt>Booked</dt><dd>${escapeHtml(formatBookedEditedLine(b))}</dd></div>
                 <div><dt>Confirmation #</dt><dd>${escapeHtml(confirmationId(b))}</dd></div>
                 <div><dt>Stay dates</dt><dd>${escapeHtml(dates)}</dd></div>
                 <div><dt>Site</dt><dd>${escapeHtml(formatSiteDetails(b.spot))}</dd></div>

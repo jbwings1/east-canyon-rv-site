@@ -54,6 +54,19 @@
     });
   }
 
+  function bookingWasEdited(booking) {
+    if (!booking?.edited_at || !booking?.created_at) return false;
+    const edited = new Date(booking.edited_at).getTime();
+    const created = new Date(booking.created_at).getTime();
+    return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
+  }
+
+  function formatBookedEditedLine(booking) {
+    const booked = formatBookedOn(booking.created_at);
+    if (!bookingWasEdited(booking)) return booked;
+    return `${booked} · Edited — ${formatBookedOn(booking.edited_at)}`;
+  }
+
   const user = Auth.redirectForAuth({
     requireMember: true,
     loginPage: `login.html?next=${encodeURIComponent(
@@ -96,7 +109,7 @@
     ["Type", Auth.reservationTypeLabel(booking.reservation_type) || "—"],
     ["Status", booking.status || "—"],
     ["Booked by", bookedByLabel(booking)],
-    ["Date booked", formatBookedOn(booking.created_at)],
+    ["Booked", formatBookedEditedLine(booking)],
     ["Confirmation #", Auth.bookingConfirmationId(booking)],
     [
       "Stay dates",

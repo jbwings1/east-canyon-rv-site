@@ -27,6 +27,30 @@
     return `Site ${unit.label}`;
   }
 
+  function formatBookedOn(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function bookingWasEdited(booking) {
+    if (!booking?.edited_at || !booking?.created_at) return false;
+    const edited = new Date(booking.edited_at).getTime();
+    const created = new Date(booking.created_at).getTime();
+    return Number.isFinite(edited) && Number.isFinite(created) && edited > created;
+  }
+
+  function formatBookedEditedLine(booking) {
+    const booked = formatBookedOn(booking.created_at);
+    if (!bookingWasEdited(booking)) return booked;
+    return `${booked} · Edited — ${formatBookedOn(booking.edited_at)}`;
+  }
+
   const user = Auth.redirectForAuth({ requireMember: true });
   if (!user) return;
 
@@ -73,6 +97,7 @@
         ? window.SpotAvailability.formatDateRange(booking.check_in, booking.check_out)
         : "—",
     ],
+    ["Booked", formatBookedEditedLine(booking)],
     ["Status", booking.status || "—"],
     ["Notes", booking.notes || ""],
   ].filter(([, value]) => String(value || "").trim());

@@ -386,7 +386,7 @@ const Auth = {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     const { data, error } = await getClient()
       .from("bookings")
-      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,confirmed_at,booked_by_kind,booked_by_user_id")
+      .select("id,user_id,reservation_type,spot,check_in,check_out,status,notes,created_at,edited_at,confirmed_at,booked_by_kind,booked_by_user_id")
       .order("check_in", { ascending: false });
     throwIfError(error);
     return data || [];
