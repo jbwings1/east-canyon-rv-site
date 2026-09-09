@@ -160,10 +160,22 @@
     return Auth.bookingConfirmationId(booking);
   }
 
-  function bookingIsEditable(booking) {
-    if (!booking || booking.status === "cancelled") return false;
+  function bookingEditGate(booking) {
+    if (typeof Auth?.bookingCanEditOrCancel === "function") {
+      return Auth.bookingCanEditOrCancel(booking);
+    }
+    if (!booking || booking.status === "cancelled") {
+      return { allowed: false, reason: "", code: "cancelled" };
+    }
     const today = window.SpotAvailability.getToday();
-    return Boolean(booking.check_out && booking.check_out >= today);
+    if (booking.check_out && booking.check_out >= today) {
+      return { allowed: true, reason: "", code: "ok" };
+    }
+    return { allowed: false, reason: "Past stays cannot be edited or cancelled online.", code: "past" };
+  }
+
+  function bookingIsEditable(booking) {
+    return bookingEditGate(booking).allowed;
   }
 
   function updateBookingNotice() {
@@ -218,13 +230,23 @@
             : "Dates unavailable";
         const status = b.status || "unknown";
         const statusLabel = bookingStatusLabel(b);
-        const editable = bookingIsEditable(b);
+        const gate = bookingEditGate(b);
+        const editable = gate.allowed;
         const statusClass =
           status === "confirmed"
             ? "available"
             : status === "cancelled"
               ? "booked"
               : "partial";
+        const disabledActions =
+          !editable && status !== "cancelled" && gate.code === "too-late"
+            ? `<span class="btn btn-primary" aria-disabled="true" title="${escapeHtml(
+                gate.reason
+              )}" style="opacity:0.55;pointer-events:none;cursor:not-allowed">Edit</span>
+               <span class="btn btn-outline" aria-disabled="true" title="${escapeHtml(
+                 gate.reason
+               )}" style="opacity:0.55;pointer-events:none;cursor:not-allowed">Delete</span>`
+            : "";
         const actions = `
           <div class="reservation-card-actions">
             <a class="btn btn-outline" href="reservation-view.html?id=${encodeURIComponent(b.id)}">View</a>
@@ -232,15 +254,17 @@
               editable
                 ? `<a class="btn btn-primary" href="reservation-edit.html?id=${encodeURIComponent(b.id)}">Edit</a>
                    <a class="btn btn-outline" href="reservation-delete.html?id=${encodeURIComponent(b.id)}">Delete</a>`
-                : ""
+                : disabledActions
             }
           </div>
           <p class="reservation-card-hint">${
             editable
               ? "Selected — choose View, Edit, or Delete."
-              : status === "cancelled"
-                ? "Cancelled — you can still view details."
-                : "Past stay — view only."
+              : gate.code === "too-late"
+                ? escapeHtml(gate.reason)
+                : status === "cancelled"
+                  ? "Cancelled — you can still view details."
+                  : escapeHtml(gate.reason || "Past stay — view only.")
           }</p>`;
 
         return `
@@ -273,7 +297,11 @@
                     : ""
                 }
               </dl>
-              <p class="reservation-card-tap">Tap or click this booking to View, Edit, or Delete</p>
+              <p class="reservation-card-tap">${
+                editable
+                  ? "Tap or click this booking to View, Edit, or Delete"
+                  : "Tap or click this booking to View"
+              }</p>
             </div>
             <div class="reservation-booking-card-panel" hidden>${actions}</div>
           </article>`;

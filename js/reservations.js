@@ -89,9 +89,20 @@ function formatSpotLabel(spotId) {
 }
 
 function bookingIsEditable(booking) {
+  if (typeof Auth?.bookingCanEditOrCancel === "function") {
+    return Auth.bookingCanEditOrCancel(booking).allowed;
+  }
   if (!booking || booking.status === "cancelled") return false;
   const today = window.SpotAvailability.getToday();
   return Boolean(booking.check_out && booking.check_out >= today);
+}
+
+function bookingEditBlockedReason(booking) {
+  if (typeof Auth?.bookingCanEditOrCancel === "function") {
+    const gate = Auth.bookingCanEditOrCancel(booking);
+    return gate.allowed ? "" : gate.reason || "That reservation can no longer be edited.";
+  }
+  return "That reservation can no longer be edited.";
 }
 
 function showMyReservationsMessage(text, type) {
@@ -163,13 +174,19 @@ function renderMyReservations() {
           ? window.SpotAvailability.formatDateRange(b.check_in, b.check_out)
           : "—";
       const status = b.status || "—";
-      const editable = bookingIsEditable(b);
+      const gate =
+        typeof Auth.bookingCanEditOrCancel === "function"
+          ? Auth.bookingCanEditOrCancel(b)
+          : { allowed: bookingIsEditable(b), code: bookingIsEditable(b) ? "ok" : "past" };
+      const editable = gate.allowed;
       const actions = editable
         ? `<button type="button" class="btn-link" data-action="edit" data-id="${escapeHtml(b.id)}">Edit</button>
            <button type="button" class="btn-link" data-action="delete" data-id="${escapeHtml(b.id)}">Delete</button>`
         : status === "cancelled"
           ? `<span class="label-optional">Cancelled</span>`
-          : `<span class="label-optional">Past stay</span>`;
+          : gate.code === "too-late"
+            ? `<span class="label-optional" title="${escapeHtml(gate.reason || "")}">Too close to check-in</span>`
+            : `<span class="label-optional">Past stay</span>`;
       return `<tr>
         <td>${escapeHtml(type)}</td>
         <td>${escapeHtml(formatSpotLabel(b.spot))}</td>
@@ -877,6 +894,15 @@ form.addEventListener("submit", async (e) => {
       message.className = "form-message error";
       return;
     }
+    const editGate =
+      typeof Auth.bookingCanEditOrCancel === "function"
+        ? Auth.bookingCanEditOrCancel(existing)
+        : { allowed: bookingIsEditable(existing), reason: bookingEditBlockedReason(existing) };
+    if (!editGate.allowed) {
+      message.textContent = editGate.reason || bookingEditBlockedReason(existing);
+      message.className = "form-message error";
+      return;
+    }
     data.type = Auth.toUiReservationType(existing.reservation_type) || data.type;
     if (!Auth.stayWithinOriginal(data.checkIn, data.checkOut, existing)) {
       const originalLabel = Auth.formatOriginalStayLabel(existing);
@@ -1110,8 +1136,9 @@ form.addEventListener("submit", async (e) => {
       return;
     }
     if (!bookingIsEditable(booking)) {
-      message.textContent = "That reservation can no longer be edited.";
+      message.textContent = bookingEditBlockedReason(booking);
       message.className = "form-message error";
+      if (completeBookingBtn) completeBookingBtn.disabled = true;
       return;
     }
     loadBookingIntoForm(booking);

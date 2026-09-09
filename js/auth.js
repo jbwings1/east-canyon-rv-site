@@ -440,6 +440,111 @@ const Auth = {
     return `${win.start} \u2192 ${win.end}`;
   },
 
+  /**
+   * Policy cancel/edit windows (calendar days before check-in):
+   * RV §6.7 and Condo Regular/Bonus §5 = 2 days; Family Reunion §8.4 = 21 days.
+   */
+  bookingEditCancelMinDays(booking) {
+    const dbType = toDbReservationType(booking?.reservation_type);
+    if (dbType === "family_reunion") return 21;
+    const unit = window.SpotAvailability?.findUnit?.(booking?.spot);
+    if (unit?.category === "reunion") return 21;
+    return 2;
+  },
+
+  /** Whole calendar days from `fromDate` (default today) until `dateStr` (YYYY-MM-DD). */
+  calendarDaysUntil(dateStr, fromDateStr) {
+    const to =
+      (typeof window.SpotAvailability?.normalizeDate === "function"
+        ? window.SpotAvailability.normalizeDate(dateStr)
+        : String(dateStr || "").slice(0, 10)) || "";
+    const from =
+      fromDateStr ||
+      (typeof window.SpotAvailability?.getToday === "function"
+        ? window.SpotAvailability.getToday()
+        : new Date().toISOString().split("T")[0]);
+    if (!to || !from) return null;
+    const ms = new Date(`${to}T12:00:00`) - new Date(`${from}T12:00:00`);
+    return Math.round(ms / 86400000);
+  },
+
+  bookingEditCancelBlockedMessage(booking, minDays = this.bookingEditCancelMinDays(booking)) {
+    if (minDays >= 21) {
+      return (
+        "Online edit and cancel for family reunion reservations are only available at least " +
+        "21 calendar days before check-in (resort policy §8.4). A late cancellation fee may apply. " +
+        "Contact the office if you need changes this close to your stay."
+      );
+    }
+    return (
+      `Online edit and cancel are only available at least ${minDays} calendar days before check-in ` +
+      "(resort policy). A late cancellation fee may apply. Contact the office if you need changes " +
+      "this close to your stay."
+    );
+  },
+
+  /**
+   * Member online edit/cancel gate. Admins keep override via updateBookingStatus / admin tools.
+   * Allowed when check_in - today >= policy min calendar days.
+   */
+  bookingCanEditOrCancel(booking, { asAdmin = false } = {}) {
+    if (asAdmin) {
+      return { allowed: true, reason: "", minDays: 0, daysUntil: null, code: "admin" };
+    }
+    if (!booking) {
+      return {
+        allowed: false,
+        reason: "Reservation not found.",
+        minDays: 2,
+        daysUntil: null,
+        code: "missing",
+      };
+    }
+    if (booking.status === "cancelled") {
+      return {
+        allowed: false,
+        reason: "This reservation is already cancelled.",
+        minDays: this.bookingEditCancelMinDays(booking),
+        daysUntil: null,
+        code: "cancelled",
+      };
+    }
+    const today =
+      typeof window.SpotAvailability?.getToday === "function"
+        ? window.SpotAvailability.getToday()
+        : new Date().toISOString().split("T")[0];
+    if (booking.check_out && booking.check_out < today) {
+      return {
+        allowed: false,
+        reason: "Past stays cannot be edited or cancelled online.",
+        minDays: this.bookingEditCancelMinDays(booking),
+        daysUntil: null,
+        code: "past",
+      };
+    }
+    const minDays = this.bookingEditCancelMinDays(booking);
+    const daysUntil = this.calendarDaysUntil(booking.check_in, today);
+    if (daysUntil == null || !booking.check_in) {
+      return {
+        allowed: false,
+        reason: "Check-in date is required.",
+        minDays,
+        daysUntil: null,
+        code: "no-checkin",
+      };
+    }
+    if (daysUntil < minDays) {
+      return {
+        allowed: false,
+        reason: this.bookingEditCancelBlockedMessage(booking, minDays),
+        minDays,
+        daysUntil,
+        code: "too-late",
+      };
+    }
+    return { allowed: true, reason: "", minDays, daysUntil, code: "ok" };
+  },
+
   async updateBookingStatus(bookingId, status) {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     if (status !== "confirmed" && status !== "cancelled") {
@@ -847,6 +952,11 @@ const Auth = {
       throw new Error("That reservation was already cancelled.");
     }
 
+    const editGate = this.bookingCanEditOrCancel(existing);
+    if (!editGate.allowed) {
+      throw new Error(editGate.reason || "This reservation can no longer be edited online.");
+    }
+
     const existingUiType = toUiReservationType(existing.reservation_type);
     const requestedUiType = toUiReservationType(reservationType) || reservationType;
     if (requestedUiType && existingUiType && requestedUiType !== existingUiType) {
@@ -885,6 +995,23 @@ const Auth = {
     const user = this.getCurrentUser();
     if (!user?.id) throw new Error("Sign in to cancel a booking.");
     if (!bookingId) throw new Error("Booking is required.");
+
+    const { data: existing, error: existingError } = await getClient()
+      .from("bookings")
+      .select("id,user_id,status,check_in,check_out,reservation_type,spot")
+      .eq("id", bookingId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    throwIfError(existingError);
+    if (!existing) throw new Error("Reservation not found.");
+    if (existing.status === "cancelled") {
+      throw new Error("That reservation was already cancelled.");
+    }
+
+    const cancelGate = this.bookingCanEditOrCancel(existing);
+    if (!cancelGate.allowed) {
+      throw new Error(cancelGate.reason || "This reservation can no longer be cancelled online.");
+    }
 
     const { data, error } = await getClient()
       .from("bookings")

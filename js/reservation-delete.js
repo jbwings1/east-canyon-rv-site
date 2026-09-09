@@ -117,8 +117,17 @@
     showMessage("This reservation is already cancelled.", "error");
   }
 
-  const today = window.SpotAvailability.getToday();
-  const canDelete = booking.status !== "cancelled" && booking.check_out >= today;
+  const cancelGate =
+    typeof Auth.bookingCanEditOrCancel === "function"
+      ? Auth.bookingCanEditOrCancel(booking)
+      : {
+          allowed:
+            booking.status !== "cancelled" &&
+            booking.check_out >= window.SpotAvailability.getToday(),
+          reason: "Past or cancelled reservations cannot be deleted here.",
+          code: "fallback",
+        };
+  const canDelete = cancelGate.allowed;
 
   const originalStay = originalStayDisplay(booking);
   const rows = [
@@ -144,7 +153,10 @@
     .join("");
 
   if (!canDelete) {
-    showMessage("Past or cancelled reservations cannot be deleted here.", "error");
+    showMessage(
+      cancelGate.reason || "Past or cancelled reservations cannot be deleted here.",
+      "error"
+    );
     return;
   }
 

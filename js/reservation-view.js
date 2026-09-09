@@ -119,9 +119,18 @@
     return;
   }
 
-  const today = window.SpotAvailability.getToday();
-  const editable =
-    booking.status !== "cancelled" && booking.check_out && booking.check_out >= today;
+  const gate =
+    typeof Auth.bookingCanEditOrCancel === "function"
+      ? Auth.bookingCanEditOrCancel(booking)
+      : {
+          allowed:
+            booking.status !== "cancelled" &&
+            booking.check_out &&
+            booking.check_out >= window.SpotAvailability.getToday(),
+          reason: "",
+          code: "fallback",
+        };
+  const editable = gate.allowed;
 
   const originalStay = originalStayDisplay(booking);
   const rows = [
@@ -154,5 +163,7 @@
     deleteLink.hidden = false;
     editLink.href = `reservation-edit.html?id=${encodeURIComponent(bookingId)}`;
     deleteLink.href = `reservation-delete.html?id=${encodeURIComponent(bookingId)}`;
+  } else if (gate.code === "too-late" && gate.reason) {
+    showMessage(gate.reason, "error");
   }
 })();
