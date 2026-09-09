@@ -30,6 +30,8 @@ window.CampgroundMap = {
   _lookupOnly: false,
   _hoveredId: null,
   _hoveredStatus: null,
+  _overlayShell: null,
+  _overlayBound: false,
 
   init({
     layerId,
@@ -51,6 +53,7 @@ window.CampgroundMap = {
     this._svg = document.getElementById(svgId || "campground-map");
     this._photo = document.getElementById(photoId || "campground-map-photo");
     this._detailPanel = detailId ? document.getElementById(detailId) : null;
+    this._overlayShell = this._detailPanel?.closest(".map-site-overlay-shell") || null;
     this._legendRoot = legendId
       ? document.getElementById(legendId)
       : this._svg?.closest(".map-panel")?.querySelector(".map-legend") || null;
@@ -74,7 +77,95 @@ window.CampgroundMap = {
     this._setupMapImage();
     this._setupEditMode();
     this._setupMapClickFallback();
+    this._bindOverlayChrome();
     this.clearSelection();
+  },
+
+  _usesDetailOverlay() {
+    return Boolean(
+      this._detailPanel?.classList.contains("map-site-overlay") ||
+        this._detailPanel?.closest(".map-site-overlay-shell") ||
+        this._overlayShell
+    );
+  },
+
+  _bindOverlayChrome() {
+    if (this._overlayBound || !this._usesDetailOverlay()) return;
+    this._overlayBound = true;
+    this._overlayShell =
+      this._overlayShell || this._detailPanel?.closest(".map-site-overlay-shell") || null;
+
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (!this._isDetailOverlayOpen()) return;
+      e.preventDefault();
+      this.closeDetailOverlay({ clearSelection: this._lookupOnly });
+    };
+    document.addEventListener("keydown", onKey);
+
+    const backdrop = this._overlayShell?.querySelector(".map-site-overlay-backdrop");
+    backdrop?.addEventListener("click", () => {
+      this.closeDetailOverlay({ clearSelection: this._lookupOnly });
+    });
+
+    this._detailPanel?.addEventListener("click", (e) => {
+      if (e.target.closest("[data-map-detail-close]")) {
+        e.preventDefault();
+        this.closeDetailOverlay({ clearSelection: this._lookupOnly });
+      }
+    });
+  },
+
+  _detailOverlayShell() {
+    return (
+      this._overlayShell ||
+      this._detailPanel?.closest(".map-site-overlay-shell") ||
+      null
+    );
+  },
+
+  _isDetailOverlayOpen() {
+    const shell = this._detailOverlayShell();
+    if (shell) return !shell.hidden;
+    return Boolean(this._detailPanel && !this._detailPanel.hidden);
+  },
+
+  openDetailOverlay() {
+    if (!this._detailPanel) return;
+    const shell = this._detailOverlayShell();
+    if (shell) shell.hidden = false;
+    this._detailPanel.hidden = false;
+    const closeBtn = this._detailPanel.querySelector("[data-map-detail-close]");
+    if (closeBtn && typeof closeBtn.focus === "function") {
+      try {
+        closeBtn.focus({ preventScroll: true });
+      } catch {
+        closeBtn.focus();
+      }
+    }
+  },
+
+  closeDetailOverlay({ clearSelection = false } = {}) {
+    const shell = this._detailOverlayShell();
+    if (shell) shell.hidden = true;
+    if (this._detailPanel) {
+      this._detailPanel.hidden = true;
+      this._detailPanel.innerHTML = "";
+    }
+    if (clearSelection) {
+      this._selectedId = null;
+      this._focusedId = null;
+      document.querySelectorAll(".map-spot").forEach((el) => {
+        el.classList.remove("selected", "focused");
+      });
+    }
+  },
+
+  _overlayCloseHtml() {
+    if (!this._usesDetailOverlay()) return "";
+    return `<div class="map-site-overlay-head">
+      <button type="button" class="map-site-overlay-close" data-map-detail-close>Close</button>
+    </div>`;
   },
 
   _setupMapImage() {
@@ -1068,6 +1159,7 @@ window.CampgroundMap = {
       ? ""
       : `<p class="detail-note">${statusNote}</p>`;
     this._detailPanel.innerHTML = `
+      ${this._overlayCloseHtml()}
       <p class="map-detail-label">${this._unitKindLabel(unit)} ${unit.label}</p>
       <h3 class="map-detail-title">${typeLabel}</h3>
       <dl class="detail-list">
@@ -1079,6 +1171,7 @@ window.CampgroundMap = {
       </dl>
       ${noteHtml}
     `;
+    this.openDetailOverlay();
   },
 
   clearSelection() {
@@ -1090,6 +1183,11 @@ window.CampgroundMap = {
     });
 
     if (!this._detailPanel) return;
+
+    if (this._usesDetailOverlay()) {
+      this.closeDetailOverlay();
+      return;
+    }
 
     const filterHint =
       this._unitFilter === "condo"

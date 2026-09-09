@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Book an RV site, condo, or family reunion stay at East Canyon Resort.">
   <title>Edit Reservation | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site12">
+  <link rel="stylesheet" href="styles.css?v=site13">
 </head>
 <body class="page-visitor page-reservations" data-reservation-mode="edit">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -131,7 +131,7 @@
       <section id="rv-availability" class="reservation-map-section">
         <h2 id="map-section-title">Booking Map</h2>
         <p id="map-date-summary" class="reservation-map-summary">
-          Click any RV site, condo, or family reunion site — details appear below. Pick dates and reservation type to book. Drag to pan, scroll or +/- to zoom.
+          Click any RV site, condo, or family reunion site — details open over the map. Pick dates and reservation type to book. Drag to pan, scroll or +/- to zoom.
         </p>
         <div class="map-layout reservation-map-layout reservation-map-layout--solo">
           <div class="map-panel">
@@ -148,29 +148,39 @@
                 <button type="button" class="map-zoom-btn" id="map-zoom-in" aria-label="Zoom in">+</button>
               </div>
             </div>
-            <div class="reservation-map-viewport" id="map-viewport">
-              <div class="map-zoom-stage" id="map-zoom-stage">
-                <div class="campground-map-frame">
-                  <p class="map-image-fallback" hidden>
-                    Add the campground map as <code>pix/map.png</code> to show the real site layout.
-                  </p>
-                  <img
-                    src="pix/map.png"
-                    alt="East Canyon Resort RV site map"
-                    class="campground-map-photo"
-                    id="campground-map-photo"
-                  >
-                  <svg id="campground-map" class="campground-map-overlay" role="img" aria-label="RV site availability overlay">
-                    <g id="spots-layer"></g>
-                  </svg>
+            <div class="reservation-map-stack">
+              <div class="reservation-map-viewport" id="map-viewport">
+                <div class="map-zoom-stage" id="map-zoom-stage">
+                  <div class="campground-map-frame">
+                    <p class="map-image-fallback" hidden>
+                      Add the campground map as <code>pix/map.png</code> to show the real site layout.
+                    </p>
+                    <img
+                      src="pix/map.png"
+                      alt="East Canyon Resort RV site map"
+                      class="campground-map-photo"
+                      id="campground-map-photo"
+                    >
+                    <svg id="campground-map" class="campground-map-overlay" role="img" aria-label="RV site availability overlay">
+                      <g id="spots-layer"></g>
+                    </svg>
+                  </div>
                 </div>
+              </div>
+              <div class="map-site-overlay-shell" id="map-detail-shell" hidden>
+                <button type="button" class="map-site-overlay-backdrop" id="map-detail-backdrop" aria-label="Close site details"></button>
+                <aside
+                  class="map-unit-detail spot-detail map-site-overlay"
+                  id="map-unit-detail"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Site details"
+                  aria-live="polite"
+                ></aside>
               </div>
             </div>
           </div>
         </div>
-        <aside class="map-unit-detail spot-detail" id="map-unit-detail" aria-live="polite">
-          <p class="spot-detail-placeholder">Click any RV site, condo, or family reunion site to see bookings for the next 90 days.</p>
-        </aside>
         <div class="reservation-submit">
           <p id="booking-signin-notice" class="stay-length-notice" hidden>
             <a href="login.html?next=reservation-edit.html">Sign in</a> to edit a booking.
@@ -187,7 +197,7 @@
 
   <script src="js/map-units-generated.js"></script>
   <script src="js/spots-data.js?v=6"></script>
-  <script src="js/campground-map.js?v=7"></script>
+  <script src="js/campground-map.js?v=8"></script>
   <script src="js/map-zoom.js"></script>
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>

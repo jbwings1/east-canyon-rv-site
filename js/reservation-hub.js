@@ -11,6 +11,7 @@
   const occMsg = document.getElementById("occupancy-message");
   const occWrap = document.getElementById("occupancy-map-wrap");
   const occDetail = document.getElementById("occupancy-unit-detail");
+  const occDetailShell = document.getElementById("occupancy-detail-shell");
 
   let bookings = [];
   let occupancyRows = [];
@@ -23,6 +24,36 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function openOccupancyDetailOverlay() {
+    if (typeof CampgroundMap?.openDetailOverlay === "function") {
+      CampgroundMap.openDetailOverlay();
+      return;
+    }
+    if (occDetailShell) occDetailShell.hidden = false;
+    if (occDetail) occDetail.hidden = false;
+  }
+
+  function closeOccupancyDetailOverlay() {
+    if (typeof CampgroundMap?.closeDetailOverlay === "function") {
+      CampgroundMap.closeDetailOverlay({ clearSelection: true });
+      return;
+    }
+    if (occDetailShell) occDetailShell.hidden = true;
+    if (occDetail) {
+      occDetail.hidden = true;
+      occDetail.innerHTML = "";
+    }
+  }
+
+  function occupancyCloseHtml() {
+    if (typeof CampgroundMap?._overlayCloseHtml === "function") {
+      return CampgroundMap._overlayCloseHtml();
+    }
+    return `<div class="map-site-overlay-head">
+      <button type="button" class="map-site-overlay-close" data-map-detail-close>Close</button>
+    </div>`;
   }
 
   function showStatus(text, type) {
@@ -326,6 +357,7 @@
           ? unit.name || `Family site ${unit.label}`
           : `Site ${unit.label}`;
     const titleWithLength = lengthBit ? `${title} · ${lengthBit}` : title;
+    const closeHtml = occupancyCloseHtml();
 
     if (mapStatus === "tooShort") {
       const max = window.SpotAvailability?.getUnitMaxLength?.(unit);
@@ -335,9 +367,11 @@
           ? `This site allows up to ${max}'. Your RV is ${rig}', so it is too short.`
           : "This site is too short for the selected RV length.";
       occDetail.innerHTML = `
+        ${closeHtml}
         <p><strong>${escapeHtml(titleWithLength)}</strong>
           <span class="status-pill tooShort">Too short for your RV</span></p>
         <p>${escapeHtml(note)}</p>`;
+      openOccupancyDetailOverlay();
       return;
     }
 
@@ -351,10 +385,12 @@
 
     if (!rows.length) {
       occDetail.innerHTML = `
+        ${closeHtml}
         <p><strong>${escapeHtml(titleWithLength)}</strong></p>
         <p><span class="status-pill ${statusClass}">${statusLabel}</span> for ${escapeHtml(
           window.SpotAvailability.formatDateRange(from, to)
         )}.</p>`;
+      openOccupancyDetailOverlay();
       return;
     }
 
@@ -379,10 +415,12 @@
       .join("");
 
     occDetail.innerHTML = `
+      ${closeHtml}
       <p><strong>${escapeHtml(titleWithLength)}</strong>
         <span class="status-pill ${statusClass}">${statusLabel}</span></p>
       <p>Booked dates in your range:</p>
       <ul class="occupancy-date-list">${items}</ul>`;
+    openOccupancyDetailOverlay();
   }
 
   async function runOccupancyCheck() {
@@ -390,7 +428,7 @@
     const from = occFrom.value;
     const to = occTo.value;
     if (!from || !to || to <= from) {
-      showOccMsg("Choose a valid from and to date.", "error");
+      showOccMsg("Choose valid from and to dates.", "error");
       return;
     }
     occBtn.disabled = true;
@@ -414,10 +452,7 @@
       CampgroundMap.setDates(from, to);
       CampgroundMap.render?.();
       occWrap.hidden = false;
-      if (occDetail) {
-        occDetail.innerHTML =
-          '<p class="spot-detail-placeholder">Click a site to see booked dates in your selected range.</p>';
-      }
+      closeOccupancyDetailOverlay();
       const n = occupancyRows.length;
       showOccMsg(`${n} booking${n === 1 ? "" : "s"} in that range.`, "success");
     } catch (err) {
