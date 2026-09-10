@@ -2127,6 +2127,26 @@ a:hover {
   color: #5c564e;
 }
 
+/* Member ID column: keep class-prefixed IDs on one line */
+#admin-members-table .admin-col-member-id {
+  white-space: nowrap;
+  min-width: 8.5rem;
+  width: 1%;
+  vertical-align: middle;
+}
+
+#admin-members-table .admin-col-member-id a {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  #admin-members-table .admin-col-member-id {
+    /* Horizontal scroll via .admin-table-wrap; don't squeeze the ID */
+    min-width: 7.25rem;
+  }
+}
+
 .admin-actions {
   white-space: nowrap;
 }
