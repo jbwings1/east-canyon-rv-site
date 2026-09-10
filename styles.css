@@ -3722,15 +3722,20 @@ img.logo {
 #member-id-input,
 #edit-member-id,
 #res-member-id {
-  min-width: 18ch;
+  min-width: 32ch;
+  box-sizing: border-box;
 }
 
-.form-row:has(#profile-member-id) {
-  grid-template-columns: minmax(16rem, 1.5fr) minmax(0, 1fr);
+/* Edit Profile + admin create/edit: Member ID uses the full form row */
+#profile-member-id,
+#member-id-input,
+#edit-member-id {
+  width: 100%;
+  max-width: 100%;
 }
 
 .reservation-form .form-row--4:has(#res-member-id) {
-  grid-template-columns: minmax(0, 1.05fr) minmax(14rem, 1.6fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 2.2fr) minmax(0, 1.1fr) minmax(0, 0.95fr);
 }
 
 .committee-page {

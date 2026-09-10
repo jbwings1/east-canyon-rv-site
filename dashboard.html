@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Your East Canyon Resort member profile — contact details, site, and bookings.">
   <title>Member Profile | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site18">
+  <link rel="stylesheet" href="styles.css?v=site20">
 </head>
 <body class="page-visitor">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -42,25 +42,23 @@
         <section class="dashboard-card dashboard-card--wide" id="profile-card">
           <h2>Profile</h2>
           <form id="profile-form" class="profile-form">
+            <div class="form-group">
+              <label for="profile-member-id">Member ID</label>
+              <input type="text" id="profile-member-id" disabled>
+            </div>
             <div class="form-row">
-              <div class="form-group">
-                <label for="profile-member-id">Member ID</label>
-                <input type="text" id="profile-member-id" disabled>
-              </div>
               <div class="form-group">
                 <label for="profile-login">Login</label>
                 <input type="text" id="profile-login" disabled>
               </div>
-            </div>
-            <div class="form-row">
               <div class="form-group">
                 <label for="profile-username">Username</label>
                 <input type="text" id="profile-username" disabled>
               </div>
-              <div class="form-group">
-                <label for="profile-name">Full name</label>
-                <input type="text" id="profile-name" required>
-              </div>
+            </div>
+            <div class="form-group">
+              <label for="profile-name">Full name</label>
+              <input type="text" id="profile-name" required>
             </div>
             <div class="form-row">
               <div class="form-group">
