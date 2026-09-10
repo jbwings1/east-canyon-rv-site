@@ -1234,6 +1234,25 @@ a:hover {
   color: #fff;
 }
 
+.page-visitor .membership-rights-table th[scope="row"] {
+  background: #f3f0ea;
+  color: #1c1916;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.page-visitor .membership-rights-table td {
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .page-visitor .membership-rights-table th,
+  .page-visitor .membership-rights-table td {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
 .page-visitor .hunting-back {
   margin: 1.75rem 0 0;
 }
