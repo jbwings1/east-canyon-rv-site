@@ -1582,7 +1582,6 @@ a:hover {
 .page-visitor .visitor-link-wide:active {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   box-sizing: border-box;
   color: var(--color-accent);
@@ -1596,21 +1595,9 @@ a:hover {
   background: transparent;
 }
 
-.page-visitor .visitor-link-wide::after {
-  content: "→";
-  font-weight: 400;
-  opacity: 0.45;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
 .page-visitor .visitor-link-wide:hover {
   background: rgba(28, 58, 50, 0.08);
   color: var(--color-accent);
-}
-
-.page-visitor .visitor-link-wide:hover::after {
-  opacity: 0.9;
-  transform: translateX(3px);
 }
 
 .page-visitor button.visitor-link-wide {
