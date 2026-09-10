@@ -4091,3 +4091,65 @@ img.logo {
     grid-template-columns: 1fr;
   }
 }
+
+/* Membership class limit override (admin) */
+.membership-override-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.membership-override-dialog[hidden] {
+  display: none !important;
+}
+
+.membership-override-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 17, 14, 0.48);
+}
+
+.membership-override-panel {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, 100%);
+  padding: 1.35rem 1.4rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--color-sand-dark, #e2d8c8);
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow, 0 8px 24px rgba(28, 25, 22, 0.12));
+  color: var(--color-text, #1c1916);
+}
+
+.membership-override-panel h2 {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: var(--color-accent, #1c3a32);
+}
+
+.membership-override-message {
+  margin: 0 0 1.15rem;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--color-text, #1c1916);
+}
+
+.membership-override-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.membership-override-actions .btn {
+  min-width: 7.5rem;
+}
+
+body.membership-override-open {
+  overflow: hidden;
+}
