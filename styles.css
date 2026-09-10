@@ -2278,8 +2278,23 @@ a:hover {
 }
 
 .admin-subhead {
-  margin: 1.5rem 0 0.75rem;
-  font-size: 1.15rem;
+  margin: 0 0 0.65rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #1c3a32;
+}
+
+.page-admin .admin-link-section {
+  margin: 1.75rem 0 0;
+  padding-top: 1.35rem;
+  border-top: 1px solid rgba(28, 26, 23, 0.1);
+}
+
+.page-admin .admin-link-section:first-of-type {
+  margin-top: 1.1rem;
+  padding-top: 0;
+  border-top: none;
 }
 
 /* Directory links inside the admin content card (no nested white box) */
@@ -2288,7 +2303,11 @@ a:hover {
   border: none;
   box-shadow: none;
   padding: 0;
-  margin: 0 0 0.5rem;
+  margin: 0;
+}
+
+.page-admin .admin-task-grid {
+  margin-top: 0.35rem;
 }
 
 .admin-toolbar {
