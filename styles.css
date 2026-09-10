@@ -888,34 +888,41 @@ a:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1rem 0.9rem;
+  padding: 0.55rem 0.45rem;
   background: #fff;
 }
 
 .page-visitor .policy-index-title {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.45rem;
+  padding: 0 0.25rem;
   font-size: 1rem;
 }
 
 .page-visitor .policy-index-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.12rem;
 }
 
+/* Match visitor directory-row link look */
 .page-visitor .policy-index-nav a,
 .page-visitor .policy-index-nav a:link,
 .page-visitor .policy-index-nav a:visited,
 .page-visitor .policy-index-nav a:hover,
 .page-visitor .policy-index-nav a:active {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   color: var(--color-accent);
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   line-height: 1.35;
   text-decoration: none;
   border: none;
   border-radius: 8px;
-  padding: 0.42rem 0.55rem;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  background: transparent;
 }
 
 .page-visitor .policy-index-nav a:hover,
@@ -926,7 +933,7 @@ a:hover {
 
 .page-visitor .policy-index-back {
   margin: 0.85rem 0 0;
-  font-size: 0.85rem;
+  padding: 0 0.25rem;
 }
 
 .page-visitor .policy-main {
@@ -1575,7 +1582,7 @@ a:hover {
   border-radius: var(--radius);
 }
 
-/* Shared directory-row look: full-width and nested grid cells */
+/* Shared directory-row look: full-width rows and grid cells */
 .page-visitor .visitor-link-wide,
 .page-visitor .visitor-link-wide:link,
 .page-visitor .visitor-link-wide:visited,
@@ -1618,6 +1625,13 @@ a:hover {
 .page-visitor button.visitor-link-wide:hover {
   background: rgba(28, 58, 50, 0.08);
   color: var(--color-accent);
+}
+
+.page-visitor .visitor-link-wide + .visitor-links-grid,
+.page-visitor .visitor-links-grid + .visitor-links-grid,
+.page-visitor .visitor-links-grid + .visitor-link-wide,
+.page-visitor .visitor-links-grid + button.visitor-link-wide {
+  margin-top: 0.35rem;
 }
 
 /* Reservations landing */
@@ -3071,9 +3085,18 @@ a:hover {
   padding: 0;
 }
 
+/* Odd last item spans both columns so nothing looks orphaned */
+.page-visitor .visitor-links-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 420px) {
   .page-visitor .visitor-links-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page-visitor .visitor-links-grid > :last-child:nth-child(odd) {
+    grid-column: auto;
   }
 }
 
