@@ -48,11 +48,17 @@
       if (!items.length && !SECTIONS.includes(section)) return;
       const cards = items
         .map((item, index) => {
-          const src = AdminCommon.escapeHtml(item.url);
+          const resolved = window.EcrGalleryUrl
+            ? window.EcrGalleryUrl.resolve(item.url)
+            : item.url;
+          const src = AdminCommon.escapeHtml(resolved);
+          const stored = AdminCommon.escapeHtml(item.url || "");
           const alt = AdminCommon.escapeHtml(item.alt || "");
           return `<article class="admin-gallery-item" data-id="${item.id}">
             <img src="${src}" alt="${alt}" loading="lazy">
             <div class="admin-gallery-item-body">
+              <p class="admin-gallery-url"><a href="${src}" target="_blank" rel="noopener">Open full image</a>
+                <span class="admin-help">${stored}</span></p>
               <label class="admin-gallery-field">
                 <span>Alt</span>
                 <input type="text" class="gallery-alt-input" value="${alt}" maxlength="200">

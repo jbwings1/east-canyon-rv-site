@@ -60,12 +60,14 @@
       .map((section) => {
         const imgs = bySection
           .get(section)
-          .map(
-            (img) =>
-              `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(
-                img.alt || "East Canyon Resort"
-              )}" loading="lazy">`
-          )
+          .map((img) => {
+            const src = window.EcrGalleryUrl
+              ? window.EcrGalleryUrl.resolve(img.url)
+              : img.url;
+            return `<img src="${escapeHtml(src)}" alt="${escapeHtml(
+              img.alt || "East Canyon Resort"
+            )}" loading="lazy">`;
+          })
           .join("");
         return `<section class="picture-group">
           <h2>${escapeHtml(section)}</h2>
