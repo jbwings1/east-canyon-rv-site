@@ -4201,6 +4201,40 @@ body.membership-override-open {
   margin-top: 0.4rem;
 }
 
+.admin-alert-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.admin-alert-item {
+  border: 1px solid #e4d9c8;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.75rem 0.85rem;
+}
+
+.admin-alert-item textarea {
+  width: 100%;
+  min-height: 4.5rem;
+}
+
+.admin-alert-item .admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
+
+.alerts-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.alerts-list li {
+  margin: 0.45rem 0;
+}
+
 .admin-gallery-item-body {
   padding: 0.75rem 0.85rem 0.9rem;
 }
