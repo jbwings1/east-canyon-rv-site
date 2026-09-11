@@ -1,18 +1,10 @@
 /**
- * Public Pictures page — load gallery_images from Supabase and render by section.
+ * Public Pictures page — load gallery sections + images from Supabase.
  */
 (async function () {
   const root = document.getElementById("pictures-root");
   const status = document.getElementById("pictures-status");
   if (!root) return;
-
-  const SECTION_ORDER = [
-    "Around the resort",
-    "Canyons and seasons",
-    "Lodging, courts, and events",
-    "From eastcanyon.com",
-    "From live-site documents",
-  ];
 
   function escapeHtml(value) {
     return String(value || "")
@@ -27,15 +19,24 @@
       throw new Error("Gallery is temporarily unavailable.");
     }
 
-    const { data, error } = await window.ecrSupabase
-      .from("gallery_images")
-      .select("id,section,url,alt,sort_order")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+    const [sectionsRes, imagesRes] = await Promise.all([
+      window.ecrSupabase
+        .from("gallery_sections")
+        .select("name,sort_order")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+      window.ecrSupabase
+        .from("gallery_images")
+        .select("id,section,url,alt,sort_order")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+    ]);
 
-    if (error) throw error;
+    if (sectionsRes.error) throw sectionsRes.error;
+    if (imagesRes.error) throw imagesRes.error;
 
-    const rows = data || [];
+    const sectionOrder = (sectionsRes.data || []).map((s) => s.name);
+    const rows = imagesRes.data || [];
     if (!rows.length) {
       if (status) {
         status.hidden = false;
@@ -52,8 +53,8 @@
     });
 
     const orderedSections = [
-      ...SECTION_ORDER.filter((s) => bySection.has(s)),
-      ...[...bySection.keys()].filter((s) => !SECTION_ORDER.includes(s)),
+      ...sectionOrder.filter((s) => bySection.has(s)),
+      ...[...bySection.keys()].filter((s) => !sectionOrder.includes(s)),
     ];
 
     root.innerHTML = orderedSections

@@ -4177,6 +4177,30 @@ body.membership-override-open {
   background: #efe8dc;
 }
 
+.admin-gallery-section-form {
+  margin-bottom: 0.75rem;
+}
+
+.admin-gallery-section-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.admin-gallery-section-row {
+  border: 1px solid #e4d9c8;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.75rem 0.85rem;
+}
+
+.admin-gallery-section-row .admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
 .admin-gallery-item-body {
   padding: 0.75rem 0.85rem 0.9rem;
 }
