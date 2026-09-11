@@ -37,6 +37,34 @@
     return AdminCommon.memberLabel(profiles, userId);
   }
 
+  function memberIdForUser(userId) {
+    return profiles.find((p) => p.id === userId)?.member_id || "";
+  }
+
+  function classFlagForBooking(booking) {
+    if (typeof MembershipRights === "undefined" || !booking) {
+      return { ok: true, message: "" };
+    }
+    if (booking.status === "cancelled") return { ok: true, message: "" };
+    const memberBookings = bookings.filter((b) => b.user_id === booking.user_id);
+    const gate = MembershipRights.evaluateExistingBooking(
+      booking,
+      memberBookings,
+      memberIdForUser(booking.user_id)
+    );
+    return {
+      ok: gate.ok,
+      message: MembershipRights.formatViolations(gate.violations),
+      classCode: gate.classCode,
+    };
+  }
+
+  function classFlagMarkup(flag) {
+    if (flag.ok) return "";
+    return `<span class="admin-class-flag" title="${AdminCommon.escapeHtml(flag.message)}">Class flag</span>
+      <span class="admin-class-flag-detail">${AdminCommon.escapeHtml(flag.message)}</span>`;
+  }
+
   function renderBookingMemberOptions() {
     const current = bookingMember.value;
     bookingMember.innerHTML = `<option value="">Select member…</option>`;
@@ -61,6 +89,10 @@
     return bookings
       .filter((b) => {
         if (statusFilter === "cancelled") return b.status === "cancelled";
+        if (statusFilter === "flagged") {
+          if (b.status === "cancelled") return false;
+          return !classFlagForBooking(b).ok;
+        }
         if (statusFilter === "active") {
           if (b.status === "cancelled") return false;
           if (b.check_out && b.check_out < today) return false;
@@ -122,8 +154,10 @@
         const canConfirm = b.status !== "confirmed" && b.status !== "cancelled";
         const canCancel = b.status !== "cancelled";
         const canEdit = b.status !== "cancelled";
-        return `<tr data-booking-id="${AdminCommon.escapeHtml(b.id)}">
-          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code></td>
+        const flag = classFlagForBooking(b);
+        const rowClass = flag.ok ? "" : " admin-row-class-flag";
+        return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">
+          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code>${classFlagMarkup(flag)}</td>
           <td>${AdminCommon.escapeHtml(memberLabel(b.user_id))}</td>
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
@@ -158,6 +192,14 @@
     bookings = await Auth.listAllBookings();
     renderBookingMemberOptions();
     renderBookings();
+    const flagged = bookings.filter((b) => !classFlagForBooking(b).ok).length;
+    if (flagged) {
+      AdminCommon.showMessage(
+        message,
+        `${flagged} booking${flagged === 1 ? "" : "s"} flagged for class rule issues. Filter: Class rule flags.`,
+        "error"
+      );
+    }
     if (editingId) {
       const still = bookings.find((b) => b.id === editingId);
       if (still && still.status !== "cancelled") openEdit(still);

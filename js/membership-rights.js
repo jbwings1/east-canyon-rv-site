@@ -412,6 +412,24 @@
     return (violations || []).map((v) => v.message).filter(Boolean).join(" ");
   }
 
+  /**
+   * Check an existing booking against class rights (other member bookings as context).
+   * Cancelled stays are not flagged.
+   */
+  function evaluateExistingBooking(booking, memberBookings = [], memberId = "") {
+    if (!booking || String(booking.status || "").toLowerCase() === "cancelled") {
+      return { ok: true, classCode: null, rights: null, violations: [] };
+    }
+    return validateBooking({
+      memberId,
+      reservationType: bookingTypeUi(booking),
+      checkIn: booking.check_in || booking.checkIn,
+      checkOut: booking.check_out || booking.checkOut,
+      existingBookings: memberBookings,
+      excludeBookingId: booking.id,
+    });
+  }
+
   function ensureOverrideDialog() {
     let root = document.getElementById("membership-override-dialog");
     if (root) return root;
@@ -483,6 +501,7 @@
     typeAllowed,
     validateBooking,
     formatViolations,
+    evaluateExistingBooking,
     showOverrideDialog,
     isCondoReservationType,
     isRvReservationType,
