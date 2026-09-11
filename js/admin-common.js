@@ -19,13 +19,13 @@ window.AdminCommon = {
       id: "reservations_view",
       label: "View reservations",
       href: "admin-reservations-view.html",
-      blurb: "See all current and upcoming bookings.",
+      blurb: "See all bookings. Edit or cancel if you also have Manage reservations.",
     },
     {
       id: "reservations_manage",
       label: "Manage reservations",
       href: "admin-reservations-manage.html",
-      blurb: "Book for a member, confirm, or cancel reservations.",
+      blurb: "Book for a member, edit dates/spot, confirm, or cancel.",
     },
     {
       id: "website",

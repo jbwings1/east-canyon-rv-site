@@ -2155,6 +2155,29 @@ a:hover {
   margin-right: 0.75rem;
 }
 
+.admin-booking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  white-space: normal;
+  min-width: 11rem;
+}
+
+.admin-booking-actions .btn-small {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.admin-booking-filters {
+  margin-bottom: 0.75rem;
+}
+
+.admin-table tr.admin-booking-past td {
+  color: #6b645c;
+}
+
 .admin-table tr.admin-row-link {
   cursor: pointer;
 }

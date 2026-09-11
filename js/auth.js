@@ -554,7 +554,9 @@ const Auth = {
   },
 
   async updateBookingStatus(bookingId, status) {
-    if (!this.isAdmin()) throw new Error("Admin access required.");
+    if (!this.hasAdminTask("reservations_manage")) {
+      throw new Error("You are not assigned the Reservations manage task.");
+    }
     if (status !== "confirmed" && status !== "cancelled") {
       throw new Error("Status must be confirmed or cancelled.");
     }
@@ -567,6 +569,77 @@ const Auth = {
       .select()
       .maybeSingle();
     throwIfError(error);
+    if (!data) throw new Error("Booking could not be updated.");
+    return data;
+  },
+
+  /**
+   * Admin edit of any member booking (dates, spot, type, notes).
+   * Does not apply member cancel/edit windows or original-stay lock.
+   */
+  async updateBookingAsAdmin(
+    bookingId,
+    { reservationType, spot, checkIn, checkOut, notes } = {}
+  ) {
+    if (!this.hasAdminTask("reservations_manage")) {
+      throw new Error("You are not assigned the Reservations manage task.");
+    }
+    if (!bookingId) throw new Error("Booking is required.");
+    if (!checkIn || !checkOut) throw new Error("Check-in and check-out are required.");
+    if (checkOut <= checkIn) throw new Error("Check-out must be after check-in.");
+
+    const { data: existing, error: existingError } = await getClient()
+      .from("bookings")
+      .select(
+        "id,user_id,reservation_type,spot,check_in,check_out,status,notes,original_check_in,original_check_out"
+      )
+      .eq("id", bookingId)
+      .maybeSingle();
+    throwIfError(existingError);
+    if (!existing) throw new Error("Booking not found.");
+    if (existing.status === "cancelled") {
+      throw new Error("Cancelled bookings cannot be edited. Create a new reservation instead.");
+    }
+
+    const dbType = reservationType
+      ? toDbReservationType(reservationType)
+      : existing.reservation_type;
+    if (!dbType) throw new Error("Choose Condo, Family reunion, or RV.");
+
+    const nextSpot =
+      spot === undefined || spot === null ? existing.spot : String(spot).trim() || null;
+    const nextNotes =
+      notes === undefined || notes === null ? existing.notes : String(notes).trim() || null;
+
+    const summaryParts = [];
+    if (existing.check_in !== checkIn || existing.check_out !== checkOut) {
+      summaryParts.push(`dates ${existing.check_in}→${existing.check_out} to ${checkIn}→${checkOut}`);
+    }
+    if (existing.reservation_type !== dbType) {
+      summaryParts.push(`type to ${dbType}`);
+    }
+    if ((existing.spot || "") !== (nextSpot || "")) {
+      summaryParts.push(`spot to ${nextSpot || "(none)"}`);
+    }
+
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update({
+        reservation_type: dbType,
+        spot: nextSpot,
+        check_in: checkIn,
+        check_out: checkOut,
+        notes: nextNotes,
+        edited_at: new Date().toISOString(),
+        last_edit_summary: summaryParts.length
+          ? `Admin edit: ${summaryParts.join("; ")}`
+          : "Admin edit",
+      })
+      .eq("id", bookingId)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Booking could not be saved.");
     return data;
   },
 
