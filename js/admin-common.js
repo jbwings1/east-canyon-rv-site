@@ -31,13 +31,20 @@ window.AdminCommon = {
       id: "website",
       label: "Website",
       href: "admin-website.html",
-      blurb: "Update the site alert notice.",
+      blurb: "Update site alerts (banner header, details, and photos).",
     },
     {
       id: "pictures",
       label: "Pictures",
       href: "admin-pictures.html",
       blurb: "Upload, reorder, or remove Pictures page gallery images.",
+      gate: "website",
+    },
+    {
+      id: "board",
+      label: "Board Members",
+      href: "admin-board.html",
+      blurb: "Edit Board of Directors names, photos, phone, email, and committees.",
       gate: "website",
     },
     {

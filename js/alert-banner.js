@@ -1,5 +1,5 @@
 /**
- * Site-wide alert banner — loads active site_alerts and rotates every 10s when multiple.
+ * Site-wide alert banner — loads active site_alerts headers and rotates every 10s.
  */
 (function () {
   const ROTATE_MS = 10000;
@@ -12,6 +12,10 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function bannerText(alert) {
+    return String(alert.header || alert.body || "").trim();
   }
 
   function render(alerts, index) {
@@ -29,7 +33,7 @@
     banner.setAttribute("aria-label", label);
     banner.innerHTML = `<p>
       <strong>${escapeHtml(label)}</strong>
-      ${escapeHtml(alert.body)}
+      ${escapeHtml(bannerText(alert))}
       <a href="alerts.html" class="home-alert-link">Details</a>
     </p>`;
   }
@@ -38,12 +42,12 @@
     try {
       const { data, error } = await window.ecrSupabase
         .from("site_alerts")
-        .select("id,body,sort_order,updated_at")
+        .select("id,header,body,sort_order,updated_at")
         .eq("active", true)
         .order("sort_order", { ascending: true })
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      const alerts = (data || []).filter((a) => String(a.body || "").trim());
+      const alerts = (data || []).filter((a) => bannerText(a));
       if (!alerts.length) {
         banner.hidden = true;
         return;

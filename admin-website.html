@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Website | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site32">
+  <link rel="stylesheet" href="styles.css?v=site34">
 </head>
 <body class="page-visitor page-admin">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
     <p>
       <strong>Alert</strong>
-      Stage 2 fire restrictions. UT-66 from Morgan and UT-65 from Henefer are closed.
-      ATV access is limited to Kurzy and Westlake trails.
+      Loading current alerts…
       <a href="alerts.html" class="home-alert-link">Details</a>
     </p>
   </aside>
@@ -46,11 +45,19 @@
 
         <section class="admin-card">
           <h2>Add alert</h2>
-          <p class="admin-help">You can have more than one active alert. The site banner shows each active alert for 10 seconds, then moves to the next and loops.</p>
+          <p class="admin-help">Banner shows only the short header (50 characters max). The Alerts page shows full details and any photos. Multiple active alerts rotate every 10 seconds on the banner.</p>
           <form id="admin-alert-form" class="auth-form admin-form">
             <div class="form-group">
-              <label for="alert-body">Alert text</label>
-              <textarea id="alert-body" rows="3" required></textarea>
+              <label for="alert-header">Banner header</label>
+              <input type="text" id="alert-header" maxlength="50" required placeholder="Short line for phones">
+            </div>
+            <div class="form-group">
+              <label for="alert-details">Details</label>
+              <textarea id="alert-details" rows="4" placeholder="Full text for the Alerts page"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="alert-photo">Photo (optional)</label>
+              <input type="file" id="alert-photo" accept="image/jpeg,image/png,image/webp,image/gif">
             </div>
             <label class="admin-check">
               <input type="checkbox" id="alert-active" checked>
@@ -76,9 +83,10 @@
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
   <script src="js/auth.js?v=sb5"></script>
-  <script src="js/admin-common.js?v=sb7"></script>
-  <script src="js/admin-website.js?v=sb7"></script>
-  <script src="js/alert-banner.js?v=1"></script>
+  <script src="js/admin-common.js?v=sb8"></script>
+  <script src="js/gallery-url.js?v=1"></script>
+  <script src="js/admin-website.js?v=sb8"></script>
+  <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
       <p>
