@@ -4235,6 +4235,31 @@ body.membership-override-open {
   margin: 0.45rem 0;
 }
 
+.alerts-page-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.alerts-page-item {
+  border: 1px solid #e4d9c8;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem 1.1rem;
+}
+
+.alerts-page-heading {
+  margin: 0 0 0.45rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.35rem;
+  color: #1c3a32;
+}
+
+.alerts-page-item p {
+  margin: 0;
+  line-height: 1.5;
+}
+
 .admin-gallery-item-body {
   padding: 0.75rem 0.85rem 0.9rem;
 }
