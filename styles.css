@@ -4181,6 +4181,18 @@ body.membership-override-open {
   padding: 0.75rem 0.85rem 0.9rem;
 }
 
+.admin-gallery-url {
+  margin: 0 0 0.55rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+
+.admin-gallery-url .admin-help {
+  word-break: break-all;
+  font-size: 0.8rem;
+}
+
 .admin-gallery-field {
   display: block;
   margin: 0 0 0.55rem;
