@@ -2156,11 +2156,78 @@ a:hover {
 }
 
 .admin-booking-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  white-space: normal;
-  min-width: 11rem;
+  white-space: nowrap;
+  min-width: 6.5rem;
+  vertical-align: middle;
+}
+
+.admin-row-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-row-menu-toggle {
+  padding: 0.32rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  min-width: 5.75rem;
+}
+
+.admin-row-menu-toggle::after {
+  content: "";
+  display: inline-block;
+  margin-left: 0.4rem;
+  border-left: 0.28rem solid transparent;
+  border-right: 0.28rem solid transparent;
+  border-top: 0.32rem solid currentColor;
+  vertical-align: 0.1rem;
+}
+
+.admin-row-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 40;
+  min-width: 10rem;
+  padding: 0.3rem;
+  background: #fffdf9;
+  border: 1px solid #e4d9c8;
+  border-radius: 0.55rem;
+  box-shadow: 0 10px 24px rgba(28, 25, 22, 0.12);
+}
+
+.admin-row-menu-panel[hidden] {
+  display: none;
+}
+
+.admin-row-menu-panel button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #1c1916;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-row-menu-panel button:hover,
+.admin-row-menu-panel button:focus-visible {
+  background: #f0ebe2;
+  outline: none;
+}
+
+.admin-row-menu-panel button.is-danger {
+  color: #8a2f22;
+}
+
+.admin-row-menu-panel button.is-danger:hover,
+.admin-row-menu-panel button.is-danger:focus-visible {
+  background: rgba(160, 55, 40, 0.1);
 }
 
 .admin-booking-actions .btn-small {

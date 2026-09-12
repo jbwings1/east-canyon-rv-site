@@ -316,28 +316,29 @@
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
           <td>${AdminCommon.escapeHtml(dates)}</td>
           <td><span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span></td>
-          <td class="admin-actions admin-booking-actions">
-            <button type="button" class="btn btn-outline btn-small" data-action="view">View</button>
-            ${
-              canEdit
-                ? `<button type="button" class="btn btn-outline btn-small" data-action="edit">Edit</button>`
-                : ""
-            }
-            ${
-              b.status === "confirmed" && !b.office_checked_in_at
-                ? `<button type="button" class="btn btn-outline btn-small" data-action="checkin">Check in</button>`
-                : ""
-            }
-            ${
-              canConfirm
-                ? `<button type="button" class="btn btn-outline btn-small" data-action="confirmed">Confirm</button>`
-                : ""
-            }
-            ${
-              canCancel
-                ? `<button type="button" class="btn btn-primary btn-small" data-action="cancelled">Cancel</button>`
-                : ""
-            }
+          <td class="admin-booking-actions">
+            <div class="admin-row-menu">
+              <button type="button" class="btn btn-outline btn-small admin-row-menu-toggle" aria-expanded="false" aria-haspopup="menu">Actions</button>
+              <div class="admin-row-menu-panel" role="menu" hidden>
+                <button type="button" role="menuitem" data-action="view">View</button>
+                ${canEdit ? `<button type="button" role="menuitem" data-action="edit">Edit</button>` : ""}
+                ${
+                  b.status === "confirmed" && !b.office_checked_in_at
+                    ? `<button type="button" role="menuitem" data-action="checkin">Check in</button>`
+                    : ""
+                }
+                ${
+                  canConfirm
+                    ? `<button type="button" role="menuitem" data-action="confirmed">Confirm</button>`
+                    : ""
+                }
+                ${
+                  canCancel
+                    ? `<button type="button" role="menuitem" class="is-danger" data-action="cancelled">Cancel</button>`
+                    : ""
+                }
+              </div>
+            </div>
           </td>
         </tr>`;
       })
@@ -546,14 +547,37 @@
   filterStatus?.addEventListener("change", renderBookings);
   filterSearch?.addEventListener("input", renderBookings);
 
+  function closeAllRowMenus(exceptPanel = null) {
+    document.querySelectorAll(".admin-row-menu-panel").forEach((panel) => {
+      if (exceptPanel && panel === exceptPanel) return;
+      panel.hidden = true;
+      const toggle = panel.parentElement?.querySelector(".admin-row-menu-toggle");
+      if (toggle) toggle.setAttribute("aria-expanded", "false");
+    });
+  }
+
   bookingsBody?.addEventListener("click", async (event) => {
+    const toggle = event.target.closest(".admin-row-menu-toggle");
+    if (toggle && bookingsBody.contains(toggle)) {
+      event.stopPropagation();
+      const panel = toggle.parentElement?.querySelector(".admin-row-menu-panel");
+      const willOpen = Boolean(panel?.hidden);
+      closeAllRowMenus(willOpen ? panel : null);
+      if (panel) {
+        panel.hidden = !willOpen;
+        toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      }
+      return;
+    }
+
     const button = event.target.closest("button[data-action]");
-    if (!button) return;
+    if (!button || !bookingsBody.contains(button)) return;
     const row = button.closest("tr[data-booking-id]");
     if (!row) return;
     const id = row.getAttribute("data-booking-id");
     const booking = bookings.find((b) => b.id === id);
     const action = button.getAttribute("data-action");
+    closeAllRowMenus();
 
     if (action === "view") {
       if (booking) openView(booking);
@@ -603,6 +627,11 @@
       AdminCommon.showMessage(message, err.message, "error");
       button.disabled = false;
     }
+  });
+
+  document.addEventListener("click", () => closeAllRowMenus());
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAllRowMenus();
   });
 
   try {
