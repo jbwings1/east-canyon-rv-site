@@ -81,7 +81,12 @@
     if (!button || !canManage) return;
     const id = button.getAttribute("data-booking-id");
     const label = button.getAttribute("data-label") || "this reservation";
-    if (!confirm(`Cancel ${label}?`)) return;
+    if (
+      !confirm(
+        `Cancel reservation ${label}?\n\nClick OK to cancel it now. The member will no longer hold this stay.`
+      )
+    )
+      return;
     button.disabled = true;
     try {
       await Auth.updateBookingStatus(id, "cancelled");

@@ -341,7 +341,12 @@
       const label = booking
         ? `${confirmationId(booking)} (${memberLabel(booking.user_id)})`
         : "this reservation";
-      if (!confirm(`Cancel ${label}? This cannot be undone from the member site.`)) return;
+      if (
+        !confirm(
+          `Cancel reservation ${label}?\n\nClick OK to cancel it now. The member will no longer hold this stay.`
+        )
+      )
+        return;
     }
 
     button.disabled = true;
