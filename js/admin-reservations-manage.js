@@ -341,12 +341,13 @@
       const label = booking
         ? `${confirmationId(booking)} (${memberLabel(booking.user_id)})`
         : "this reservation";
-      if (
-        !confirm(
-          `Cancel reservation ${label}?\n\nClick OK to cancel it now. The member will no longer hold this stay.`
-        )
-      )
-        return;
+      const ok = await AdminCommon.confirmAction({
+        title: "Confirm action",
+        message: `Cancel reservation ${label}?\n\nThe member will no longer hold this stay.`,
+        confirmLabel: "Cancel reservation",
+        cancelLabel: "Go back",
+      });
+      if (!ok) return;
     }
 
     button.disabled = true;
