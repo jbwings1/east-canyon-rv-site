@@ -2,8 +2,8 @@
  * Shared browser client. Uses the anon/publishable key from supabase-config.js.
  * Service role keys must stay server-side and never ship in this repo.
  *
- * Admin sessions use sessionStorage (cleared when the browser closes).
- * Member sessions stay in localStorage.
+ * Auth sessions use sessionStorage so closing the browser signs the user out
+ * (important on shared office / family computers).
  */
 (function () {
   const cfg = window.SUPABASE_CONFIG;
@@ -14,17 +14,7 @@
     throw new Error("Load js/supabase.js (Supabase JS UMD) before js/supabase-client.js.");
   }
 
-  const ADMIN_SESSION_FLAG = "eastCanyonAdminSession";
-
-  function adminSessionMode() {
-    try {
-      return sessionStorage.getItem(ADMIN_SESSION_FLAG) === "1";
-    } catch {
-      return false;
-    }
-  }
-
-  const dualStorage = {
+  const sessionOnlyStorage = {
     getItem(key) {
       try {
         const fromSession = sessionStorage.getItem(key);
@@ -32,28 +22,27 @@
       } catch {
         /* ignore */
       }
+      // One-time migration from older localStorage sessions, then clear them.
       try {
-        return localStorage.getItem(key);
+        const fromLocal = localStorage.getItem(key);
+        if (fromLocal != null) {
+          sessionStorage.setItem(key, fromLocal);
+          localStorage.removeItem(key);
+          return fromLocal;
+        }
       } catch {
-        return null;
+        /* ignore */
       }
+      return null;
     },
     setItem(key, value) {
-      if (adminSessionMode()) {
-        try {
-          sessionStorage.setItem(key, value);
-        } catch {
-          /* ignore */
-        }
-        try {
-          localStorage.removeItem(key);
-        } catch {
-          /* ignore */
-        }
-        return;
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {
+        /* ignore */
       }
       try {
-        localStorage.setItem(key, value);
+        localStorage.removeItem(key);
       } catch {
         /* ignore */
       }
@@ -77,7 +66,7 @@
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storage: dualStorage,
+      storage: sessionOnlyStorage,
     },
   });
 })();
