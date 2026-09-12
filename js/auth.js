@@ -6,6 +6,7 @@ const SESSION_KEY = "eastCanyonSupabaseSession";
 const PROFILE_CACHE_KEY = "eastCanyonProfileCache";
 const PENDING_PROFILE_KEY = "eastCanyonPendingProfile";
 const LAST_BOOKING_KEY = "ecr-last-booking-confirmation";
+const ADMIN_SESSION_FLAG = "eastCanyonAdminSession";
 
 const RESERVATION_TYPE_LABELS = {
   condo: "Condo",
@@ -37,23 +38,86 @@ function storageAvailable() {
   }
 }
 
-function readJson(key, fallback = null) {
-  if (!storageAvailable()) return fallback;
+function adminSessionMode() {
   try {
-    const raw = localStorage.getItem(key);
+    return sessionStorage.getItem(ADMIN_SESSION_FLAG) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function readFromStore(store, key, fallback = null) {
+  try {
+    const raw = store.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
 }
 
-function writeJson(key, value) {
-  if (!storageAvailable()) return;
+function writeToStore(store, key, value) {
   try {
-    if (value == null) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(value));
+    if (value == null) store.removeItem(key);
+    else store.setItem(key, JSON.stringify(value));
   } catch {
     /* storage blocked */
+  }
+}
+
+function readJson(key, fallback = null) {
+  const fromSession = readFromStore(sessionStorage, key, null);
+  if (fromSession != null) return fromSession;
+  if (!storageAvailable()) return fallback;
+  return readFromStore(localStorage, key, fallback);
+}
+
+function writeJson(key, value) {
+  if (adminSessionMode()) {
+    writeToStore(sessionStorage, key, value);
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
+  if (!storageAvailable()) return;
+  writeToStore(localStorage, key, value);
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+function moveKeyToSessionStorage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw == null) return;
+    sessionStorage.setItem(key, raw);
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Admin auth lives in sessionStorage so closing the browser signs staff out. */
+function enableAdminSessionStorage() {
+  try {
+    sessionStorage.setItem(ADMIN_SESSION_FLAG, "1");
+  } catch {
+    /* ignore */
+  }
+  moveKeyToSessionStorage(officialStorageKey());
+  moveKeyToSessionStorage(SESSION_KEY);
+  moveKeyToSessionStorage(PROFILE_CACHE_KEY);
+}
+
+function disableAdminSessionStorage() {
+  try {
+    sessionStorage.removeItem(ADMIN_SESSION_FLAG);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -125,7 +189,19 @@ function officialStorageKey() {
 
 function readOfficialSession() {
   try {
-    const raw = localStorage.getItem(officialStorageKey());
+    let raw = null;
+    try {
+      raw = sessionStorage.getItem(officialStorageKey());
+    } catch {
+      raw = null;
+    }
+    if (!raw) {
+      try {
+        raw = localStorage.getItem(officialStorageKey());
+      } catch {
+        raw = null;
+      }
+    }
     if (!raw) return readJson(SESSION_KEY);
     const parsed = JSON.parse(raw);
     if (parsed?.access_token) return parsed;
@@ -192,7 +268,12 @@ const Auth = {
     const session = this.getSession();
     if (!session?.access_token || !session.user) return null;
     const cached = readJson(PROFILE_CACHE_KEY);
-    return mapProfile(session, cached);
+    const user = mapProfile(session, cached);
+    // Migrate any leftover persistent admin session into browser-session storage.
+    if (user?.accountKind === "admin" && !adminSessionMode()) {
+      enableAdminSessionStorage();
+    }
+    return user;
   },
 
   needsPasswordChange(user = this.getCurrentUser()) {
@@ -682,6 +763,16 @@ const Auth = {
     writeJson(SESSION_KEY, null);
     writeJson(PROFILE_CACHE_KEY, null);
     try {
+      sessionStorage.removeItem(ADMIN_SESSION_FLAG);
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.removeItem(officialStorageKey());
+    } catch {
+      /* ignore */
+    }
+    try {
       localStorage.removeItem(officialStorageKey());
     } catch {
       /* ignore */
@@ -835,12 +926,14 @@ const Auth = {
   },
 
   async signInAsMember(loginId, password) {
+    disableAdminSessionStorage();
     const email = await this.resolveMemberLoginEmail(loginId);
     const user = await this.signIn(email, password);
     if (user?.accountKind === "admin") {
       await this.signOutQuiet();
       throw new Error("Use Admin Sign In for staff accounts. Member Sign In is for members only.");
     }
+    disableAdminSessionStorage();
     return user;
   },
 
@@ -851,7 +944,8 @@ const Auth = {
       await this.signOutQuiet();
       throw new Error("This account does not have administrator access.");
     }
-    return user;
+    enableAdminSessionStorage();
+    return this.getCurrentUser() || user;
   },
 
   async signUp({ email, password, name, phone, reservationType, rv }) {
