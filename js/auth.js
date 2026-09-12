@@ -434,11 +434,22 @@ const Auth = {
     return { start, end };
   },
 
-  /** New stay must be fully inside the original booking window. */
-  stayWithinOriginal(checkIn, checkOut, booking) {
+  /**
+   * Member edits may move or extend dates, but the new stay must share at least one
+   * calendar day with the original booking (inclusive check-in through check-out).
+   * Example: original 9-30→10-2 may become 9-29→10-2, 9-29→10-3, or 10-2→10-5.
+   */
+  stayOverlapsOriginal(checkIn, checkOut, booking) {
     const win = this.getOriginalStayWindow(booking);
     if (!win) return true;
-    return Boolean(checkIn && checkOut && checkIn >= win.start && checkOut <= win.end);
+    if (!checkIn || !checkOut || checkOut <= checkIn) return false;
+    // Closed intervals [start, end] share a day when startA <= endB && startB <= endA.
+    return checkIn <= win.end && win.start <= checkOut;
+  },
+
+  /** @deprecated Use stayOverlapsOriginal — kept for older callers. */
+  stayWithinOriginal(checkIn, checkOut, booking) {
+    return this.stayOverlapsOriginal(checkIn, checkOut, booking);
   },
 
   formatOriginalStayLabel(booking) {
@@ -448,6 +459,20 @@ const Auth = {
       return window.SpotAvailability.formatOriginalStayRange(win.start, win.end);
     }
     return `${win.start} \u2192 ${win.end}`;
+  },
+
+  originalStayOverlapMessage(booking) {
+    const originalLabel = this.formatOriginalStayLabel(booking);
+    if (originalLabel) {
+      return (
+        `Edited dates must keep at least one day from your original booking (${originalLabel}). ` +
+        "You can move or extend the stay as long as it still overlaps that original range."
+      );
+    }
+    return (
+      "Edited dates must keep at least one day from your original booking. " +
+      "You can move or extend the stay as long as it still overlaps that original range."
+    );
   },
 
   /**
@@ -1045,13 +1070,8 @@ const Auth = {
     if (requestedUiType && existingUiType && requestedUiType !== existingUiType) {
       throw new Error("You cannot change reservation type. Delete and book a new stay instead.");
     }
-    if (!this.stayWithinOriginal(checkIn, checkOut, existing)) {
-      const originalLabel = this.formatOriginalStayLabel(existing);
-      throw new Error(
-        originalLabel
-          ? `Edited dates must stay within your original booking (${originalLabel}). To book different dates, delete this reservation and book a new one.`
-          : "Edited dates must stay within your original booking window. To book different dates, delete this reservation and book a new one."
-      );
+    if (!this.stayOverlapsOriginal(checkIn, checkOut, existing)) {
+      throw new Error(this.originalStayOverlapMessage(existing));
     }
 
     const { data, error } = await getClient()
