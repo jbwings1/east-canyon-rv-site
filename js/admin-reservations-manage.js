@@ -30,7 +30,27 @@
   let viewingId = null;
 
   function todayIso() {
-    return new Date().toISOString().split("T")[0];
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+  }
+
+  /** Office check-in is allowed from the reservation check-in date onward. */
+  function canOfficeCheckIn(booking) {
+    if (!booking) return false;
+    if (booking.status === "cancelled") return false;
+    if (booking.status === "active" || booking.office_checked_in_at) return false;
+    if (booking.status !== "confirmed") return false;
+    const checkIn = booking.check_in || "";
+    if (!checkIn) return false;
+    return checkIn <= todayIso();
+  }
+
+  function officeCheckInTooEarlyMessage(booking) {
+    const checkIn = booking?.check_in || "";
+    if (!checkIn) return "Office check-in is only available on or after the reservation check-in date.";
+    return `Office check-in opens on the first day of the stay (${checkIn}).`;
   }
 
   function uiType(dbType) {
@@ -156,7 +176,18 @@
     if (checkinDone) checkinDone.hidden = !checkedIn;
     if (!checkedIn) {
       const notesEl = document.getElementById("office-check-in-notes");
+      const checkInBtn = document.getElementById("admin-office-check-in-btn");
+      const earlyEl = document.getElementById("admin-checkin-too-early");
       if (notesEl) notesEl.value = booking.office_check_in_notes || "";
+      const allowed = canOfficeCheckIn(booking);
+      if (checkInBtn) {
+        checkInBtn.disabled = !allowed;
+        checkInBtn.title = allowed ? "" : officeCheckInTooEarlyMessage(booking);
+      }
+      if (earlyEl) {
+        earlyEl.hidden = allowed;
+        earlyEl.textContent = allowed ? "" : officeCheckInTooEarlyMessage(booking);
+      }
       return;
     }
     const byEl = document.getElementById("office-checked-in-by-label");
@@ -328,7 +359,7 @@
                 <button type="button" role="menuitem" data-action="view">View</button>
                 ${canEdit ? `<button type="button" role="menuitem" data-action="edit">Edit</button>` : ""}
                 ${
-                  b.status === "confirmed" && !b.office_checked_in_at
+                  canOfficeCheckIn(b)
                     ? `<button type="button" role="menuitem" data-action="checkin">Check in</button>`
                     : ""
                 }
@@ -546,6 +577,11 @@
   document.getElementById("admin-office-check-in-btn")?.addEventListener("click", async () => {
     const id = document.getElementById("edit-booking-id")?.value || editingId;
     if (!id) return;
+    const booking = bookings.find((b) => b.id === id);
+    if (booking && !canOfficeCheckIn(booking)) {
+      AdminCommon.showMessage(checkinResult, officeCheckInTooEarlyMessage(booking), "error");
+      return;
+    }
     const notes = document.getElementById("office-check-in-notes")?.value.trim() || "";
     const ok = await AdminCommon.confirmAction({
       title: "Confirm action",

@@ -1246,7 +1246,7 @@ const Auth = {
 
     const { data: existing, error: existingError } = await getClient()
       .from("bookings")
-      .select("id,status,office_checked_in_at,check_out")
+      .select("id,status,office_checked_in_at,check_in,check_out")
       .eq("id", bookingId)
       .maybeSingle();
     throwIfError(existingError);
@@ -1256,6 +1256,18 @@ const Auth = {
     }
     if (existing.status === "active" || existing.office_checked_in_at) {
       throw new Error("This reservation is already checked in.");
+    }
+    const checkIn = existing.check_in || "";
+    if (checkIn) {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+        now.getDate()
+      ).padStart(2, "0")}`;
+      if (today < checkIn) {
+        throw new Error(
+          `Office check-in opens on the first day of the stay (${checkIn}).`
+        );
+      }
     }
 
     const now = new Date().toISOString();
