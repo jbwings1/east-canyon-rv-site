@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Reservations | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site38">
+  <link rel="stylesheet" href="styles.css?v=site39">
 </head>
 <body class="page-visitor page-admin">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -85,6 +85,16 @@
           <p id="admin-create-booking-result" class="form-message" role="status" aria-live="polite"></p>
         </section>
 
+        <section class="admin-card" id="admin-view-card" hidden>
+          <h2>Reservation details</h2>
+          <p id="admin-view-summary" class="admin-help"></p>
+          <dl class="admin-checkin-details admin-view-details" id="admin-view-details"></dl>
+          <div class="admin-actions">
+            <button type="button" class="btn btn-outline" id="admin-view-edit" hidden>Edit</button>
+            <button type="button" class="btn btn-outline" id="admin-view-close">Close</button>
+          </div>
+        </section>
+
         <section class="admin-card" id="admin-edit-card" hidden>
           <h2>Edit reservation</h2>
           <p id="admin-edit-summary" class="admin-help"></p>
@@ -156,7 +166,7 @@
 
         <section class="admin-card">
           <h2>All bookings</h2>
-          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. Open Edit to perform <strong>Office check-in</strong> when the member arrives. <strong>Rule flags</strong> mark broken booking rules. Active (office-checked-in) stays do not count toward the max of 2 upcoming. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
+          <p class="admin-help">Use <strong>View</strong> for full reservation details, <strong>Edit</strong> or <strong>Cancel</strong> on each row. Open Edit to perform <strong>Office check-in</strong> when the member arrives. <strong>Rule flags</strong> mark broken booking rules. Active (office-checked-in) stays do not count toward the max of 2 upcoming. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
           <div class="admin-form-row admin-booking-filters">
             <div class="form-group">
               <label for="booking-filter-status">Show</label>
@@ -206,7 +216,7 @@
   <script src="js/membership-rights.js?v=3"></script>
   <script src="js/booking-rule-flags.js?v=5"></script>
   <script src="js/admin-common.js?v=sb9"></script>
-  <script src="js/admin-reservations-manage.js?v=sb16"></script>
+  <script src="js/admin-reservations-manage.js?v=sb17"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

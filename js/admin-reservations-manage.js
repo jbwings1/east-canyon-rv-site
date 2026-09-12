@@ -10,6 +10,10 @@
   const bookingType = document.getElementById("booking-type");
   const message = document.getElementById("admin-message");
   const createForm = document.getElementById("admin-create-booking-form");
+  const viewCard = document.getElementById("admin-view-card");
+  const viewSummary = document.getElementById("admin-view-summary");
+  const viewDetails = document.getElementById("admin-view-details");
+  const viewEditBtn = document.getElementById("admin-view-edit");
   const editCard = document.getElementById("admin-edit-card");
   const editForm = document.getElementById("admin-edit-booking-form");
   const editResult = document.getElementById("admin-edit-booking-result");
@@ -23,6 +27,7 @@
   let profiles = [];
   let bookings = [];
   let editingId = null;
+  let viewingId = null;
 
   function todayIso() {
     return new Date().toISOString().split("T")[0];
@@ -162,6 +167,87 @@
     if (notesEdit) notesEdit.value = booking.office_check_in_notes || "";
   }
 
+  function detailRow(label, value, { span = false } = {}) {
+    const text = value == null || value === "" ? "—" : String(value);
+    const spanClass = span ? " admin-view-span" : "";
+    return `<div class="${spanClass.trim()}">
+      <dt>${AdminCommon.escapeHtml(label)}</dt>
+      <dd>${AdminCommon.escapeHtml(text)}</dd>
+    </div>`;
+  }
+
+  function memberProfile(userId) {
+    return profiles.find((p) => p.id === userId) || null;
+  }
+
+  function closeView() {
+    viewingId = null;
+    if (viewCard) viewCard.hidden = true;
+    if (viewDetails) viewDetails.innerHTML = "";
+    if (viewSummary) viewSummary.textContent = "";
+    if (viewEditBtn) viewEditBtn.hidden = true;
+  }
+
+  function openView(booking) {
+    if (!booking) return;
+    closeEdit();
+    viewingId = booking.id;
+    const profile = memberProfile(booking.user_id);
+    const displayStatus =
+      typeof Auth.bookingDisplayStatus === "function"
+        ? Auth.bookingDisplayStatus(booking)
+        : booking.status || "—";
+    const flag = ruleFlagForBooking(booking);
+    const bookedBy =
+      booking.booked_by_kind === "admin"
+        ? `Admin · ${staffLabel(booking.booked_by_user_id)}`
+        : booking.booked_by_kind === "member"
+          ? `Member · ${memberLabel(booking.booked_by_user_id || booking.user_id)}`
+          : booking.booked_by_kind || "—";
+
+    if (viewSummary) {
+      viewSummary.textContent = `${confirmationId(booking)} · ${memberLabel(booking.user_id)} · ${displayStatus}`;
+    }
+
+    if (viewDetails) {
+      viewDetails.innerHTML = [
+        detailRow("Confirmation", confirmationId(booking)),
+        detailRow("Status", displayStatus),
+        detailRow("Member", profile?.full_name || memberLabel(booking.user_id)),
+        detailRow("Member ID", profile?.member_id || "—"),
+        detailRow("Email", profile?.email || "—"),
+        detailRow("Phone", profile?.phone || "—"),
+        detailRow("Type", Auth.reservationTypeLabel(booking.reservation_type) || booking.reservation_type || "—"),
+        detailRow("Spot / unit", booking.spot || "—"),
+        detailRow("Check in", booking.check_in || "—"),
+        detailRow("Check out", booking.check_out || "—"),
+        detailRow("Original check in", booking.original_check_in || "—"),
+        detailRow("Original check out", booking.original_check_out || "—"),
+        detailRow("Booked by", bookedBy),
+        detailRow("Created", formatDateTime(booking.created_at)),
+        detailRow("Confirmed", formatDateTime(booking.confirmed_at)),
+        detailRow("Last edited", formatDateTime(booking.edited_at)),
+        detailRow("Last edit summary", booking.last_edit_summary || "—", { span: true }),
+        detailRow("Reservation notes", booking.notes || "—", { span: true }),
+        detailRow("Office checked in", formatDateTime(booking.office_checked_in_at)),
+        detailRow("Checked in by", staffLabel(booking.office_checked_in_by)),
+        detailRow("Office check-in notes", booking.office_check_in_notes || "—", { span: true }),
+        detailRow(
+          "Rule flags",
+          flag.ok ? "None" : flag.message || "Flagged",
+          { span: true }
+        ),
+        detailRow("Booking ID", booking.id || "—", { span: true }),
+      ].join("");
+    }
+
+    if (viewEditBtn) viewEditBtn.hidden = booking.status === "cancelled";
+    if (viewCard) {
+      viewCard.hidden = false;
+      viewCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   function closeEdit() {
     editingId = null;
     if (editCard) editCard.hidden = true;
@@ -173,6 +259,7 @@
 
   function openEdit(booking) {
     if (!booking || booking.status === "cancelled") return;
+    closeView();
     editingId = booking.id;
     document.getElementById("edit-booking-id").value = booking.id;
     document.getElementById("edit-booking-type").value = uiType(booking.reservation_type);
@@ -230,6 +317,7 @@
           <td>${AdminCommon.escapeHtml(dates)}</td>
           <td><span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span></td>
           <td class="admin-actions admin-booking-actions">
+            <button type="button" class="btn btn-outline btn-small" data-action="view">View</button>
             ${
               canEdit
                 ? `<button type="button" class="btn btn-outline btn-small" data-action="edit">Edit</button>`
@@ -273,6 +361,10 @@
       const still = bookings.find((b) => b.id === editingId);
       if (still && still.status !== "cancelled") openEdit(still);
       else closeEdit();
+    } else if (viewingId) {
+      const still = bookings.find((b) => b.id === viewingId);
+      if (still) openView(still);
+      else closeView();
     }
   }
 
@@ -393,6 +485,15 @@
     closeEdit();
   });
 
+  document.getElementById("admin-view-close")?.addEventListener("click", () => {
+    closeView();
+  });
+
+  document.getElementById("admin-view-edit")?.addEventListener("click", () => {
+    const booking = bookings.find((b) => b.id === viewingId);
+    if (booking) openEdit(booking);
+  });
+
   document.getElementById("admin-office-check-in-btn")?.addEventListener("click", async () => {
     const id = document.getElementById("edit-booking-id")?.value || editingId;
     if (!id) return;
@@ -453,6 +554,11 @@
     const id = row.getAttribute("data-booking-id");
     const booking = bookings.find((b) => b.id === id);
     const action = button.getAttribute("data-action");
+
+    if (action === "view") {
+      if (booking) openView(booking);
+      return;
+    }
 
     if (action === "edit") {
       if (booking) openEdit(booking);
