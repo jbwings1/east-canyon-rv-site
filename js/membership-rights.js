@@ -386,7 +386,7 @@
             message:
               `Class ${classCode} has ${remaining} ${seasonLabel(season)} day${remaining === 1 ? "" : "s"} left ` +
               `(${already} of ${allotment} used) for ${yearLabel(yearStart)}. ` +
-              `This stay needs ${request} night${request === 1 ? "" : "s"}.`,
+              `This stay uses ${request} night${request === 1 ? "" : "s"}. Please reduce the nights of the reservation.`,
           });
         }
       });
