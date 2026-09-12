@@ -126,7 +126,7 @@
 
         <section class="admin-card">
           <h2>All bookings</h2>
-          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. Flags mark class-rule problems and members over the 2-upcoming reservation limit. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
+          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. <strong>Rule flags</strong> mark broken booking rules: class rights, max 2 upcoming stays, max 7 nights, 60-day advance window, missing/wrong site, and site overlaps. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
           <div class="admin-form-row admin-booking-filters">
             <div class="form-group">
               <label for="booking-filter-status">Show</label>
@@ -171,9 +171,12 @@
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
   <script src="js/auth.js?v=sb17"></script>
+  <script src="js/map-units-generated.js?v=1"></script>
+  <script src="js/spots-data.js?v=1"></script>
   <script src="js/membership-rights.js?v=2"></script>
+  <script src="js/booking-rule-flags.js?v=1"></script>
   <script src="js/admin-common.js?v=sb8"></script>
-  <script src="js/admin-reservations-manage.js?v=sb10"></script>
+  <script src="js/admin-reservations-manage.js?v=sb11"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

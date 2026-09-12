@@ -41,74 +41,22 @@
     return profiles.find((p) => p.id === userId)?.member_id || "";
   }
 
-  function maxActiveReservations() {
-    return window.RESERVATION_MAX_ACTIVE || 2;
-  }
-
-  /** Same rule as member booking: confirmed and check-in still in the future. */
-  function isUpcomingReservation(booking) {
-    if (!booking || booking.status !== "confirmed") return false;
-    const checkIn = booking.check_in || "";
-    return Boolean(checkIn && checkIn > todayIso());
-  }
-
-  function upcomingCountForMember(userId) {
-    return bookings.filter((b) => b.user_id === userId && isUpcomingReservation(b)).length;
-  }
-
-  function isCurrentOrUpcoming(booking) {
-    if (!booking || booking.status === "cancelled") return false;
-    const today = todayIso();
-    if (booking.check_out && booking.check_out < today) return false;
-    return true;
-  }
-
   function ruleFlagForBooking(booking) {
-    if (!booking || booking.status === "cancelled") {
+    if (typeof BookingRuleFlags === "undefined") {
       return { ok: true, message: "", kinds: [] };
     }
-
-    const parts = [];
-    const kinds = [];
-
-    if (typeof MembershipRights !== "undefined") {
-      const memberBookings = bookings.filter((b) => b.user_id === booking.user_id);
-      const gate = MembershipRights.evaluateExistingBooking(
-        booking,
-        memberBookings,
-        memberIdForUser(booking.user_id)
-      );
-      if (!gate.ok) {
-        kinds.push("class");
-        const text = MembershipRights.formatViolations(gate.violations);
-        if (text) parts.push(text);
-      }
-    }
-
-    const maxActive = maxActiveReservations();
-    const upcoming = upcomingCountForMember(booking.user_id);
-    if (upcoming > maxActive && isCurrentOrUpcoming(booking)) {
-      kinds.push("limit");
-      parts.push(
-        `Member has ${upcoming} upcoming reservation${upcoming === 1 ? "" : "s"} (maximum ${maxActive}).`
-      );
-    }
-
-    return {
-      ok: parts.length === 0,
-      message: parts.join(" "),
-      kinds,
-    };
+    return BookingRuleFlags.evaluateBookingRules(booking, {
+      allBookings: bookings,
+      memberId: memberIdForUser(booking?.user_id),
+    });
   }
 
   function ruleFlagMarkup(flag) {
     if (flag.ok) return "";
     const label =
-      flag.kinds.includes("class") && flag.kinds.includes("limit")
-        ? "Rule flag"
-        : flag.kinds.includes("limit")
-          ? "Limit flag"
-          : "Class flag";
+      typeof BookingRuleFlags !== "undefined"
+        ? BookingRuleFlags.flagLabel(flag.kinds)
+        : "Rule flag";
     return `<span class="admin-class-flag" title="${AdminCommon.escapeHtml(flag.message)}">${label}</span>
       <span class="admin-class-flag-detail">${AdminCommon.escapeHtml(flag.message)}</span>`;
   }
@@ -244,7 +192,7 @@
     if (flagged) {
       AdminCommon.showMessage(
         message,
-        `${flagged} booking${flagged === 1 ? "" : "s"} flagged (class rules or over the ${maxActiveReservations()}-reservation limit). Filter: Rule flags.`,
+        `${flagged} booking${flagged === 1 ? "" : "s"} flagged for broken reservation rules. Filter: Rule flags.`,
         "error"
       );
     }
