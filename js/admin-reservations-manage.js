@@ -255,6 +255,10 @@
     AdminCommon.showMessage(editResult, "", "");
     AdminCommon.showMessage(checkinResult, "", "");
     renderCheckInSection(null);
+    setRightsNotice(document.getElementById("admin-edit-rights-notice"), {
+      ok: true,
+      violations: [],
+    });
   }
 
   function openEdit(booking) {
@@ -275,6 +279,7 @@
       editSummary.textContent = `${confirmationId(booking)} · ${memberLabel(booking.user_id)} · ${status}`;
     }
     renderCheckInSection(booking);
+    refreshEditRightsNotice();
     if (editCard) {
       editCard.hidden = false;
       editCard.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -395,13 +400,54 @@
     }
     const profile = profiles.find((p) => p.id === booking.user_id);
     return MembershipRights.validateBooking({
-      memberId: profile?.member_id || "",
+      memberId: profile?.member_id || memberIdForUser(booking.user_id),
       reservationType: document.getElementById("edit-booking-type").value,
       checkIn: document.getElementById("edit-booking-check-in").value,
       checkOut: document.getElementById("edit-booking-check-out").value,
       existingBookings: bookings.filter((b) => b.user_id === booking.user_id),
       excludeBookingId: booking.id,
     });
+  }
+
+  function setRightsNotice(el, gate) {
+    if (!el) return;
+    if (!gate || gate.ok || !(gate.violations || []).length) {
+      el.hidden = true;
+      el.textContent = "";
+      el.classList.remove("stay-length-notice--limit");
+      return;
+    }
+    el.hidden = false;
+    el.classList.add("stay-length-notice--limit");
+    el.textContent = MembershipRights.formatViolations(gate.violations);
+  }
+
+  function refreshCreateRightsNotice() {
+    const el = document.getElementById("admin-create-rights-notice");
+    const checkIn = document.getElementById("booking-check-in")?.value;
+    const checkOut = document.getElementById("booking-check-out")?.value;
+    if (!bookingMember?.value || !checkIn || !checkOut || checkOut <= checkIn) {
+      setRightsNotice(el, { ok: true, violations: [] });
+      return;
+    }
+    setRightsNotice(el, evaluateSelectedMemberRights());
+  }
+
+  function refreshEditRightsNotice() {
+    const el = document.getElementById("admin-edit-rights-notice");
+    const id = document.getElementById("edit-booking-id")?.value || editingId;
+    const booking = bookings.find((b) => b.id === id);
+    if (!booking) {
+      setRightsNotice(el, { ok: true, violations: [] });
+      return;
+    }
+    const checkIn = document.getElementById("edit-booking-check-in")?.value;
+    const checkOut = document.getElementById("edit-booking-check-out")?.value;
+    if (!checkIn || !checkOut || checkOut <= checkIn) {
+      setRightsNotice(el, { ok: true, violations: [] });
+      return;
+    }
+    setRightsNotice(el, evaluateEditRights(booking));
   }
 
   createForm?.addEventListener("submit", async (e) => {
@@ -419,6 +465,7 @@
         );
         if (!override) {
           e.target.reset();
+          refreshCreateRightsNotice();
           AdminCommon.showMessage(result, "Started over — reservation not saved.", "");
           return;
         }
@@ -434,6 +481,7 @@
       });
       AdminCommon.showMessage(result, "Reservation created for the member.", "success");
       e.target.reset();
+      refreshCreateRightsNotice();
       await load();
     } catch (err) {
       AdminCommon.showMessage(result, err.message, "error");
@@ -546,6 +594,19 @@
 
   filterStatus?.addEventListener("change", renderBookings);
   filterSearch?.addEventListener("input", renderBookings);
+
+  ["booking-member", "booking-type", "booking-check-in", "booking-check-out"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", () => {
+      AdminCommon.showMessage(document.getElementById("admin-create-booking-result"), "", "");
+      refreshCreateRightsNotice();
+    });
+  });
+  ["edit-booking-type", "edit-booking-check-in", "edit-booking-check-out"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", () => {
+      AdminCommon.showMessage(editResult, "", "");
+      refreshEditRightsNotice();
+    });
+  });
 
   function closeAllRowMenus(exceptPanel = null) {
     document.querySelectorAll(".admin-row-menu-panel").forEach((panel) => {

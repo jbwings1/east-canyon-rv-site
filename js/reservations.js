@@ -13,6 +13,7 @@ const clearSpotBtn = document.getElementById("clear-spot");
 const rvDetailsGroup = document.getElementById("rv-details-group");
 const rigSelect = document.getElementById("res-rig");
 const stayLengthNotice = document.getElementById("stay-length-notice");
+const membershipRightsNotice = document.getElementById("membership-rights-notice");
 const memberIdInput = document.getElementById("res-member-id");
 const memberReservationNotice = document.getElementById("member-reservation-notice");
 const completeBookingBtn = document.getElementById("complete-booking-btn");
@@ -356,6 +357,38 @@ function evaluateMembershipRights({ reservationType, checkIn: stayIn, checkOut: 
   });
 }
 
+function clearStaleBookingError() {
+  if (!message) return;
+  if (message.classList.contains("error")) {
+    message.textContent = "";
+    message.className = "form-message";
+  }
+}
+
+function updateMembershipRightsNotice() {
+  if (!membershipRightsNotice) return;
+  if (!checkIn.value || !checkOut.value || checkOut.value <= checkIn.value || !typeSelect.value) {
+    membershipRightsNotice.hidden = true;
+    membershipRightsNotice.textContent = "";
+    membershipRightsNotice.classList.remove("stay-length-notice--limit");
+    return;
+  }
+  const gate = evaluateMembershipRights({
+    reservationType: typeSelect.value,
+    checkIn: checkIn.value,
+    checkOut: checkOut.value,
+  });
+  if (gate.ok) {
+    membershipRightsNotice.hidden = true;
+    membershipRightsNotice.textContent = "";
+    membershipRightsNotice.classList.remove("stay-length-notice--limit");
+    return;
+  }
+  membershipRightsNotice.hidden = false;
+  membershipRightsNotice.classList.add("stay-length-notice--limit");
+  membershipRightsNotice.textContent = window.MembershipRights.formatViolations(gate.violations);
+}
+
 function canBookSelectUnit(unit) {
   const type = typeSelect.value;
   if (!type) return false;
@@ -645,24 +678,32 @@ async function syncAvailabilityFromDates() {
 }
 
 checkIn.addEventListener("change", () => {
+  clearStaleBookingError();
   syncDateLimits();
   syncAvailabilityFromDates();
+  updateMembershipRightsNotice();
 });
 
 checkOut.addEventListener("change", () => {
+  clearStaleBookingError();
   syncAvailabilityFromDates();
+  updateMembershipRightsNotice();
 });
 memberIdInput?.addEventListener("input", () => {
   updateMemberReservationNotice();
+  updateMembershipRightsNotice();
 });
 memberIdInput?.addEventListener("change", () => {
   updateMemberReservationNotice();
+  updateMembershipRightsNotice();
 });
 typeSelect.addEventListener("change", () => {
+  clearStaleBookingError();
   updateRvFields();
   clearPreferredSpot();
   updateMapAvailability();
   updateMemberReservationNotice();
+  updateMembershipRightsNotice();
 });
 rigSelect?.addEventListener("change", () => {
   updateMapAvailability();
@@ -671,6 +712,7 @@ rigSelect?.addEventListener("change", () => {
 updateRvFields();
 updateMapAvailability();
 updateMemberReservationNotice();
+updateMembershipRightsNotice();
 
 function showConfirmedState(record) {
   const signedIn = typeof Auth !== "undefined" && Auth.getCurrentUser();
@@ -987,7 +1029,8 @@ form.addEventListener("submit", async (e) => {
     } else {
       message.textContent = limitText;
       message.className = "form-message error";
-      message.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      updateMembershipRightsNotice();
+      membershipRightsNotice?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
   }
