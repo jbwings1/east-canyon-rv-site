@@ -1183,9 +1183,13 @@ const Auth = {
   },
 
   getActiveBookings(bookings = []) {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     return bookings.filter(
-      (b) => b.status === "confirmed" && b.check_in && b.check_in > today
+      (b) =>
+        b.status === "confirmed" &&
+        b.check_out &&
+        b.check_out >= today
     );
   },
 

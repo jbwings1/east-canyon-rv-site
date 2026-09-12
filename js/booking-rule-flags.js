@@ -18,7 +18,11 @@
 
   function todayIso() {
     if (global.SpotAvailability?.getToday) return global.SpotAvailability.getToday();
-    return new Date().toISOString().split("T")[0];
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }
 
   function normalizeDate(value) {
@@ -114,10 +118,11 @@
     return null;
   }
 
-  function isUpcoming(booking, today = todayIso()) {
+  /** Confirmed stay that has not checked out yet (in progress or upcoming). */
+  function isOpenReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
-    const checkIn = normalizeDate(booking.check_in || booking.checkIn);
-    return Boolean(checkIn && checkIn > today);
+    const checkOut = normalizeDate(booking.check_out || booking.checkOut);
+    return Boolean(checkOut && checkOut >= today);
   }
 
   function isCurrentOrUpcoming(booking, today = todayIso()) {
@@ -237,14 +242,14 @@
       }
     }
 
-    // Max upcoming reservations
-    const upcoming = memberBookings.filter((b) => isUpcoming(b, today)).length;
+    // Max open reservations (in progress + upcoming, not yet checked out)
+    const openCount = memberBookings.filter((b) => isOpenReservation(b, today)).length;
     const capActive = maxActive();
-    if (upcoming > capActive && isCurrentOrUpcoming(booking, today)) {
+    if (openCount > capActive && isOpenReservation(booking, today)) {
       kinds.add("limit");
       violations.push({
         code: "max-active",
-        message: `Member has ${upcoming} upcoming reservation${upcoming === 1 ? "" : "s"} (maximum ${capActive}).`,
+        message: `Member has ${openCount} open reservation${openCount === 1 ? "" : "s"} (maximum ${capActive}).`,
       });
     }
 
@@ -299,7 +304,7 @@
     maxNights,
     maxAdvanceDays,
     maxActive,
-    isUpcoming,
+    isOpenReservation,
     isCurrentOrUpcoming,
   };
 })(typeof window !== "undefined" ? window : globalThis);
