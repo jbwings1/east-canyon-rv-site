@@ -368,7 +368,7 @@
     const byKey = new Map();
     (Array.isArray(rows) ? rows : []).forEach((r) => {
       if (!r || !r.spot || !r.check_in || !r.check_out) return;
-      if (r.status && r.status !== "confirmed") return;
+      if (r.status && r.status !== "confirmed" && r.status !== "active") return;
       if (!window.SpotAvailability.datesOverlap(from, to, r.check_in, r.check_out)) return;
       const key =
         r.id != null && r.id !== ""

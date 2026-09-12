@@ -230,7 +230,8 @@
   }
 
   function isConfirmedBooking(booking) {
-    return String(booking?.status || "").toLowerCase() === "confirmed";
+    const status = String(booking?.status || "").toLowerCase();
+    return status === "confirmed" || status === "active";
   }
 
   function isCondoBooking(booking) {

@@ -1190,7 +1190,6 @@ const Auth = {
     return bookings.filter(
       (b) =>
         b.status === "confirmed" &&
-        !b.office_checked_in_at &&
         b.check_in &&
         b.check_in > today
     );
@@ -1205,12 +1204,12 @@ const Auth = {
     if (status === "cancelled") return "Cancelled";
     if (status === "pending") return "Pending";
     if (status === "completed") return "Completed";
+    if (status === "active") return "Active";
     if (status !== "confirmed") return booking?.status || "—";
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const checkOut = booking?.check_out || "";
     if (checkOut && checkOut <= today) return "Completed";
-    if (booking?.office_checked_in_at) return "Active";
     return "Confirmed";
   },
 
@@ -1235,7 +1234,7 @@ const Auth = {
     if (existing.status === "cancelled") {
       throw new Error("Cancelled reservations cannot be checked in.");
     }
-    if (existing.office_checked_in_at) {
+    if (existing.status === "active" || existing.office_checked_in_at) {
       throw new Error("This reservation is already checked in.");
     }
 
@@ -1243,6 +1242,7 @@ const Auth = {
     const { data, error } = await getClient()
       .from("bookings")
       .update({
+        status: "active",
         office_checked_in_at: now,
         office_checked_in_by: admin.id,
         office_check_in_notes: String(notes || "").trim(),

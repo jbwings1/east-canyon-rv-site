@@ -121,15 +121,13 @@
   /** Confirmed stay not yet office-checked-in, with future arrival (counts toward max 2). */
   function isUpcomingReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
-    if (booking.office_checked_in_at) return false;
     const checkIn = normalizeDate(booking.check_in || booking.checkIn);
     return Boolean(checkIn && checkIn > today);
   }
 
-  /** Stay activated by office check-in and not yet past check-out. */
+  /** Stay activated by office check-in (status active) and not yet past check-out. */
   function isInProgressReservation(booking, today = todayIso()) {
-    if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
-    if (!booking.office_checked_in_at) return false;
+    if (!booking || String(booking.status || "").toLowerCase() !== "active") return false;
     const checkOut = normalizeDate(booking.check_out || booking.checkOut);
     return Boolean(checkOut && checkOut > today);
   }
@@ -236,7 +234,10 @@
     if (spot && checkIn && checkOut) {
       const overlaps = (allBookings || []).filter((other) => {
         if (!other || other.id === booking.id) return false;
-        if (String(other.status || "").toLowerCase() === "cancelled") return false;
+        const otherStatus = String(other.status || "").toLowerCase();
+        if (otherStatus === "cancelled" || otherStatus === "pending" || otherStatus === "completed") {
+          return false;
+        }
         if (String(other.spot || "").trim() !== spot) return false;
         const oIn = normalizeDate(other.check_in || other.checkIn);
         const oOut = normalizeDate(other.check_out || other.checkOut);
@@ -312,10 +313,14 @@
     if (status === "cancelled") return "Cancelled";
     if (status === "pending") return "Pending";
     if (status === "completed") return "Completed";
+    if (status === "active") {
+      const checkOut = normalizeDate(booking.check_out || booking.checkOut);
+      if (checkOut && checkOut <= today) return "Completed";
+      return "Active";
+    }
     if (status === "confirmed") {
       const checkOut = normalizeDate(booking.check_out || booking.checkOut);
       if (checkOut && checkOut <= today) return "Completed";
-      if (booking.office_checked_in_at) return "Active";
       return "Confirmed";
     }
     return booking?.status || "—";

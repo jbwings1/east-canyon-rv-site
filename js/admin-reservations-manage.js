@@ -145,7 +145,8 @@
       if (checkinDone) checkinDone.hidden = true;
       return;
     }
-    const checkedIn = Boolean(booking.office_checked_in_at);
+    const checkedIn =
+      booking.status === "active" || Boolean(booking.office_checked_in_at);
     if (checkinPending) checkinPending.hidden = checkedIn;
     if (checkinDone) checkinDone.hidden = !checkedIn;
     if (!checkedIn) {
@@ -204,7 +205,7 @@
       .map((b) => {
         const type = Auth.reservationTypeLabel(b.reservation_type) || "—";
         const dates = b.check_in && b.check_out ? `${b.check_in} → ${b.check_out}` : "—";
-        const canConfirm = b.status !== "confirmed" && b.status !== "cancelled";
+        const canConfirm = b.status !== "confirmed" && b.status !== "cancelled" && b.status !== "active";
         const canCancel = b.status !== "cancelled";
         const canEdit = b.status !== "cancelled";
         const flag = ruleFlagForBooking(b);
@@ -232,6 +233,11 @@
             ${
               canEdit
                 ? `<button type="button" class="btn btn-outline btn-small" data-action="edit">Edit</button>`
+                : ""
+            }
+            ${
+              b.status === "confirmed" && !b.office_checked_in_at
+                ? `<button type="button" class="btn btn-outline btn-small" data-action="checkin">Check in</button>`
                 : ""
             }
             ${
@@ -394,7 +400,7 @@
     const ok = await AdminCommon.confirmAction({
       title: "Confirm action",
       message:
-        "Check this member in at the office now?\n\nThe reservation will show as Active, and it will no longer count toward their max of 2 upcoming stays.",
+        "Check this member in at the office now?\n\nStatus will change from Confirmed to Active, and it will no longer count toward their max of 2 upcoming stays.",
       confirmLabel: "Check in",
       cancelLabel: "Go back",
     });
@@ -450,6 +456,17 @@
 
     if (action === "edit") {
       if (booking) openEdit(booking);
+      return;
+    }
+
+    if (action === "checkin") {
+      if (booking) {
+        openEdit(booking);
+        document.getElementById("admin-checkin-block")?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
       return;
     }
 
