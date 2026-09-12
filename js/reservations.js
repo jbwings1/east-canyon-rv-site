@@ -498,8 +498,8 @@ function updateMemberReservationNotice() {
     memberReservationNotice.hidden = false;
     memberReservationNotice.classList.add("stay-length-notice--limit");
     memberReservationNotice.textContent =
-      `You have ${active.length} open reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. After a stay ends, or after deleting one, you can book again.`;
+      `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
+      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
     return;
   }
 
@@ -508,8 +508,8 @@ function updateMemberReservationNotice() {
     const remaining = maxActive - active.length;
     memberReservationNotice.hidden = false;
     memberReservationNotice.textContent =
-      `You have ${active.length} open reservation${active.length === 1 ? "" : "s"} ` +
-      `(${formatActiveReservationRanges(active)}). You may book ${remaining} more.`;
+      `You have ${active.length} upcoming reservation${active.length === 1 ? "" : "s"} ` +
+      `(${formatActiveReservationRanges(active)}). You may book ${remaining} more before check-in.`;
     return;
   }
 
@@ -955,8 +955,8 @@ form.addEventListener("submit", async (e) => {
   const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
   if (!editingBookingId && active.length >= maxActive) {
     message.textContent =
-      `You have ${active.length} open reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. After a stay ends, or after deleting one, you can book again.`;
+      `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
+      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
     message.className = "form-message error";
     updateMemberReservationNotice();
     memberReservationNotice?.scrollIntoView({ behavior: "smooth", block: "nearest" });

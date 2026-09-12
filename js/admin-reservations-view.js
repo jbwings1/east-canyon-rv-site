@@ -44,6 +44,18 @@
         const past = b.check_out && b.check_out < today;
         const canCancel = canManage && b.status !== "cancelled";
         const canEdit = canManage && b.status !== "cancelled";
+        const displayStatus =
+          typeof Auth.bookingDisplayStatus === "function"
+            ? Auth.bookingDisplayStatus(b)
+            : b.status || "—";
+        const pillClass =
+          displayStatus === "Cancelled"
+            ? "booked"
+            : displayStatus === "Active"
+              ? "available"
+              : displayStatus === "Confirmed"
+                ? "available"
+                : "partial";
         const actions = canManage
           ? `<td class="admin-actions admin-booking-actions">
               ${
@@ -64,9 +76,7 @@
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
           <td>${AdminCommon.escapeHtml(dates)}</td>
-          <td><span class="status-pill ${
-            b.status === "confirmed" ? "available" : b.status === "cancelled" ? "booked" : "partial"
-          }">${AdminCommon.escapeHtml(b.status || "—")}</span></td>
+          <td><span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span></td>
           ${actions}
         </tr>`;
       })

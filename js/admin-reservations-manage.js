@@ -152,15 +152,25 @@
         const canEdit = b.status !== "cancelled";
         const flag = ruleFlagForBooking(b);
         const rowClass = flag.ok ? "" : " admin-row-class-flag";
+        const displayStatus =
+          typeof Auth.bookingDisplayStatus === "function"
+            ? Auth.bookingDisplayStatus(b)
+            : b.status || "—";
+        const pillClass =
+          displayStatus === "Cancelled"
+            ? "booked"
+            : displayStatus === "Active"
+              ? "available"
+              : displayStatus === "Confirmed" || displayStatus === "Edit confirmed"
+                ? "available"
+                : "partial";
         return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">
           <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code>${ruleFlagMarkup(flag)}</td>
           <td>${AdminCommon.escapeHtml(memberLabel(b.user_id))}</td>
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
           <td>${AdminCommon.escapeHtml(dates)}</td>
-          <td><span class="status-pill ${
-            b.status === "confirmed" ? "available" : b.status === "cancelled" ? "booked" : "partial"
-          }">${AdminCommon.escapeHtml(b.status || "—")}</span></td>
+          <td><span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span></td>
           <td class="admin-actions admin-booking-actions">
             ${
               canEdit

@@ -118,11 +118,19 @@
     return null;
   }
 
-  /** Confirmed stay that has not checked out yet (in progress or upcoming). */
-  function isOpenReservation(booking, today = todayIso()) {
+  /** Confirmed stay with check-in still in the future (counts toward max 2). */
+  function isUpcomingReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
+    const checkIn = normalizeDate(booking.check_in || booking.checkIn);
+    return Boolean(checkIn && checkIn > today);
+  }
+
+  /** Confirmed stay currently underway (checked in, not yet checked out). */
+  function isInProgressReservation(booking, today = todayIso()) {
+    if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
+    const checkIn = normalizeDate(booking.check_in || booking.checkIn);
     const checkOut = normalizeDate(booking.check_out || booking.checkOut);
-    return Boolean(checkOut && checkOut >= today);
+    return Boolean(checkIn && checkOut && checkIn <= today && checkOut > today);
   }
 
   function isCurrentOrUpcoming(booking, today = todayIso()) {
@@ -242,14 +250,14 @@
       }
     }
 
-    // Max open reservations (in progress + upcoming, not yet checked out)
-    const openCount = memberBookings.filter((b) => isOpenReservation(b, today)).length;
+    // Max upcoming reservations (in-progress / checked-in stays do not count)
+    const upcoming = memberBookings.filter((b) => isUpcomingReservation(b, today)).length;
     const capActive = maxActive();
-    if (openCount > capActive && isOpenReservation(booking, today)) {
+    if (upcoming > capActive && isUpcomingReservation(booking, today)) {
       kinds.add("limit");
       violations.push({
         code: "max-active",
-        message: `Member has ${openCount} open reservation${openCount === 1 ? "" : "s"} (maximum ${capActive}).`,
+        message: `Member has ${upcoming} upcoming reservation${upcoming === 1 ? "" : "s"} (maximum ${capActive}).`,
       });
     }
 
@@ -298,13 +306,30 @@
     return "Rule flag";
   }
 
+  function displayStatus(booking, today = todayIso()) {
+    const status = String(booking?.status || "").toLowerCase();
+    if (status === "cancelled") return "Cancelled";
+    if (status === "pending") return "Pending";
+    if (status === "completed") return "Completed";
+    if (status === "confirmed") {
+      const checkIn = normalizeDate(booking.check_in || booking.checkIn);
+      const checkOut = normalizeDate(booking.check_out || booking.checkOut);
+      if (checkOut && checkOut <= today) return "Completed";
+      if (checkIn && checkOut && checkIn <= today && checkOut > today) return "Active";
+      return "Confirmed";
+    }
+    return booking?.status || "—";
+  }
+
   global.BookingRuleFlags = {
     evaluateBookingRules,
     flagLabel,
+    displayStatus,
     maxNights,
     maxAdvanceDays,
     maxActive,
-    isOpenReservation,
+    isUpcomingReservation,
+    isInProgressReservation,
     isCurrentOrUpcoming,
   };
 })(typeof window !== "undefined" ? window : globalThis);

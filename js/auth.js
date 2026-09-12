@@ -1186,11 +1186,27 @@ const Auth = {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     return bookings.filter(
-      (b) =>
-        b.status === "confirmed" &&
-        b.check_out &&
-        b.check_out >= today
+      (b) => b.status === "confirmed" && b.check_in && b.check_in > today
     );
+  },
+
+  /** Human status for lists: Confirmed → Active after check-in, Completed after check-out. */
+  bookingDisplayStatus(booking) {
+    if (typeof window.BookingRuleFlags?.displayStatus === "function") {
+      return window.BookingRuleFlags.displayStatus(booking);
+    }
+    const status = String(booking?.status || "").toLowerCase();
+    if (status === "cancelled") return "Cancelled";
+    if (status === "pending") return "Pending";
+    if (status === "completed") return "Completed";
+    if (status !== "confirmed") return booking?.status || "—";
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const checkIn = booking?.check_in || "";
+    const checkOut = booking?.check_out || "";
+    if (checkOut && checkOut <= today) return "Completed";
+    if (checkIn && checkOut && checkIn <= today && checkOut > today) return "Active";
+    return "Confirmed";
   },
 
   saveLastBooking(record) {

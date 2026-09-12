@@ -44,7 +44,7 @@ window.RESERVATION_MAX_NIGHTS = 7;
 /** How far in advance a reservation may be made (resort policy). */
 window.RESERVATION_MAX_ADVANCE_DAYS = 60;
 
-/** Maximum open reservations (in progress or upcoming) a member may hold at one time. */
+/** Maximum upcoming reservations (before check-in) a member may hold at one time. */
 window.RESERVATION_MAX_ACTIVE = 2;
 
 window.MEMBER_RESERVATIONS_STORAGE_KEY = "ecr-member-reservations";
@@ -72,16 +72,13 @@ window.SpotAvailability = {
     return String(memberId || "").trim();
   },
 
-  /** Open reservations (not yet checked out) — counts toward the 2-reservation limit. */
+  /** Reservations not yet started — counts toward the 2-reservation limit until check-in day. */
   getActiveMemberReservations(memberId) {
     const id = this.normalizeMemberId(memberId);
     if (!id) return [];
     const today = this.getToday();
     return (window.MEMBER_RESERVATIONS || []).filter(
-      (r) =>
-        this.normalizeMemberId(r.memberId) === id &&
-        r.checkOut &&
-        r.checkOut >= today
+      (r) => this.normalizeMemberId(r.memberId) === id && r.checkIn > today
     );
   },
 
