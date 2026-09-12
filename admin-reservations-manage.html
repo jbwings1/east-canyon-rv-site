@@ -126,13 +126,13 @@
 
         <section class="admin-card">
           <h2>All bookings</h2>
-          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. Rows that break membership class rules show a <strong>Class flag</strong>. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
+          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. Flags mark class-rule problems and members over the 2-upcoming reservation limit. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
           <div class="admin-form-row admin-booking-filters">
             <div class="form-group">
               <label for="booking-filter-status">Show</label>
               <select id="booking-filter-status">
                 <option value="active" selected>Active / upcoming</option>
-                <option value="flagged">Class rule flags</option>
+                <option value="flagged">Rule flags</option>
                 <option value="cancelled">Cancelled</option>
                 <option value="all">All</option>
               </select>
@@ -173,7 +173,7 @@
   <script src="js/auth.js?v=sb17"></script>
   <script src="js/membership-rights.js?v=2"></script>
   <script src="js/admin-common.js?v=sb8"></script>
-  <script src="js/admin-reservations-manage.js?v=sb9"></script>
+  <script src="js/admin-reservations-manage.js?v=sb10"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

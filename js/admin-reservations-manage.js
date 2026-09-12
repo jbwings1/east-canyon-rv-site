@@ -41,27 +41,75 @@
     return profiles.find((p) => p.id === userId)?.member_id || "";
   }
 
-  function classFlagForBooking(booking) {
-    if (typeof MembershipRights === "undefined" || !booking) {
-      return { ok: true, message: "" };
+  function maxActiveReservations() {
+    return window.RESERVATION_MAX_ACTIVE || 2;
+  }
+
+  /** Same rule as member booking: confirmed and check-in still in the future. */
+  function isUpcomingReservation(booking) {
+    if (!booking || booking.status !== "confirmed") return false;
+    const checkIn = booking.check_in || "";
+    return Boolean(checkIn && checkIn > todayIso());
+  }
+
+  function upcomingCountForMember(userId) {
+    return bookings.filter((b) => b.user_id === userId && isUpcomingReservation(b)).length;
+  }
+
+  function isCurrentOrUpcoming(booking) {
+    if (!booking || booking.status === "cancelled") return false;
+    const today = todayIso();
+    if (booking.check_out && booking.check_out < today) return false;
+    return true;
+  }
+
+  function ruleFlagForBooking(booking) {
+    if (!booking || booking.status === "cancelled") {
+      return { ok: true, message: "", kinds: [] };
     }
-    if (booking.status === "cancelled") return { ok: true, message: "" };
-    const memberBookings = bookings.filter((b) => b.user_id === booking.user_id);
-    const gate = MembershipRights.evaluateExistingBooking(
-      booking,
-      memberBookings,
-      memberIdForUser(booking.user_id)
-    );
+
+    const parts = [];
+    const kinds = [];
+
+    if (typeof MembershipRights !== "undefined") {
+      const memberBookings = bookings.filter((b) => b.user_id === booking.user_id);
+      const gate = MembershipRights.evaluateExistingBooking(
+        booking,
+        memberBookings,
+        memberIdForUser(booking.user_id)
+      );
+      if (!gate.ok) {
+        kinds.push("class");
+        const text = MembershipRights.formatViolations(gate.violations);
+        if (text) parts.push(text);
+      }
+    }
+
+    const maxActive = maxActiveReservations();
+    const upcoming = upcomingCountForMember(booking.user_id);
+    if (upcoming > maxActive && isCurrentOrUpcoming(booking)) {
+      kinds.push("limit");
+      parts.push(
+        `Member has ${upcoming} upcoming reservation${upcoming === 1 ? "" : "s"} (maximum ${maxActive}).`
+      );
+    }
+
     return {
-      ok: gate.ok,
-      message: MembershipRights.formatViolations(gate.violations),
-      classCode: gate.classCode,
+      ok: parts.length === 0,
+      message: parts.join(" "),
+      kinds,
     };
   }
 
-  function classFlagMarkup(flag) {
+  function ruleFlagMarkup(flag) {
     if (flag.ok) return "";
-    return `<span class="admin-class-flag" title="${AdminCommon.escapeHtml(flag.message)}">Class flag</span>
+    const label =
+      flag.kinds.includes("class") && flag.kinds.includes("limit")
+        ? "Rule flag"
+        : flag.kinds.includes("limit")
+          ? "Limit flag"
+          : "Class flag";
+    return `<span class="admin-class-flag" title="${AdminCommon.escapeHtml(flag.message)}">${label}</span>
       <span class="admin-class-flag-detail">${AdminCommon.escapeHtml(flag.message)}</span>`;
   }
 
@@ -91,7 +139,7 @@
         if (statusFilter === "cancelled") return b.status === "cancelled";
         if (statusFilter === "flagged") {
           if (b.status === "cancelled") return false;
-          return !classFlagForBooking(b).ok;
+          return !ruleFlagForBooking(b).ok;
         }
         if (statusFilter === "active") {
           if (b.status === "cancelled") return false;
@@ -154,10 +202,10 @@
         const canConfirm = b.status !== "confirmed" && b.status !== "cancelled";
         const canCancel = b.status !== "cancelled";
         const canEdit = b.status !== "cancelled";
-        const flag = classFlagForBooking(b);
+        const flag = ruleFlagForBooking(b);
         const rowClass = flag.ok ? "" : " admin-row-class-flag";
         return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">
-          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code>${classFlagMarkup(flag)}</td>
+          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code>${ruleFlagMarkup(flag)}</td>
           <td>${AdminCommon.escapeHtml(memberLabel(b.user_id))}</td>
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
@@ -192,11 +240,11 @@
     bookings = await Auth.listAllBookings();
     renderBookingMemberOptions();
     renderBookings();
-    const flagged = bookings.filter((b) => !classFlagForBooking(b).ok).length;
+    const flagged = bookings.filter((b) => !ruleFlagForBooking(b).ok).length;
     if (flagged) {
       AdminCommon.showMessage(
         message,
-        `${flagged} booking${flagged === 1 ? "" : "s"} flagged for class rule issues. Filter: Class rule flags.`,
+        `${flagged} booking${flagged === 1 ? "" : "s"} flagged (class rules or over the ${maxActiveReservations()}-reservation limit). Filter: Rule flags.`,
         "error"
       );
     }
