@@ -134,9 +134,9 @@ window.AdminCommon = {
       }. `;
     }
 
-    document.getElementById("admin-logout")?.addEventListener("click", () =>
-      Auth.logout("admin-login.html")
-    );
+    if (typeof SiteHeaderAuth?.mount === "function") {
+      SiteHeaderAuth.mount();
+    }
 
     return me;
   },

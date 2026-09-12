@@ -750,6 +750,35 @@ a:hover {
   color: #f7f2ea;
 }
 
+.header-nav .header-nav-sign-out,
+.page-visitor .header-nav .header-nav-sign-out {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(247, 242, 234, 0.55);
+  border-radius: 0;
+  background: transparent;
+  color: #f7f2ea;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.header-nav .header-nav-sign-out:hover,
+.page-visitor .header-nav .header-nav-sign-out:hover {
+  background: #1c3a32;
+  color: #f7f2ea;
+}
+
 .page-visitor main,
 .page-visitor .page-main {
   flex: 1;
