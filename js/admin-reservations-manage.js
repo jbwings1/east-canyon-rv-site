@@ -16,6 +16,9 @@
   const editSummary = document.getElementById("admin-edit-summary");
   const filterStatus = document.getElementById("booking-filter-status");
   const filterSearch = document.getElementById("booking-filter-search");
+  const checkinPending = document.getElementById("admin-checkin-pending");
+  const checkinDone = document.getElementById("admin-checkin-done");
+  const checkinResult = document.getElementById("admin-checkin-result");
 
   let profiles = [];
   let bookings = [];
@@ -111,11 +114,60 @@
       });
   }
 
+  function formatDateTime(value) {
+    if (!value) return "—";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function staffLabel(userId) {
+    if (!userId) return "—";
+    const profile = profiles.find((p) => p.id === userId);
+    if (!profile) return String(userId).slice(0, 8);
+    const seat =
+      profile.admin_level != null
+        ? ` · ${profile.admin_level}${profile.admin_seat || ""}`
+        : "";
+    return `${profile.full_name || profile.email || "Staff"}${seat}`;
+  }
+
+  function renderCheckInSection(booking) {
+    AdminCommon.showMessage(checkinResult, "", "");
+    if (!booking) {
+      if (checkinPending) checkinPending.hidden = true;
+      if (checkinDone) checkinDone.hidden = true;
+      return;
+    }
+    const checkedIn = Boolean(booking.office_checked_in_at);
+    if (checkinPending) checkinPending.hidden = checkedIn;
+    if (checkinDone) checkinDone.hidden = !checkedIn;
+    if (!checkedIn) {
+      const notesEl = document.getElementById("office-check-in-notes");
+      if (notesEl) notesEl.value = booking.office_check_in_notes || "";
+      return;
+    }
+    const byEl = document.getElementById("office-checked-in-by-label");
+    const atEl = document.getElementById("office-checked-in-at-label");
+    const notesEdit = document.getElementById("office-check-in-notes-edit");
+    if (byEl) byEl.textContent = staffLabel(booking.office_checked_in_by);
+    if (atEl) atEl.textContent = formatDateTime(booking.office_checked_in_at);
+    if (notesEdit) notesEdit.value = booking.office_check_in_notes || "";
+  }
+
   function closeEdit() {
     editingId = null;
     if (editCard) editCard.hidden = true;
     editForm?.reset();
     AdminCommon.showMessage(editResult, "", "");
+    AdminCommon.showMessage(checkinResult, "", "");
+    renderCheckInSection(null);
   }
 
   function openEdit(booking) {
@@ -128,8 +180,13 @@
     document.getElementById("edit-booking-check-out").value = booking.check_out || "";
     document.getElementById("edit-booking-notes").value = booking.notes || "";
     if (editSummary) {
-      editSummary.textContent = `${confirmationId(booking)} · ${memberLabel(booking.user_id)}`;
+      const status =
+        typeof Auth.bookingDisplayStatus === "function"
+          ? Auth.bookingDisplayStatus(booking)
+          : booking.status;
+      editSummary.textContent = `${confirmationId(booking)} · ${memberLabel(booking.user_id)} · ${status}`;
     }
+    renderCheckInSection(booking);
     if (editCard) {
       editCard.hidden = false;
       editCard.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -329,6 +386,55 @@
   document.getElementById("admin-edit-cancel")?.addEventListener("click", () => {
     closeEdit();
   });
+
+  document.getElementById("admin-office-check-in-btn")?.addEventListener("click", async () => {
+    const id = document.getElementById("edit-booking-id")?.value || editingId;
+    if (!id) return;
+    const notes = document.getElementById("office-check-in-notes")?.value.trim() || "";
+    const ok = await AdminCommon.confirmAction({
+      title: "Confirm action",
+      message:
+        "Check this member in at the office now?\n\nThe reservation will show as Active, and it will no longer count toward their max of 2 upcoming stays.",
+      confirmLabel: "Check in",
+      cancelLabel: "Go back",
+    });
+    if (!ok) return;
+    const btn = document.getElementById("admin-office-check-in-btn");
+    if (btn) btn.disabled = true;
+    try {
+      await Auth.checkInBookingAsAdmin(id, { notes });
+      AdminCommon.showMessage(checkinResult, "Member checked in.", "success");
+      AdminCommon.showMessage(message, "Office check-in saved.", "success");
+      await load();
+      const updated = bookings.find((b) => b.id === id);
+      if (updated) openEdit(updated);
+    } catch (err) {
+      AdminCommon.showMessage(checkinResult, err.message, "error");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+
+  document
+    .getElementById("admin-office-check-in-notes-save")
+    ?.addEventListener("click", async () => {
+      const id = document.getElementById("edit-booking-id")?.value || editingId;
+      if (!id) return;
+      const notes = document.getElementById("office-check-in-notes-edit")?.value || "";
+      const btn = document.getElementById("admin-office-check-in-notes-save");
+      if (btn) btn.disabled = true;
+      try {
+        await Auth.updateOfficeCheckInNotesAsAdmin(id, notes);
+        AdminCommon.showMessage(checkinResult, "Check-in notes saved.", "success");
+        await load();
+        const updated = bookings.find((b) => b.id === id);
+        if (updated) openEdit(updated);
+      } catch (err) {
+        AdminCommon.showMessage(checkinResult, err.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
 
   filterStatus?.addEventListener("change", renderBookings);
   filterSearch?.addEventListener("input", renderBookings);

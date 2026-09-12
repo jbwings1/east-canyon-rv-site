@@ -118,19 +118,20 @@
     return null;
   }
 
-  /** Confirmed stay with check-in still in the future (counts toward max 2). */
+  /** Confirmed stay not yet office-checked-in, with future arrival (counts toward max 2). */
   function isUpcomingReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
+    if (booking.office_checked_in_at) return false;
     const checkIn = normalizeDate(booking.check_in || booking.checkIn);
     return Boolean(checkIn && checkIn > today);
   }
 
-  /** Confirmed stay currently underway (checked in, not yet checked out). */
+  /** Stay activated by office check-in and not yet past check-out. */
   function isInProgressReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
-    const checkIn = normalizeDate(booking.check_in || booking.checkIn);
+    if (!booking.office_checked_in_at) return false;
     const checkOut = normalizeDate(booking.check_out || booking.checkOut);
-    return Boolean(checkIn && checkOut && checkIn <= today && checkOut > today);
+    return Boolean(checkOut && checkOut > today);
   }
 
   function isCurrentOrUpcoming(booking, today = todayIso()) {
@@ -312,10 +313,9 @@
     if (status === "pending") return "Pending";
     if (status === "completed") return "Completed";
     if (status === "confirmed") {
-      const checkIn = normalizeDate(booking.check_in || booking.checkIn);
       const checkOut = normalizeDate(booking.check_out || booking.checkOut);
       if (checkOut && checkOut <= today) return "Completed";
-      if (checkIn && checkOut && checkIn <= today && checkOut > today) return "Active";
+      if (booking.office_checked_in_at) return "Active";
       return "Confirmed";
     }
     return booking?.status || "—";

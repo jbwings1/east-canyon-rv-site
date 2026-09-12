@@ -2170,6 +2170,43 @@ a:hover {
   text-decoration: none;
 }
 
+.admin-checkin-block {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid #e4d9c8;
+}
+
+.admin-checkin-block h3 {
+  margin: 0 0 0.45rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.35rem;
+  color: #1c3a32;
+}
+
+.admin-checkin-details {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+}
+
+.admin-checkin-details > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-checkin-details dt {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c564e;
+}
+
+.admin-checkin-details dd {
+  margin: 0;
+  font-size: 1rem;
+}
+
 .admin-booking-filters {
   margin-bottom: 0.75rem;
 }

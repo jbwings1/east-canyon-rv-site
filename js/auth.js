@@ -396,7 +396,9 @@ const Auth = {
     if (!this.isAdmin()) throw new Error("Admin access required.");
     const { data, error } = await getClient()
       .from("bookings")
-      .select("id,user_id,reservation_type,spot,check_in,check_out,original_check_in,original_check_out,status,notes,created_at,edited_at,last_edit_summary,confirmed_at,booked_by_kind,booked_by_user_id")
+      .select(
+        "id,user_id,reservation_type,spot,check_in,check_out,original_check_in,original_check_out,status,notes,created_at,edited_at,last_edit_summary,confirmed_at,booked_by_kind,booked_by_user_id,office_checked_in_at,office_checked_in_by,office_check_in_notes"
+      )
       .order("check_in", { ascending: false });
     throwIfError(error);
     return data || [];
@@ -1186,11 +1188,15 @@ const Auth = {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     return bookings.filter(
-      (b) => b.status === "confirmed" && b.check_in && b.check_in > today
+      (b) =>
+        b.status === "confirmed" &&
+        !b.office_checked_in_at &&
+        b.check_in &&
+        b.check_in > today
     );
   },
 
-  /** Human status for lists: Confirmed → Active after check-in, Completed after check-out. */
+  /** Human status: Confirmed → Active after office check-in → Completed after stay end. */
   bookingDisplayStatus(booking) {
     if (typeof window.BookingRuleFlags?.displayStatus === "function") {
       return window.BookingRuleFlags.displayStatus(booking);
@@ -1202,11 +1208,82 @@ const Auth = {
     if (status !== "confirmed") return booking?.status || "—";
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const checkIn = booking?.check_in || "";
     const checkOut = booking?.check_out || "";
     if (checkOut && checkOut <= today) return "Completed";
-    if (checkIn && checkOut && checkIn <= today && checkOut > today) return "Active";
+    if (booking?.office_checked_in_at) return "Active";
     return "Confirmed";
+  },
+
+  /**
+   * Office check-in at the resort (staff activates the stay).
+   */
+  async checkInBookingAsAdmin(bookingId, { notes = "" } = {}) {
+    if (!this.hasAdminTask("reservations_manage")) {
+      throw new Error("You are not assigned the Reservations manage task.");
+    }
+    const admin = this.getCurrentUser();
+    if (!admin?.id) throw new Error("Admin sign in required.");
+    if (!bookingId) throw new Error("Booking is required.");
+
+    const { data: existing, error: existingError } = await getClient()
+      .from("bookings")
+      .select("id,status,office_checked_in_at,check_out")
+      .eq("id", bookingId)
+      .maybeSingle();
+    throwIfError(existingError);
+    if (!existing) throw new Error("Booking not found.");
+    if (existing.status === "cancelled") {
+      throw new Error("Cancelled reservations cannot be checked in.");
+    }
+    if (existing.office_checked_in_at) {
+      throw new Error("This reservation is already checked in.");
+    }
+
+    const now = new Date().toISOString();
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update({
+        office_checked_in_at: now,
+        office_checked_in_by: admin.id,
+        office_check_in_notes: String(notes || "").trim(),
+        edited_at: now,
+        last_edit_summary: `Office check-in by ${admin.name || admin.email || "staff"}`,
+      })
+      .eq("id", bookingId)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Check-in could not be saved.");
+    return data;
+  },
+
+  /** Update office check-in notes after check-in (does not change who/when). */
+  async updateOfficeCheckInNotesAsAdmin(bookingId, notes) {
+    if (!this.hasAdminTask("reservations_manage")) {
+      throw new Error("You are not assigned the Reservations manage task.");
+    }
+    if (!bookingId) throw new Error("Booking is required.");
+    const { data: existing, error: existingError } = await getClient()
+      .from("bookings")
+      .select("id,office_checked_in_at")
+      .eq("id", bookingId)
+      .maybeSingle();
+    throwIfError(existingError);
+    if (!existing) throw new Error("Booking not found.");
+    if (!existing.office_checked_in_at) {
+      throw new Error("Check the member in before saving check-in notes.");
+    }
+    const { data, error } = await getClient()
+      .from("bookings")
+      .update({
+        office_check_in_notes: String(notes || "").trim(),
+      })
+      .eq("id", bookingId)
+      .select()
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error("Check-in notes could not be saved.");
+    return data;
   },
 
   saveLastBooking(record) {

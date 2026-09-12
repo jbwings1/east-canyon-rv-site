@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Reservations | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site37">
+  <link rel="stylesheet" href="styles.css?v=site38">
 </head>
 <body class="page-visitor page-admin">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -104,16 +104,16 @@
             </div>
             <div class="admin-form-row">
               <div class="form-group">
-                <label for="edit-booking-check-in">Check in</label>
+                <label for="edit-booking-check-in">Stay start</label>
                 <input type="date" id="edit-booking-check-in" required>
               </div>
               <div class="form-group">
-                <label for="edit-booking-check-out">Check out</label>
+                <label for="edit-booking-check-out">Stay end</label>
                 <input type="date" id="edit-booking-check-out" required>
               </div>
             </div>
             <div class="form-group">
-              <label for="edit-booking-notes">Notes</label>
+              <label for="edit-booking-notes">Reservation notes</label>
               <input type="text" id="edit-booking-notes">
             </div>
             <div class="admin-actions">
@@ -122,11 +122,41 @@
             </div>
           </form>
           <p id="admin-edit-booking-result" class="form-message" role="status" aria-live="polite"></p>
+
+          <div class="admin-checkin-block" id="admin-checkin-block">
+            <h3>Office check-in</h3>
+            <p class="admin-help">When the member arrives, staff activates check-in here. That marks the stay Active and frees a reservation slot for a new booking.</p>
+            <div id="admin-checkin-pending">
+              <div class="form-group">
+                <label for="office-check-in-notes">Check-in notes</label>
+                <textarea id="office-check-in-notes" rows="3" placeholder="Gate code, vehicle, special requests…"></textarea>
+              </div>
+              <button type="button" class="btn btn-primary" id="admin-office-check-in-btn">Check in at office</button>
+            </div>
+            <div id="admin-checkin-done" hidden>
+              <dl class="admin-checkin-details">
+                <div>
+                  <dt>Checked in by</dt>
+                  <dd id="office-checked-in-by-label">—</dd>
+                </div>
+                <div>
+                  <dt>Check-in time</dt>
+                  <dd id="office-checked-in-at-label">—</dd>
+                </div>
+              </dl>
+              <div class="form-group">
+                <label for="office-check-in-notes-edit">Check-in notes</label>
+                <textarea id="office-check-in-notes-edit" rows="3"></textarea>
+              </div>
+              <button type="button" class="btn btn-outline" id="admin-office-check-in-notes-save">Save check-in notes</button>
+            </div>
+            <p id="admin-checkin-result" class="form-message" role="status" aria-live="polite"></p>
+          </div>
         </section>
 
         <section class="admin-card">
           <h2>All bookings</h2>
-          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. <strong>Rule flags</strong> mark broken booking rules: class rights, max 2 upcoming stays (in-progress Active stays do not count), max 7 nights, 60-day advance window, missing/wrong site, and site overlaps. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
+          <p class="admin-help">Use <strong>Edit</strong> or <strong>Cancel</strong> on each row. Open Edit to perform <strong>Office check-in</strong> when the member arrives. <strong>Rule flags</strong> mark broken booking rules. Active (office-checked-in) stays do not count toward the max of 2 upcoming. Cancelled stays are hidden unless you choose “Cancelled” or “All”.</p>
           <div class="admin-form-row admin-booking-filters">
             <div class="form-group">
               <label for="booking-filter-status">Show</label>
@@ -170,13 +200,13 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb2"></script>
-  <script src="js/auth.js?v=sb19"></script>
+  <script src="js/auth.js?v=sb20"></script>
   <script src="js/map-units-generated.js?v=1"></script>
   <script src="js/spots-data.js?v=8"></script>
   <script src="js/membership-rights.js?v=2"></script>
-  <script src="js/booking-rule-flags.js?v=3"></script>
+  <script src="js/booking-rule-flags.js?v=4"></script>
   <script src="js/admin-common.js?v=sb9"></script>
-  <script src="js/admin-reservations-manage.js?v=sb14"></script>
+  <script src="js/admin-reservations-manage.js?v=sb15"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
