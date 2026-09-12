@@ -512,7 +512,7 @@ function updateMemberReservationNotice() {
     memberReservationNotice.classList.add("stay-length-notice--limit");
     memberReservationNotice.textContent =
       `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
+      `${formatActiveReservationRanges(active)}. Once the office checks you in, or after deleting one, you can book again.`;
     return;
   }
 
@@ -522,7 +522,7 @@ function updateMemberReservationNotice() {
     memberReservationNotice.hidden = false;
     memberReservationNotice.textContent =
       `You have ${active.length} upcoming reservation${active.length === 1 ? "" : "s"} ` +
-      `(${formatActiveReservationRanges(active)}). You may book ${remaining} more before check-in.`;
+      `(${formatActiveReservationRanges(active)}). You may book ${remaining} more before office check-in.`;
     return;
   }
 
@@ -1001,7 +1001,7 @@ form.addEventListener("submit", async (e) => {
   if (!editingBookingId && active.length >= maxActive) {
     message.textContent =
       `You have ${active.length} upcoming reservations (maximum ${maxActive}): ` +
-      `${formatActiveReservationRanges(active)}. Once you check in, or after deleting one, you can book again.`;
+      `${formatActiveReservationRanges(active)}. Once the office checks you in, or after deleting one, you can book again.`;
     message.className = "form-message error";
     updateMemberReservationNotice();
     memberReservationNotice?.scrollIntoView({ behavior: "smooth", block: "nearest" });

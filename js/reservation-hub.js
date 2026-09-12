@@ -210,13 +210,13 @@
       notice.classList.add("stay-length-notice--limit");
       notice.textContent =
         `You have ${active.length} upcoming reservations (maximum ${maxActive}): ${bookingLines}. ` +
-        `Once you check in, or after deleting one, you can book again.`;
+        `Once the office checks you in, or after deleting one, you can book again.`;
     } else {
       notice.classList.remove("stay-length-notice--limit");
       const remaining = maxActive - active.length;
       notice.textContent =
         `You have ${active.length} upcoming reservation${active.length === 1 ? "" : "s"} ` +
-        `(${bookingLines}). You may book ${remaining} more before check-in.`;
+        `(${bookingLines}). You may book ${remaining} more before office check-in.`;
     }
   }
 

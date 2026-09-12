@@ -118,11 +118,11 @@
     return null;
   }
 
-  /** Confirmed stay not yet office-checked-in, with future arrival (counts toward max 2). */
+  /** Confirmed stay not yet office-checked-in; still holds a max-2 slot until check-out ends. */
   function isUpcomingReservation(booking, today = todayIso()) {
     if (!booking || String(booking.status || "").toLowerCase() !== "confirmed") return false;
-    const checkIn = normalizeDate(booking.check_in || booking.checkIn);
-    return Boolean(checkIn && checkIn > today);
+    const checkOut = normalizeDate(booking.check_out || booking.checkOut);
+    return Boolean(checkOut && checkOut > today);
   }
 
   /** Stay activated by office check-in (status active) and not yet past check-out. */
@@ -252,7 +252,7 @@
       }
     }
 
-    // Max upcoming reservations (in-progress / checked-in stays do not count)
+    // Max reservations held before office check-in (checked-in / active stays do not count)
     const upcoming = memberBookings.filter((b) => isUpcomingReservation(b, today)).length;
     const capActive = maxActive();
     if (upcoming > capActive && isUpcomingReservation(booking, today)) {
