@@ -566,7 +566,10 @@
     }
     container.hidden = false;
     container.innerHTML = `
-      <h2 class="member-class-rules-title">Your class rules</h2>
+      <div class="member-class-rules-head">
+        <h2 class="member-class-rules-title">Your class rules</h2>
+        <a class="member-class-rules-sheet-link" href="membership-use-rights.html">Class information sheet</a>
+      </div>
       <p class="member-class-rules-lead">
         These limits apply to Class ${escapeHtml(described.classCode)} based on resort membership use rights.
       </p>
