@@ -4782,3 +4782,142 @@ body.admin-confirm-open {
   opacity: 0.4;
   pointer-events: none;
 }
+
+.wedding-cal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.wedding-cal-year-label {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.wedding-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  font-size: 0.92rem;
+}
+
+.wedding-cal-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wedding-cal-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.wedding-cal-swatch.is-available,
+.wedding-cal-day.is-available {
+  background: transparent;
+}
+
+.wedding-cal-swatch.is-available {
+  border: 1px solid rgba(28, 26, 23, 0.22);
+}
+
+.wedding-cal-swatch.is-booked,
+.wedding-cal-day.is-booked {
+  background: #1c3a32;
+  color: #f6f1e8;
+}
+
+.wedding-cal-swatch.is-hold,
+.wedding-cal-day.is-hold {
+  background: #c4a574;
+  color: #1c1916;
+}
+
+.wedding-cal-swatch.is-closed,
+.wedding-cal-day.is-closed {
+  background: rgba(28, 25, 22, 0.14);
+  color: #5c564e;
+}
+
+.wedding-cal-year {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.35rem 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.wedding-cal-month h3 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.wedding-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.wedding-cal-dow {
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c564e;
+  padding: 0.15rem 0;
+}
+
+.wedding-cal-pad {
+  min-height: 1.7rem;
+}
+
+.wedding-cal-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.7rem;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: #1c1916;
+  background: transparent;
+  padding: 0;
+}
+
+button.wedding-cal-day {
+  cursor: pointer;
+}
+
+button.wedding-cal-day:hover {
+  background: rgba(28, 58, 50, 0.08);
+}
+
+button.wedding-cal-day.is-booked:hover,
+button.wedding-cal-day.is-hold:hover,
+button.wedding-cal-day.is-closed:hover {
+  filter: brightness(0.96);
+}
+
+.wedding-cal-day.is-selected {
+  outline: 2px solid #1c3a32;
+  outline-offset: 1px;
+}
+
+@media (max-width: 768px) {
+  .wedding-cal-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

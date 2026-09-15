@@ -41,6 +41,13 @@ window.AdminCommon = {
       gate: "website",
     },
     {
+      id: "wedding_calendar",
+      label: "Booking calendar",
+      href: "admin-wedding-calendar.html",
+      blurb: "Mark wedding dates booked, on hold, or closed for the public calendar.",
+      gate: "website",
+    },
+    {
       id: "board",
       label: "Board Members",
       href: "admin-board.html",
