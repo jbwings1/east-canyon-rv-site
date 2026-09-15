@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking calendar | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site47">
+  <title>Resort Calendar | East Canyon Resort</title>
+  <link rel="stylesheet" href="styles.css?v=site54">
 </head>
 <body class="page-visitor">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -30,29 +30,31 @@
   </header>
   <main>
     <div class="container page-content page-content--wide">
-      <p class="admin-back"><a href="weddings.html">← Weddings</a></p>
-      <h1 id="wedding-calendar-heading">Booking calendar</h1>
-      <p id="wedding-calendar-note">
-        Dates marked booked or on hold are not available. Unmarked dates may still need confirmation — contact Special Events.
-      </p>
-      <div class="wedding-cal-toolbar">
-        <button type="button" class="btn-link" id="wedding-calendar-prev">Previous year</button>
-        <p class="wedding-cal-year-label" id="wedding-calendar-year"></p>
-        <button type="button" class="btn-link" id="wedding-calendar-next">Next year</button>
-      </div>
-      <ul class="wedding-cal-legend">
-        <li><span class="wedding-cal-swatch is-available"></span> Available</li>
-        <li><span class="wedding-cal-swatch is-booked"></span> Booked</li>
-        <li><span class="wedding-cal-swatch is-hold"></span> Hold</li>
-        <li><span class="wedding-cal-swatch is-closed"></span> Closed</li>
-      </ul>
-      <p id="wedding-calendar-status" class="form-message" role="status" aria-live="polite">Loading calendar…</p>
-      <div id="wedding-calendar-root"></div>
+      <p class="admin-back"><a id="resort-cal-back" href="visitors.html">← Visitors</a></p>
+      <h1>Resort Calendar</h1>
       <p>
-        To book a date or schedule a tour, contact Special Events at
-        <a href="tel:+18013599030">(801) 359-9030</a>, option 2, or
-        <a href="mailto:specialevents@eastcanyon.com">specialevents@eastcanyon.com</a>.
-        See also <a href="weddings.html">Weddings</a> and <a href="contact.html">Contact Information</a>.
+        Events planned by East Canyon Resort — member gatherings, activities, and other ECR-hosted dates.
+        Wedding availability is on the
+        <a href="wedding-calendar.html">Booking calendar</a>.
+      </p>
+      <div class="resort-cal-toolbar">
+        <button type="button" class="btn-link" id="resort-calendar-prev">Previous month</button>
+        <p class="resort-cal-month-label" id="resort-calendar-month"></p>
+        <button type="button" class="btn-link" id="resort-calendar-next">Next month</button>
+      </div>
+      <p id="resort-calendar-status" class="form-message" role="status" aria-live="polite">Loading calendar…</p>
+      <div id="resort-calendar-root"></div>
+      <p id="resort-calendar-pick-note" class="resort-cal-pick-note" hidden></p>
+      <h2 id="resort-calendar-day-heading">Event details</h2>
+      <div id="resort-calendar-list"></div>
+
+      <h2>2026 Events</h2>
+      <p>Special events planned by East Canyon Resort for 2026. Details are subject to change.</p>
+      <figure class="resort-cal-flyer">
+        <img src="pix/events/2026-events.jpg" alt="East Canyon Resort 2026 events flyer">
+      </figure>
+      <p>
+        <a href="files/events/2026-activities.pdf" target="_blank" rel="noopener noreferrer">Download 2026 events PDF</a>
       </p>
     </div>
   </main>
@@ -75,8 +77,8 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb4"></script>
-  <script src="js/wedding-calendar.js?v=1"></script>
-  <script src="js/wedding-calendar-page.js?v=1"></script>
+  <script src="js/resort-calendar.js?v=4"></script>
+  <script src="js/resort-calendar-page.js?v=4"></script>
   <script src="js/alert-banner.js?v=2"></script>
 </body>
 </html>

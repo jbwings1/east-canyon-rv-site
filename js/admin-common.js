@@ -48,6 +48,13 @@ window.AdminCommon = {
       gate: "website",
     },
     {
+      id: "resort_calendar",
+      label: "Resort Calendar",
+      href: "admin-resort-calendar.html",
+      blurb: "Add, edit, or remove ECR-planned events on the public resort calendar.",
+      gate: "website",
+    },
+    {
       id: "board",
       label: "Board Members",
       href: "admin-board.html",
