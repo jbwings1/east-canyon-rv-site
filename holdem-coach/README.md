@@ -21,6 +21,7 @@ Optional: Share → **Add to Home Screen** for an app-like icon.
 | **Home** | Progress snapshot + shortcuts |
 | **Learn** | Lessons on rankings, position, starting hands, pot odds, streets |
 | **Practice** | Drills: identify hands, starting hands, pot odds, decisions |
+| **Table** | Automated 5-handed cash game (you + 4 bots) to test skills live |
 | **Progress** | Scores and streak (saved in the browser) |
 
 ## Run locally (optional)

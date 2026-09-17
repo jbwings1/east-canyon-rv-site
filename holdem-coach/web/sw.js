@@ -1,4 +1,4 @@
-const CACHE = "holdem-coach-v2";
+const CACHE = "holdem-coach-v3";
 
 self.addEventListener("install", (event) => {
   const base = self.registration.scope;
@@ -13,6 +13,7 @@ self.addEventListener("install", (event) => {
     "js/lessons.js",
     "js/quiz.js",
     "js/progress.js",
+    "js/table.js",
   ].map((path) => new URL(path, base).href);
 
   event.waitUntil(

@@ -3,10 +3,14 @@ import { HAND_CATEGORIES } from "./hand-evaluator.js";
 import { LESSONS } from "./lessons.js";
 import { QUIZ_KINDS, makeQuiz } from "./quiz.js";
 import { progress } from "./progress.js";
+import { createTableGame } from "./table.js";
 
 const main = document.getElementById("main");
 const pageTitle = document.getElementById("page-title");
 const tabs = [...document.querySelectorAll(".tab")];
+
+const tableSession = createTableGame();
+let botTimer = null;
 
 const state = {
   route: "home",
@@ -30,7 +34,15 @@ function setActiveTab(route) {
   });
 }
 
+function clearBotTimer() {
+  if (botTimer) {
+    clearTimeout(botTimer);
+    botTimer = null;
+  }
+}
+
 function go(route, opts = {}) {
+  if (route !== "table") clearBotTimer();
   state.route = route;
   Object.assign(state, opts);
   render();
@@ -55,6 +67,7 @@ function render() {
   if (state.route === "practice") {
     return state.quizKind ? renderQuiz() : renderPracticeHub();
   }
+  if (state.route === "table") return renderTable();
   if (state.route === "progress") return renderProgress();
 }
 
@@ -66,7 +79,7 @@ function renderHome() {
   const next = LESSONS.find((l) => !progress.isLessonDone(l.id));
   main.innerHTML = `
     <p class="hero-title">Learn the game.<br>Test your edge.</p>
-    <p class="hero-copy">Short lessons and drills for hand rankings, starting hands, pot odds, and street decisions — works on your phone.</p>
+    <p class="hero-copy">Short lessons and drills for hand rankings, starting hands, pot odds, and street decisions — plus an automated 5-player table.</p>
     <div class="stat-row">
       <div class="stat"><span class="label">Lessons</span><span class="value">${done}/${LESSONS.length}</span></div>
       <div class="stat"><span class="label">Streak</span><span class="value">${progress.streak()}d</span></div>
@@ -81,10 +94,15 @@ function renderHome() {
         <span class="cta-badge">2</span>
         <span><strong>Start a drill</strong><span>Identify hands, odds, and decisions</span></span>
       </button>
+      <button class="cta" type="button" data-go-table>
+        <span class="cta-badge">3</span>
+        <span><strong>Play the table</strong><span>You + 4 bots · practice live decisions</span></span>
+      </button>
     </div>
   `;
   main.querySelector("[data-go-learn]").onclick = () => go("learn");
   main.querySelector("[data-go-practice]").onclick = () => go("practice");
+  main.querySelector("[data-go-table]").onclick = () => go("table");
 }
 
 function renderLearnList() {
@@ -267,6 +285,139 @@ function renderQuiz() {
       renderQuiz();
     };
   }
+}
+
+function seatCardsHtml(player, g) {
+  const show =
+    player.isHero ||
+    (g.street === "showdown" && g.lastResult?.showCards && !player.folded);
+  if (!player.hole?.length) return `<div class="seat-cards"></div>`;
+  if (show) {
+    return `<div class="seat-cards">${player.hole
+      .map(
+        (c) => `
+      <div class="playing-card ${c.red ? "red" : ""}" aria-label="${c.rankSymbol} of ${c.suit}">
+        <span class="rank">${c.rankSymbol}</span>
+        <span class="suit">${c.suitSymbol}</span>
+      </div>`
+      )
+      .join("")}</div>`;
+  }
+  return `<div class="seat-cards"><div class="card-back" aria-hidden="true"></div><div class="card-back" aria-hidden="true"></div></div>`;
+}
+
+function scheduleBot() {
+  clearBotTimer();
+  const g = tableSession.game;
+  if (state.route !== "table") return;
+  if (g.street === "idle" || g.street === "showdown") return;
+  if (g.waitingForHero) return;
+
+  botTimer = setTimeout(() => {
+    const status = tableSession.runBot();
+    renderTable();
+    if (status === "bot") scheduleBot();
+  }, 650);
+}
+
+function kickTable(status) {
+  renderTable();
+  if (status === "bot") scheduleBot();
+}
+
+function renderTable() {
+  setTitle("Table");
+  setActiveTab("table");
+  const g = tableSession.game;
+  const idle = g.street === "idle";
+  const showdown = g.street === "showdown";
+  const heroOpts = !idle && !showdown ? tableSession.heroView() : null;
+
+  main.innerHTML = `
+    <div class="table-shell">
+      <div class="table-meta">
+        <span>${idle ? "Ready" : showdown ? "Showdown" : g.street}</span>
+        <span>Blinds $${tableSession.SMALL_BLIND}/$${tableSession.BIG_BLIND}</span>
+      </div>
+
+      <div class="felt" aria-label="Poker table">
+        <div class="felt-center">
+          <p class="felt-pot">Pot $${g.pot}</p>
+          <div class="felt-board">${g.board.length ? cardsHtml(g.board) : `<p class="detail" style="margin:0">Board</p>`}</div>
+        </div>
+        ${g.players
+          .map((p, i) => {
+            const acting = g.actingIndex === i && !showdown && !idle;
+            const dealer = g.dealerIndex === i && !idle;
+            return `
+            <div class="seat seat-${i}${p.folded ? " folded" : ""}${acting ? " acting" : ""}${dealer ? " dealer" : ""}">
+              <p class="seat-name">${p.name}</p>
+              <p class="seat-stack">$${p.stack}</p>
+              ${seatCardsHtml(p, g)}
+              <p class="seat-bet">${p.bet ? `Bet $${p.bet}` : ""}</p>
+            </div>`;
+          })
+          .join("")}
+      </div>
+
+      ${
+        !idle && g.players[0].hole?.length
+          ? `<p class="hero-hand-label">Your hand${heroOpts?.handHint && g.street !== "preflop" ? ` · ${heroOpts.handHint}` : ""}</p>`
+          : ""
+      }
+
+      <p class="coach-tip">${g.coachTip}</p>
+
+      ${
+        idle
+          ? `<button class="btn" type="button" data-deal>Deal hand</button>
+             <p class="detail">Automated 5-player table: you play every decision; River, Oakley, Bluff, and Canyon act for themselves.</p>`
+          : showdown
+            ? `<button class="btn" type="button" data-deal>Next hand</button>
+               ${
+                 g.lastResult
+                   ? `<div class="panel"><strong>${g.lastResult.winners.join(" & ")} win $${g.lastResult.amount}</strong><p class="detail" style="margin:8px 0 0">${g.lastResult.reason}</p></div>`
+                   : ""
+               }`
+            : g.waitingForHero
+              ? `<div class="table-actions">
+                   <button class="btn danger" type="button" data-act="fold">Fold</button>
+                   <button class="btn secondary" type="button" data-act="checkCall">${heroOpts.callLabel}</button>
+                   <button class="btn" type="button" data-act="raise" ${heroOpts.canRaise ? "" : "disabled"}>${heroOpts.raiseLabel}</button>
+                 </div>
+                 ${
+                   heroOpts.potOdds != null
+                     ? `<p class="detail">To call needs ~${heroOpts.potOdds}% equity (pot odds).</p>`
+                     : ""
+                 }`
+              : `<p class="detail">Bots are acting…</p>`
+      }
+
+      ${
+        g.log.length
+          ? `<ul class="table-log">${g.log.map((line) => `<li>${line}</li>`).join("")}</ul>`
+          : ""
+      }
+    </div>
+  `;
+
+  const deal = main.querySelector("[data-deal]");
+  if (deal) {
+    deal.onclick = () => {
+      clearBotTimer();
+      const status = tableSession.startHand();
+      if (g.handNumber > 0) progress.touchStreak();
+      kickTable(status);
+    };
+  }
+
+  main.querySelectorAll("[data-act]").forEach((btn) => {
+    btn.onclick = () => {
+      clearBotTimer();
+      const status = tableSession.heroAct(btn.dataset.act);
+      kickTable(status);
+    };
+  });
 }
 
 function renderProgress() {
