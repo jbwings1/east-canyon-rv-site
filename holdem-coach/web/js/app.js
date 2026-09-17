@@ -288,9 +288,8 @@ function renderQuiz() {
 }
 
 function seatCardsHtml(player, g) {
-  const show =
-    player.isHero ||
-    (g.street === "showdown" && g.lastResult?.showCards && !player.folded);
+  const atShowdown = g.street === "showdown" && !player.folded && player.hole?.length;
+  const show = player.isHero || atShowdown;
   if (!player.hole?.length) return `<div class="seat-cards"></div>`;
   if (show) {
     return `<div class="seat-cards">${player.hole

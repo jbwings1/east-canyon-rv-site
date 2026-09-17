@@ -1,4 +1,4 @@
-const CACHE = "holdem-coach-v3";
+const CACHE = "holdem-coach-v4";
 
 self.addEventListener("install", (event) => {
   const base = self.registration.scope;
