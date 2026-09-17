@@ -1,40 +1,33 @@
 # Holdem Coach
 
-iOS app that teaches and tests Texas Hold’em skills — hand rankings, starting hands, pot odds, position, and street-by-street decisions.
+Teach and test Texas Hold’em skills — hand rankings, starting hands, pot odds, position, and street decisions.
 
-## Requirements
+## Use on your phone (no Mac needed)
 
-- macOS with **Xcode 15+**
-- iOS 17+ Simulator or device
+Open the **web app**:
 
-## Open in Xcode
+1. Start a simple local server from this folder, **or** open the hosted copy once it’s deployed.
+2. On your phone, visit the URL in Safari/Chrome.
+3. Optional: Add to Home Screen for an app-like icon (PWA).
 
-1. Open `HoldemCoach.xcodeproj`
-2. Select an iPhone simulator
-3. Press **Run** (⌘R)
+### Run locally
 
-## What’s included
-
-| Area | Content |
-|------|---------|
-| **Learn** | Short lessons on rankings, position, starting hands, pot odds, and betting streets |
-| **Practice** | Quizzes: identify hands, pick better starting hands, pot-odds multiple choice, action decisions |
-| **Progress** | Scores, streak, and lesson completion saved on device |
-
-## Project layout
-
-```
-holdem-coach/
-├── HoldemCoach.xcodeproj
-├── HoldemCoach/
-│   ├── HoldemCoachApp.swift
-│   ├── Models/
-│   ├── Services/
-│   ├── Views/
-│   └── Resources/
-└── README.md
+```bash
+cd holdem-coach/web
+python3 -m http.server 8080 --bind 0.0.0.0
 ```
 
-## Note
+Then open `http://localhost:8080` on this machine, or `http://YOUR_LAN_IP:8080` from your phone on the same Wi‑Fi.
 
-This folder lives in the East Canyon site repository for now so you can review and pull it. For ongoing iOS work, move `holdem-coach/` into its own GitHub repo when ready.
+### What’s included
+
+| Tab | Content |
+|-----|---------|
+| **Home** | Progress snapshot + shortcuts |
+| **Learn** | Lessons on rankings, position, starting hands, pot odds, streets |
+| **Practice** | Drills: identify hands, starting hands, pot odds, decisions |
+| **Progress** | Scores and streak (saved in the browser) |
+
+## Native iOS (Mac + Xcode only)
+
+The SwiftUI project in the parent folder (`../HoldemCoach.xcodeproj`) is optional. Use the **web** app if you don’t have a Mac.
