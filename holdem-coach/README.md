@@ -2,24 +2,19 @@
 
 Teach and test Texas Hold’em skills — hand rankings, starting hands, pot odds, position, and street decisions.
 
-## Use on your phone (no Mac needed)
+## Play on your phone (GitHub Pages)
 
-Open the **web app**:
+**Live URL:**
 
-1. Start a simple local server from this folder, **or** open the hosted copy once it’s deployed.
-2. On your phone, visit the URL in Safari/Chrome.
-3. Optional: Add to Home Screen for an app-like icon (PWA).
+**https://jbwings1.github.io/east-canyon-rv-site/holdem-coach/web/**
 
-### Run locally
+Shorter path (redirects to the app):  
+https://jbwings1.github.io/east-canyon-rv-site/holdem-coach/
 
-```bash
-cd holdem-coach/web
-python3 -m http.server 8080 --bind 0.0.0.0
-```
+Open either link in Safari on your iPhone.  
+Optional: Share → **Add to Home Screen** for an app-like icon.
 
-Then open `http://localhost:8080` on this machine, or `http://YOUR_LAN_IP:8080` from your phone on the same Wi‑Fi.
-
-### What’s included
+## What’s included
 
 | Tab | Content |
 |-----|---------|
@@ -28,6 +23,15 @@ Then open `http://localhost:8080` on this machine, or `http://YOUR_LAN_IP:8080` 
 | **Practice** | Drills: identify hands, starting hands, pot odds, decisions |
 | **Progress** | Scores and streak (saved in the browser) |
 
+## Run locally (optional)
+
+```bash
+cd holdem-coach/web
+python3 -m http.server 8080 --bind 0.0.0.0
+```
+
+Open `http://localhost:8080`.
+
 ## Native iOS (Mac + Xcode only)
 
-The SwiftUI project in the parent folder (`../HoldemCoach.xcodeproj`) is optional. Use the **web** app if you don’t have a Mac.
+The SwiftUI project (`../HoldemCoach.xcodeproj`) is optional. Use the web app if you don’t have a Mac.
