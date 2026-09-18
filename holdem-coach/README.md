@@ -1,26 +1,26 @@
-# Holdem Coach
+# Holdem Coach (moved)
 
-Teach and test Texas Hold’em skills — hand rankings, starting hands, pot odds, position, and street decisions.
+This copy under the East Canyon Resort repo is a **snapshot / mirror**.
 
-## Play on your phone (GitHub Pages)
+## Dedicated repository (canonical)
 
-**Live URL (after this PR is merged to `main`):**
+- **Repo:** https://github.com/jbwings1/holdem-coach  
+- **Clone:** `git clone https://github.com/jbwings1/holdem-coach.git`  
+- **Live Pages URL:** https://jbwings1.github.io/holdem-coach/  
 
-**https://jbwings1.github.io/east-canyon-rv-site/holdem-coach/web/**
+> **Pages note:** If the Pages URL 404s, enable it once under  
+> https://github.com/jbwings1/holdem-coach/settings/pages → Source **GitHub Actions**  
+> (or Deploy from branch **main** / folder **/**).
 
-Open that link in Safari on your iPhone.  
-Optional: Share → **Add to Home Screen** for an app-like icon.
+## Legacy path in this repo
 
-## What’s included
+The embedded web app remains at `holdem-coach/web/` for now so the old URL still works:
 
-| Tab | Content |
-|-----|---------|
-| **Home** | Progress snapshot + shortcuts |
-| **Learn** | Lessons on rankings, position, starting hands, pot odds, streets |
-| **Practice** | Drills: identify hands, starting hands, pot odds, decisions |
-| **Progress** | Scores and streak (saved in the browser) |
+https://jbwings1.github.io/east-canyon-rv-site/holdem-coach/web/
 
-## Run locally (optional)
+Prefer the dedicated repo above for new work.
+
+## Run locally (this tree)
 
 ```bash
 cd holdem-coach/web
@@ -28,7 +28,3 @@ python3 -m http.server 8080 --bind 0.0.0.0
 ```
 
 Open `http://localhost:8080`.
-
-## Native iOS (Mac + Xcode only)
-
-The SwiftUI project (`../HoldemCoach.xcodeproj`) is optional. Use the web app if you don’t have a Mac.
