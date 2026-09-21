@@ -752,6 +752,8 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
+        // Contact fields only — never put is_admin / member_id / account_status
+        // in user_metadata (user-editable). Privileges are set via service-role upsert.
         user_metadata: {
           full_name: fullName,
           phone,
@@ -759,11 +761,6 @@ Deno.serve(async (req) => {
           city,
           state,
           zip,
-          member_id: memberId,
-          account_kind: "member",
-          account_status: "pending_activation",
-          must_change_password: true,
-          is_admin: false,
         },
       });
 
@@ -857,17 +854,10 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
+      // Contact fields only — staff privileges come from the service-role upsert below.
       user_metadata: {
         full_name: fullName,
         phone,
-        account_kind: "admin",
-        account_status: "active",
-        must_change_password: true,
-        is_admin: true,
-        admin_level: String(adminLevel),
-        admin_seat: adminSeat,
-        staff_code: staffCode,
-        admin_tasks: tasks,
       },
     });
 
