@@ -2141,22 +2141,22 @@ a:hover {
 }
 
 .occupancy-legend {
-  margin: 0.75rem 0;
-  gap: 0.65rem 1rem;
-  font-size: 1rem;
+  margin: 0.85rem 0 1rem;
+  gap: 0.7rem 1.1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text, #1c1916);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .page-reservations .occupancy-legend .legend-item {
-  padding: 0.3rem 0.55rem;
+  padding: 0.35rem 0.6rem;
 }
 
 .page-reservations .occupancy-legend .legend-swatch {
-  width: 16px;
-  height: 16px;
-  margin-right: 0.35rem;
+  width: 18px;
+  height: 18px;
+  margin-right: 0.4rem;
   border-radius: 3px;
 }
 
