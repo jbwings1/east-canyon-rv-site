@@ -2,11 +2,6 @@
  * Puts Sign Out in the top header on every page when a user is signed in.
  */
 (function () {
-  function logoutTarget(user) {
-    if (user?.sessionRole === "admin" || user?.isAdmin) return "admin-login.html";
-    return "login.html";
-  }
-
   function findMountTarget() {
     const headerNav = document.querySelector("nav.header-nav");
     if (headerNav) return { parent: headerNav, home: false };
@@ -39,7 +34,7 @@
         target.parent.appendChild(existing);
       }
       existing.className = target.home ? "header-home-sign-out" : "header-nav-sign-out";
-      existing.onclick = () => Auth.logout(logoutTarget(user));
+      existing.onclick = () => Auth.logout("index.html");
       return;
     }
 
@@ -49,7 +44,7 @@
     btn.setAttribute("data-site-sign-out", "");
     btn.id = "site-header-sign-out";
     btn.textContent = "Sign Out";
-    btn.addEventListener("click", () => Auth.logout(logoutTarget(user)));
+    btn.addEventListener("click", () => Auth.logout("index.html"));
     target.parent.appendChild(btn);
   }
 
