@@ -140,7 +140,7 @@
       .sort((a, b) => {
         const aIn = a.check_in || "";
         const bIn = b.check_in || "";
-        if (aIn !== bIn) return aIn < bIn ? -1 : 1;
+        if (aIn !== bIn) return aIn > bIn ? -1 : 1;
         return String(a.created_at || "") < String(b.created_at || "") ? -1 : 1;
       });
   }

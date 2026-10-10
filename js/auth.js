@@ -1398,9 +1398,9 @@ const Auth = {
   },
 
   /**
-   * Member list order: active (non-cancelled) first by stay date, then cancelled.
-   * Active: upcoming/current by soonest check_in, then past (most recent check_in first).
-   * Cancelled: same date rules (upcoming cancelled ascending, then past descending).
+   * Member list order: active (non-cancelled) first, then cancelled.
+   * Current and upcoming stays come before past stays.
+   * Within each group, later check-in dates come first and the earliest stay is last.
    * Same check_in: original before edited, then created_at / id.
    */
   sortBookingsForDisplay(bookings = []) {
@@ -1417,10 +1417,7 @@ const Auth = {
       if (pastA !== pastB) return pastA - pastB;
       const checkInA = a?.check_in || "";
       const checkInB = b?.check_in || "";
-      if (checkInA !== checkInB) {
-        if (pastA) return checkInA > checkInB ? -1 : 1;
-        return checkInA < checkInB ? -1 : 1;
-      }
+      if (checkInA !== checkInB) return checkInA > checkInB ? -1 : 1;
       const byEdited = editedRank(a) - editedRank(b);
       if (byEdited !== 0) return byEdited;
       const createdA = a?.created_at || "";

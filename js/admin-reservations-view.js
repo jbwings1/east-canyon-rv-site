@@ -31,7 +31,7 @@
     const sorted = [...bookings].sort((a, b) => {
       const aIn = a.check_in || "";
       const bIn = b.check_in || "";
-      if (aIn !== bIn) return aIn < bIn ? -1 : 1;
+      if (aIn !== bIn) return aIn > bIn ? -1 : 1;
       return 0;
     });
 
