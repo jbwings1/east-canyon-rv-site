@@ -310,7 +310,7 @@
       const rows = bookings
         .filter((booking) => reservationMatches(booking, range))
         .sort((a, b) => {
-          const start = isoDate(a.check_in).localeCompare(isoDate(b.check_in));
+          const start = isoDate(b.check_in).localeCompare(isoDate(a.check_in));
           if (start) return start;
           return memberName(profiles, a.user_id).localeCompare(memberName(profiles, b.user_id));
         });
