@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reports | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site61">
+  <link rel="stylesheet" href="styles.css?v=site62">
 </head>
 <body class="page-visitor page-admin page-reports">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -62,17 +62,29 @@
           <h2 id="report-reservations-heading">All reservations</h2>
           <p class="report-print-range" id="report-res-print-range"></p>
           <p class="admin-help">
-            Choose a member to see every reservation for that member.
-            Dates still narrow the list. Leave the member on All members to see everyone.
+            Type a name or member number, then choose the member.
+            That shows every reservation for them. Clear the box to see everyone.
+            Dates still narrow the list.
             Upcoming lists stays that start today or later.
+            Completed means they checked in and the checkout date has passed.
+            Past, in red, means the check-in day has passed and they never checked in.
           </p>
           <div class="admin-toolbar">
             <div class="admin-toolbar-filters">
-              <div class="form-group form-group-search">
-                <label for="report-res-member">Member</label>
-                <select id="report-res-member">
-                  <option value="">All members</option>
-                </select>
+              <div class="form-group form-group-search member-lookup">
+                <label for="report-res-member-search">Member</label>
+                <input
+                  type="text"
+                  id="report-res-member-search"
+                  placeholder="Name or member number"
+                  autocomplete="off"
+                  role="combobox"
+                  aria-expanded="false"
+                  aria-controls="report-res-member-list"
+                  aria-autocomplete="list"
+                >
+                <ul id="report-res-member-list" class="member-lookup-list" role="listbox" hidden></ul>
+                <input type="hidden" id="report-res-member" value="">
               </div>
               <div class="form-group">
                 <label for="report-res-from">From</label>
@@ -193,12 +205,12 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb5"></script>
-  <script src="js/auth.js?v=sb32"></script>
+  <script src="js/auth.js?v=sb34"></script>
   <script src="js/site-header-auth.js?v=4"></script>
   <script src="js/admin-common.js?v=sb17"></script>
   <script src="js/spots-data.js?v=12"></script>
   <script src="js/stay-date-fields.js?v=3"></script>
-  <script src="js/admin-reports.js?v=5"></script>
+  <script src="js/admin-reports.js?v=6"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
