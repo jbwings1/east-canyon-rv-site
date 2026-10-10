@@ -320,11 +320,51 @@
       setPressed(report, kind);
     }
 
+    function selectedMemberId() {
+      return document.getElementById("report-res-member")?.value || "";
+    }
+
+    function fillMemberSelect() {
+      const select = document.getElementById("report-res-member");
+      if (!select) return;
+      const booked = new Set(bookings.map((booking) => booking.user_id).filter(Boolean));
+      const members = profiles
+        .filter((profile) => {
+          const id = profile.id || "";
+          return id && (root.AdminCommon.profileHasMembership(profile) || booked.has(id));
+        })
+        .sort((a, b) =>
+          memberName(profiles, a.id).localeCompare(memberName(profiles, b.id), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          })
+        );
+      const known = new Set(members.map((profile) => profile.id));
+      const extras = [...booked].filter((id) => !known.has(id));
+      const option = (id, label) =>
+        `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+      select.innerHTML = [`<option value="">All members</option>`]
+        .concat(
+          members.map((profile) => {
+            const closed =
+              String(profile.account_status || "").toLowerCase() === "closed" ? " — Closed" : "";
+            return option(profile.id, `${memberName(profiles, profile.id)}${closed}`);
+          })
+        )
+        .concat(extras.map((id) => option(id, memberName(profiles, id))))
+        .join("");
+    }
+
     function renderReservations() {
       const range = readRange("reservations", "report-res-from", "report-res-to");
       ranges.reservations = range;
       setPressed("reservations", matchingPreset(range));
-      setPrintRange("report-res-print-range", describeRange(range));
+      const memberId = selectedMemberId();
+      const who = memberId ? memberName(profiles, memberId) : "";
+      setPrintRange(
+        "report-res-print-range",
+        who ? `${who}. ${describeRange(range)}` : describeRange(range)
+      );
       const error = range.mode === "overlap" ? rangeError(range.from, range.to) : "";
       if (error) {
         resSummary.textContent = error;
@@ -332,7 +372,10 @@
         return;
       }
       const rows = bookings
-        .filter((booking) => reservationMatches(booking, range))
+        .filter((booking) => {
+          if (memberId && booking.user_id !== memberId) return false;
+          return reservationMatches(booking, range);
+        })
         .sort((a, b) => {
           const start = isoDate(b.check_in).localeCompare(isoDate(a.check_in));
           if (start) return start;
@@ -340,12 +383,16 @@
         });
       const cancelled = rows.filter(isCancelled).length;
       if (!rows.length) {
-        resSummary.textContent = "No reservations in this range.";
-        resBody.innerHTML = `<tr><td colspan="7">No reservations in this range.</td></tr>`;
+        const empty = who
+          ? `No reservations for ${who}.`
+          : "No reservations in this range.";
+        resSummary.textContent = empty;
+        resBody.innerHTML = `<tr><td colspan="7">${escapeHtml(empty)}</td></tr>`;
         return;
       }
       const cancelNote = cancelled ? ` (${cancelled} cancelled)` : "";
-      resSummary.textContent = `${rows.length} reservation${rows.length === 1 ? "" : "s"}${cancelNote}.`;
+      const forWhom = who ? ` for ${who}` : "";
+      resSummary.textContent = `${rows.length} reservation${rows.length === 1 ? "" : "s"}${cancelNote}${forWhom}.`;
       resBody.innerHTML = rows
         .map((booking) => {
           const display = statusLabel(booking);
@@ -463,6 +510,18 @@
       });
     });
 
+    document.getElementById("report-res-member")?.addEventListener("change", () => {
+      if (selectedMemberId()) {
+        ranges.reservations = { from: "", to: "", mode: "overlap" };
+        setDateValue("report-res-from", "");
+        setDateValue("report-res-to", "");
+        setPressed("reservations", "");
+      } else {
+        applyPreset("reservations", "current-year", "report-res-from", "report-res-to");
+      }
+      renderReservations();
+    });
+
     ["report-res-from", "report-res-to"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", () => {
         ranges.reservations = { mode: "overlap", from: "", to: "" };
@@ -483,6 +542,7 @@
         root.Auth.listAllProfiles(),
         root.Auth.listAllBookings(),
       ]);
+      fillMemberSelect();
       applyPreset("reservations", "current-year", "report-res-from", "report-res-to");
       applyPreset("types", "current-year", "report-type-from", "report-type-to");
       renderAll();

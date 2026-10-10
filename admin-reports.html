@@ -62,11 +62,18 @@
           <h2 id="report-reservations-heading">All reservations</h2>
           <p class="report-print-range" id="report-res-print-range"></p>
           <p class="admin-help">
-            Pick a start and end date, or use Past year, Current year, or Upcoming.
-            Upcoming lists stays that start today or later. Leave both dates blank to see every reservation.
+            Choose a member to see every reservation for that member.
+            Dates still narrow the list. Leave the member on All members to see everyone.
+            Upcoming lists stays that start today or later.
           </p>
           <div class="admin-toolbar">
             <div class="admin-toolbar-filters">
+              <div class="form-group form-group-search">
+                <label for="report-res-member">Member</label>
+                <select id="report-res-member">
+                  <option value="">All members</option>
+                </select>
+              </div>
               <div class="form-group">
                 <label for="report-res-from">From</label>
                 <input type="date" id="report-res-from" min="2020-01-01" max="2036-12-31">
@@ -191,7 +198,7 @@
   <script src="js/admin-common.js?v=sb17"></script>
   <script src="js/spots-data.js?v=12"></script>
   <script src="js/stay-date-fields.js?v=3"></script>
-  <script src="js/admin-reports.js?v=4"></script>
+  <script src="js/admin-reports.js?v=5"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
