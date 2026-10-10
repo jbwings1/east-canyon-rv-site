@@ -41,10 +41,15 @@
       <div id="admin-app" hidden>
         <p class="admin-intro">
           <span id="admin-whoami"></span>
-          Reservation reports use the stay itself: a booking is included when its nights overlap the dates you pick.
         </p>
 
-        <section class="admin-card" aria-labelledby="report-reservations-heading">
+        <div class="report-presets" role="group" aria-label="Choose a report">
+          <button type="button" class="btn btn-outline" data-report-picker="reservations" aria-pressed="true">All reservations</button>
+          <button type="button" class="btn btn-outline" data-report-picker="members" aria-pressed="false">Current members</button>
+          <button type="button" class="btn btn-outline" data-report-picker="types" aria-pressed="false">Reservations by type</button>
+        </div>
+
+        <section class="admin-card" data-report-panel="reservations" aria-labelledby="report-reservations-heading">
           <h2 id="report-reservations-heading">All reservations</h2>
           <p class="admin-help">
             Pick a start and end date, or use Past year, Current year, or Upcoming.
@@ -88,7 +93,7 @@
           </div>
         </section>
 
-        <section class="admin-card" aria-labelledby="report-members-heading">
+        <section class="admin-card" data-report-panel="members" aria-labelledby="report-members-heading" hidden>
           <h2 id="report-members-heading">Current members</h2>
           <p class="admin-help">
             Active and pending members. Closed memberships are left off.
@@ -122,7 +127,7 @@
           </div>
         </section>
 
-        <section class="admin-card" aria-labelledby="report-types-heading">
+        <section class="admin-card" data-report-panel="types" aria-labelledby="report-types-heading" hidden>
           <h2 id="report-types-heading">Reservations by type</h2>
           <p class="admin-help">
             Counts of RV, condo, and family reunion reservations for the dates you pick.
@@ -174,7 +179,7 @@
   <script src="js/admin-common.js?v=sb17"></script>
   <script src="js/spots-data.js?v=12"></script>
   <script src="js/stay-date-fields.js?v=3"></script>
-  <script src="js/admin-reports.js?v=1"></script>
+  <script src="js/admin-reports.js?v=2"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

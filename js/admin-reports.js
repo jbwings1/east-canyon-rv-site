@@ -229,7 +229,35 @@
     if (input) input.value = iso || "";
   }
 
+  const REPORT_PANELS = ["reservations", "members", "types"];
+
+  function showReport(id) {
+    const next = REPORT_PANELS.includes(id) ? id : "reservations";
+    document.querySelectorAll("[data-report-panel]").forEach((panel) => {
+      panel.hidden = panel.getAttribute("data-report-panel") !== next;
+    });
+    document.querySelectorAll("[data-report-picker]").forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        button.getAttribute("data-report-picker") === next ? "true" : "false"
+      );
+    });
+    const hash = next === "reservations" ? "" : `#${next}`;
+    const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+    return next;
+  }
+
   (async function () {
+    document.querySelectorAll("[data-report-picker]").forEach((button) => {
+      button.addEventListener("click", () => {
+        showReport(button.getAttribute("data-report-picker"));
+      });
+    });
+    showReport(String(window.location.hash || "").replace(/^#/, ""));
+
     const me = await root.AdminCommon.requireAdmin("reports");
     if (!me) return;
 
