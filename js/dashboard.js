@@ -64,7 +64,16 @@
     bookingsContent.innerHTML = bookings
       .map((b) => {
         const label = Auth.reservationTypeLabel(b.reservation_type) || "Reservation";
-        const status = b.status || "confirmed";
+        const statusLabel =
+          typeof Auth.bookingDisplayStatus === "function"
+            ? Auth.bookingDisplayStatus(b)
+            : b.status || "confirmed";
+        const statusClass =
+          typeof Auth.bookingStatusClass === "function"
+            ? Auth.bookingStatusClass(statusLabel)
+            : statusLabel === "Cancelled" || statusLabel === "Past"
+              ? "booked"
+              : "partial";
         const spot = b.spot ? ` · ${b.spot}` : "";
         const dates =
           b.check_in && b.check_out && window.SpotAvailability?.formatDateRange
@@ -74,7 +83,7 @@
         return `
       <article class="booking-item">
         <p><strong>${label}${spot}</strong> · ${dates}</p>
-        <span class="status-pill ${status === "confirmed" ? "available" : "reserved"}">${status}</span>
+        <span class="status-pill ${statusClass}">${statusLabel}</span>
       </article>`;
       })
       .join("");

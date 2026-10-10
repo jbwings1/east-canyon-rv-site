@@ -116,6 +116,30 @@
     return toIso(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate());
   }
 
+  function memberMatchesQuery(profile, query) {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return false;
+    const name = String(profile?.full_name || "").toLowerCase();
+    const memberId = String(profile?.member_id || "").toLowerCase();
+    const label = String(profile?.label || "").toLowerCase();
+    return (
+      (name && name.includes(q)) ||
+      (memberId && memberId.includes(q)) ||
+      (label && label.includes(q))
+    );
+  }
+
+  function rankMemberMatch(profile, query) {
+    const q = String(query || "").trim().toLowerCase();
+    const name = String(profile?.full_name || "").toLowerCase();
+    const memberId = String(profile?.member_id || "").toLowerCase();
+    if (!memberMatchesQuery(profile, q)) return 9;
+    if (memberId && memberId === q) return 0;
+    if (memberId && memberId.startsWith(q)) return 1;
+    if (name.startsWith(q)) return 2;
+    return 3;
+  }
+
   function countByType(bookings, range) {
     const matched = (bookings || []).filter((booking) => reservationMatches(booking, range));
     const active = matched.filter((booking) => !isCancelled(booking));
@@ -149,6 +173,8 @@
     memberSinceIso,
     countByType,
     isoDate,
+    memberMatchesQuery,
+    rankMemberMatch,
   };
 
   if (typeof document === "undefined") return;
@@ -194,7 +220,10 @@
   }
 
   function statusClass(label) {
-    if (label === "Cancelled") return "booked";
+    if (typeof root.Auth?.bookingStatusClass === "function") {
+      return root.Auth.bookingStatusClass(label);
+    }
+    if (label === "Cancelled" || label === "Past") return "booked";
     if (label === "Active" || label === "Confirmed") return "available";
     return "partial";
   }
@@ -320,39 +349,178 @@
       setPressed(report, kind);
     }
 
+    const MEMBER_MATCH_LIMIT = 12;
+    let memberOptions = [];
+    let memberHighlight = -1;
+
     function selectedMemberId() {
       return document.getElementById("report-res-member")?.value || "";
     }
 
-    function fillMemberSelect() {
-      const select = document.getElementById("report-res-member");
-      if (!select) return;
+    function memberSearchInput() {
+      return document.getElementById("report-res-member-search");
+    }
+
+    function memberList() {
+      return document.getElementById("report-res-member-list");
+    }
+
+    function buildMemberOptions() {
       const booked = new Set(bookings.map((booking) => booking.user_id).filter(Boolean));
-      const members = profiles
-        .filter((profile) => {
-          const id = profile.id || "";
-          return id && (root.AdminCommon.profileHasMembership(profile) || booked.has(id));
-        })
-        .sort((a, b) =>
-          memberName(profiles, a.id).localeCompare(memberName(profiles, b.id), undefined, {
-            numeric: true,
-            sensitivity: "base",
-          })
-        );
+      const members = profiles.filter((profile) => {
+        const id = profile.id || "";
+        return id && (root.AdminCommon.profileHasMembership(profile) || booked.has(id));
+      });
       const known = new Set(members.map((profile) => profile.id));
       const extras = [...booked].filter((id) => !known.has(id));
-      const option = (id, label) =>
-        `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
-      select.innerHTML = [`<option value="">All members</option>`]
+      const choice = (id, profile) => {
+        const closed =
+          String(profile?.account_status || "").toLowerCase() === "closed" ? " — Closed" : "";
+        const name = memberName(profiles, id);
+        return {
+          id,
+          label: `${name}${closed}`,
+          full_name: String(profile?.full_name || profile?.email || name || ""),
+          member_id: String(profile?.member_id || ""),
+        };
+      };
+      memberOptions = members
+        .map((profile) => choice(profile.id, profile))
         .concat(
-          members.map((profile) => {
-            const closed =
-              String(profile.account_status || "").toLowerCase() === "closed" ? " — Closed" : "";
-            return option(profile.id, `${memberName(profiles, profile.id)}${closed}`);
-          })
+          extras.map((id) =>
+            choice(id, {
+              full_name: memberName(profiles, id),
+              member_id: "",
+            })
+          )
+        );
+    }
+
+    function matchingMembers(query) {
+      return memberOptions
+        .filter((option) =>
+          memberMatchesQuery(
+            {
+              full_name: option.full_name,
+              member_id: option.member_id,
+              label: option.label,
+            },
+            query
+          )
         )
-        .concat(extras.map((id) => option(id, memberName(profiles, id))))
+        .sort((a, b) => {
+          const rank =
+            rankMemberMatch(
+              { full_name: a.full_name, member_id: a.member_id, label: a.label },
+              query
+            ) -
+            rankMemberMatch(
+              { full_name: b.full_name, member_id: b.member_id, label: b.label },
+              query
+            );
+          if (rank) return rank;
+          return a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: "base" });
+        });
+    }
+
+    function closeMemberList() {
+      const list = memberList();
+      const input = memberSearchInput();
+      memberHighlight = -1;
+      if (list) {
+        list.hidden = true;
+        list.innerHTML = "";
+      }
+      if (input) {
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    function paintMemberHighlight() {
+      const list = memberList();
+      const input = memberSearchInput();
+      if (!list) return;
+      const buttons = [...list.querySelectorAll("[data-member-id]")];
+      buttons.forEach((button, index) => {
+        const on = index === memberHighlight;
+        button.setAttribute("aria-selected", on ? "true" : "false");
+        button.classList.toggle("is-active", on);
+        if (on) {
+          button.id = "report-res-member-active";
+          input?.setAttribute("aria-activedescendant", button.id);
+          button.scrollIntoView({ block: "nearest" });
+        } else if (button.id === "report-res-member-active") {
+          button.removeAttribute("id");
+        }
+      });
+    }
+
+    function showMemberMatches(query) {
+      const list = memberList();
+      const input = memberSearchInput();
+      if (!list || !input) return;
+      const q = String(query || "").trim();
+      if (!q) {
+        closeMemberList();
+        return;
+      }
+      const matches = matchingMembers(q);
+      const shown = matches.slice(0, MEMBER_MATCH_LIMIT);
+      memberHighlight = shown.length ? 0 : -1;
+      const items = shown
+        .map(
+          (option, index) =>
+            `<li role="presentation"><button type="button" role="option" data-member-id="${escapeHtml(
+              option.id
+            )}" aria-selected="${index === 0 ? "true" : "false"}">${escapeHtml(option.label)}</button></li>`
+        )
         .join("");
+      const more =
+        matches.length > shown.length
+          ? `<li class="member-lookup-note" role="presentation">Showing ${shown.length} of ${matches.length}. Keep typing to narrow the list.</li>`
+          : "";
+      const empty = shown.length
+        ? ""
+        : `<li class="member-lookup-note" role="presentation">No members match.</li>`;
+      list.innerHTML = items + more + empty;
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      if (shown.length) {
+        const first = list.querySelector("[data-member-id]");
+        if (first) {
+          first.id = "report-res-member-active";
+          input.setAttribute("aria-activedescendant", first.id);
+        }
+      }
+    }
+
+    function applyMemberSelection(id) {
+      const hidden = document.getElementById("report-res-member");
+      const input = memberSearchInput();
+      const previous = hidden?.value || "";
+      const next = id || "";
+      if (hidden) hidden.value = next;
+      const option = memberOptions.find((item) => item.id === next);
+      if (input) input.value = option ? option.label : "";
+      closeMemberList();
+      if (previous === next) return;
+      if (next) {
+        ranges.reservations = { from: "", to: "", mode: "overlap" };
+        setDateValue("report-res-from", "");
+        setDateValue("report-res-to", "");
+        setPressed("reservations", "");
+      } else {
+        applyPreset("reservations", "current-year", "report-res-from", "report-res-to");
+      }
+      renderReservations();
+    }
+
+    function restoreMemberField() {
+      const input = memberSearchInput();
+      if (!input) return;
+      const option = memberOptions.find((item) => item.id === selectedMemberId());
+      input.value = option ? option.label : "";
     }
 
     function renderReservations() {
@@ -510,16 +678,56 @@
       });
     });
 
-    document.getElementById("report-res-member")?.addEventListener("change", () => {
-      if (selectedMemberId()) {
-        ranges.reservations = { from: "", to: "", mode: "overlap" };
-        setDateValue("report-res-from", "");
-        setDateValue("report-res-to", "");
-        setPressed("reservations", "");
-      } else {
-        applyPreset("reservations", "current-year", "report-res-from", "report-res-to");
+    const memberSearch = memberSearchInput();
+    const memberResultList = memberList();
+    memberSearch?.addEventListener("input", () => {
+      const text = memberSearch.value;
+      if (!text.trim()) {
+        applyMemberSelection("");
+        return;
       }
-      renderReservations();
+      showMemberMatches(text);
+    });
+    memberSearch?.addEventListener("keydown", (event) => {
+      const list = memberList();
+      const open = list && !list.hidden;
+      const buttons = open ? [...list.querySelectorAll("[data-member-id]")] : [];
+      if (event.key === "ArrowDown" && open && buttons.length) {
+        event.preventDefault();
+        memberHighlight = (memberHighlight + 1) % buttons.length;
+        paintMemberHighlight();
+      } else if (event.key === "ArrowUp" && open && buttons.length) {
+        event.preventDefault();
+        memberHighlight = (memberHighlight - 1 + buttons.length) % buttons.length;
+        paintMemberHighlight();
+      } else if (event.key === "Enter") {
+        if (open && buttons.length) {
+          event.preventDefault();
+          const index = memberHighlight >= 0 ? memberHighlight : 0;
+          applyMemberSelection(buttons[index].getAttribute("data-member-id"));
+        }
+      } else if (event.key === "Escape") {
+        closeMemberList();
+        restoreMemberField();
+      }
+    });
+    memberSearch?.addEventListener("blur", () => {
+      window.setTimeout(() => {
+        const list = memberList();
+        if (list && list.contains(document.activeElement)) return;
+        closeMemberList();
+        restoreMemberField();
+      }, 150);
+    });
+    memberResultList?.addEventListener("mousedown", (event) => {
+      const button = event.target.closest("[data-member-id]");
+      if (!button) return;
+      event.preventDefault();
+      applyMemberSelection(button.getAttribute("data-member-id"));
+    });
+    document.addEventListener("click", (event) => {
+      const field = document.querySelector(".member-lookup");
+      if (field && !field.contains(event.target)) closeMemberList();
     });
 
     ["report-res-from", "report-res-to"].forEach((id) => {
@@ -542,7 +750,7 @@
         root.Auth.listAllProfiles(),
         root.Auth.listAllBookings(),
       ]);
-      fillMemberSelect();
+      buildMemberOptions();
       applyPreset("reservations", "current-year", "report-res-from", "report-res-to");
       applyPreset("types", "current-year", "report-type-from", "report-type-to");
       renderAll();

@@ -382,11 +382,13 @@
             ? Auth.bookingDisplayStatus(b)
             : b.status || "—";
         const pillClass =
-          displayStatus === "Cancelled"
-            ? "booked"
-            : displayStatus === "Active"
-              ? "available"
-              : displayStatus === "Confirmed" || displayStatus === "Edit confirmed"
+          typeof Auth.bookingStatusClass === "function"
+            ? Auth.bookingStatusClass(displayStatus)
+            : displayStatus === "Cancelled" || displayStatus === "Past"
+              ? "booked"
+              : displayStatus === "Active" ||
+                  displayStatus === "Confirmed" ||
+                  displayStatus === "Edit confirmed"
                 ? "available"
                 : "partial";
         return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">

@@ -1455,22 +1455,43 @@ const Auth = {
     );
   },
 
-  /** Human status: Confirmed → Active after office check-in → Completed after stay end. */
-  bookingDisplayStatus(booking) {
-    if (typeof window.BookingRuleFlags?.displayStatus === "function") {
-      return window.BookingRuleFlags.displayStatus(booking);
-    }
+  /**
+   * Human status.
+   * Office check-in (status active, or office_checked_in_at) stays Active until checkout,
+   * then Completed. Checkout is exclusive, so the stay is over on the checkout date.
+   * A stay that was never checked in is Past once the check-in day itself is over
+   * (the day after check-in), shown in red like Cancelled.
+   * Pass today (YYYY-MM-DD) to check a specific calendar day.
+   */
+  bookingDisplayStatus(booking, today) {
+    const day = today || this.localCalendarToday();
     const status = String(booking?.status || "").toLowerCase();
     if (status === "cancelled") return "Cancelled";
+    const checkIn = String(booking?.check_in || "").slice(0, 10);
+    const checkOut = String(booking?.check_out || "").slice(0, 10);
+    const checkedIn =
+      status === "active" || status === "completed" || Boolean(booking?.office_checked_in_at);
+    if (checkedIn) {
+      if (status === "completed" || (checkOut && checkOut <= day)) return "Completed";
+      return "Active";
+    }
+    if (checkIn && checkIn < day) return "Past";
     if (status === "pending") return "Pending";
-    if (status === "completed") return "Completed";
-    if (status === "active") return "Active";
-    if (status !== "confirmed") return booking?.status || "—";
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const checkOut = booking?.check_out || "";
-    if (checkOut && checkOut <= today) return "Completed";
-    return "Confirmed";
+    if (status === "confirmed") return "Confirmed";
+    return booking?.status || "—";
+  },
+
+  localCalendarToday(now = new Date()) {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+  },
+
+  /** Pill color. Past uses the same red as Cancelled. */
+  bookingStatusClass(label) {
+    if (label === "Cancelled" || label === "Past") return "booked";
+    if (label === "Active" || label === "Confirmed" || label === "Edit confirmed") return "available";
+    return "partial";
   },
 
   /**

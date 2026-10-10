@@ -53,11 +53,11 @@
             ? Auth.bookingDisplayStatus(b)
             : b.status || "—";
         const pillClass =
-          displayStatus === "Cancelled"
-            ? "booked"
-            : displayStatus === "Active"
-              ? "available"
-              : displayStatus === "Confirmed"
+          typeof Auth.bookingStatusClass === "function"
+            ? Auth.bookingStatusClass(displayStatus)
+            : displayStatus === "Cancelled" || displayStatus === "Past"
+              ? "booked"
+              : displayStatus === "Active" || displayStatus === "Confirmed"
                 ? "available"
                 : "partial";
         const actions = canManage
