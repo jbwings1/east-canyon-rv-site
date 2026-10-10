@@ -2641,6 +2641,29 @@ a:hover {
   font-size: 0.95rem;
 }
 
+.report-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.report-presets .btn {
+  min-width: 8.5rem;
+}
+
+.report-presets .btn[aria-pressed="true"] {
+  background: #1c3a32;
+  border-color: #1c3a32;
+  color: #fff;
+}
+
+.report-total td {
+  font-weight: 700;
+  color: #1c3a32;
+  border-top: 2px solid rgba(28, 58, 50, 0.28);
+}
+
 .admin-card .form-message {
   text-align: left;
 }

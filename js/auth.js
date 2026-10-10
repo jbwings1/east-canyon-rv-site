@@ -331,7 +331,7 @@ const Auth = {
     const { data, error } = await getClient()
       .from("profiles")
       .select(
-        "id,email,full_name,phone,address,city,state,zip,reservation_type,assigned_spot,profile_complete,is_admin,account_kind,account_status,member_id,username,must_change_password,admin_level,admin_seat,staff_code,admin_tasks"
+        "id,email,full_name,phone,address,city,state,zip,reservation_type,assigned_spot,profile_complete,is_admin,account_kind,account_status,member_id,username,must_change_password,admin_level,admin_seat,staff_code,admin_tasks,created_at"
       )
       .order("full_name", { ascending: true, nullsFirst: false });
     throwIfError(error);
