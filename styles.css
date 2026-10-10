@@ -2641,6 +2641,25 @@ a:hover {
   font-size: 0.95rem;
 }
 
+.report-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.report-toolbar .report-presets {
+  margin: 0;
+  flex: 1 1 18rem;
+}
+
+.report-print-banner,
+.report-print-range {
+  display: none;
+}
+
 .report-presets {
   display: flex;
   flex-wrap: wrap;
@@ -2662,6 +2681,78 @@ a:hover {
   font-weight: 700;
   color: #1c3a32;
   border-top: 2px solid rgba(28, 58, 50, 0.28);
+}
+
+@media print {
+  .page-reports {
+    background: #fff !important;
+  }
+
+  .page-reports .home-alert-banner,
+  .page-reports .site-header,
+  .page-reports .home-footer,
+  .page-reports .admin-back,
+  .page-reports .admin-intro,
+  .page-reports .report-toolbar,
+  .page-reports .admin-help,
+  .page-reports .admin-toolbar,
+  .page-reports .report-presets,
+  .page-reports #admin-message,
+  .page-reports #admin-denied {
+    display: none !important;
+  }
+
+  .page-reports .report-print-banner,
+  .page-reports .report-print-range {
+    display: block;
+    margin: 0 0 0.75rem;
+    color: #1c1916;
+  }
+
+  .page-reports main {
+    padding: 0;
+  }
+
+  .page-reports .page-content,
+  .page-reports .page-content--wide {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .page-reports .admin-card {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    background: #fff;
+  }
+
+  .page-reports .admin-card[hidden] {
+    display: none !important;
+  }
+
+  .page-reports .admin-table-wrap {
+    overflow: visible;
+  }
+
+  .page-reports .admin-table {
+    font-size: 10.5pt;
+  }
+
+  .page-reports .status-pill {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .page-reports h1 {
+    margin-top: 0;
+  }
 }
 
 .admin-card .form-message {
