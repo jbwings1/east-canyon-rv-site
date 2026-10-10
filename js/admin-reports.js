@@ -250,7 +250,30 @@
     return next;
   }
 
+  function describeRange(range) {
+    if (range?.mode === "upcoming") {
+      const from = formatStayDate(range.from);
+      const to = range.to ? formatStayDate(range.to) : "";
+      if (to && to !== "—") return `Upcoming stays from ${from} through ${to}.`;
+      return from && from !== "—" ? `Upcoming stays starting ${from}.` : "Upcoming stays.";
+    }
+    const from = range?.from ? formatStayDate(range.from) : "";
+    const to = range?.to ? formatStayDate(range.to) : "";
+    if (from && from !== "—" && to && to !== "—") return `${from} through ${to}.`;
+    if (from && from !== "—") return `From ${from}.`;
+    if (to && to !== "—") return `Through ${to}.`;
+    return "All dates.";
+  }
+
+  function setPrintRange(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
   (async function () {
+    document.getElementById("report-print-btn")?.addEventListener("click", () => {
+      window.print();
+    });
     document.querySelectorAll("[data-report-picker]").forEach((button) => {
       button.addEventListener("click", () => {
         showReport(button.getAttribute("data-report-picker"));
@@ -301,6 +324,7 @@
       const range = readRange("reservations", "report-res-from", "report-res-to");
       ranges.reservations = range;
       setPressed("reservations", matchingPreset(range));
+      setPrintRange("report-res-print-range", describeRange(range));
       const error = range.mode === "overlap" ? rangeError(range.from, range.to) : "";
       if (error) {
         resSummary.textContent = error;
@@ -360,6 +384,10 @@
           )
         );
       if (staysHeading) staysHeading.textContent = `Stays (past ${stayMonths} months)`;
+      setPrintRange(
+        "report-members-print-range",
+        `Stays in the past ${stayMonths} months, through ${formatStayDate(today)}.`
+      );
       if (!members.length) {
         membersSummary.textContent = "No current members.";
         membersBody.innerHTML = `<tr><td colspan="5">No current members.</td></tr>`;
@@ -384,6 +412,7 @@
       const range = readRange("types", "report-type-from", "report-type-to");
       ranges.types = range;
       setPressed("types", matchingPreset(range));
+      setPrintRange("report-type-print-range", describeRange(range));
       const error = range.mode === "overlap" ? rangeError(range.from, range.to) : "";
       if (error) {
         typeSummary.textContent = error;
@@ -407,6 +436,8 @@
     }
 
     function renderAll() {
+      const printed = document.getElementById("report-printed-on");
+      if (printed) printed.textContent = `Printed ${formatStayDate(todayIso())}`;
       renderReservations();
       renderMembers();
       renderTypes();
