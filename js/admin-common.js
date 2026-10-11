@@ -25,7 +25,7 @@ window.AdminCommon = {
       id: "reservations_manage",
       label: "Manage reservations",
       href: "admin-reservations-manage.html",
-      blurb: "Book for a member, edit dates/spot, confirm, or cancel.",
+      blurb: "Edit, check in, confirm, or cancel. Make a reservation when you need a new one.",
     },
     {
       id: "reports",
