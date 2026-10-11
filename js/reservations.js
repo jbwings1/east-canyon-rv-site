@@ -413,16 +413,34 @@ function bookingLimitsAvailable() {
   return typeof window.BookingLimits !== "undefined";
 }
 
-function evaluateMembershipRights({ reservationType, checkIn: stayIn, checkOut: stayOut } = {}) {
+function spotOccupancyRows() {
+  return (window.SPOT_BOOKINGS || []).map((row) => ({
+    id: row.bookingId || row.id || "",
+    spot: row.spotId || row.spot,
+    check_in: row.checkIn || row.check_in,
+    check_out: row.checkOut || row.check_out,
+    status: row.status || "confirmed",
+  }));
+}
+
+function evaluateMembershipRights({ reservationType, checkIn: stayIn, checkOut: stayOut, spot } = {}) {
+  const chosenSpot =
+    spot !== undefined ? spot : preferredSpotInput?.value ? preferredSpotInput.value : undefined;
+  const editing = editingBookingId
+    ? memberBookings.find((booking) => booking.id === editingBookingId)
+    : null;
   if (bookingLimitsAvailable()) {
     return window.BookingLimits.evaluateProposedStay({
       memberId: bookingMemberIdForRights(),
       reservationType: reservationType || typeSelect.value,
+      spot: chosenSpot,
       checkIn: stayIn || checkIn.value,
       checkOut: stayOut || checkOut.value,
       existingBookings: memberBookings,
+      occupancyBookings: spotOccupancyRows(),
       excludeBookingId: editingBookingId,
       isNewBooking: !editingBookingId,
+      createdAt: editing?.created_at || null,
     });
   }
   if (!membershipRightsAvailable()) {
@@ -1253,17 +1271,16 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
+  await refreshOccupancyForSelectedDates();
   const membershipGate = evaluateMembershipRights({
     reservationType: data.type,
     checkIn: data.checkIn,
     checkOut: data.checkOut,
+    spot: data.preferredSpot || "",
   });
-  const hardViolations = (membershipGate.violations || []).filter(
-    (v) => v.rule !== "max_nights" && v.rule !== "max_open_reservations"
-  );
-  if (hardViolations.length) {
-    const limitText = hardViolations.map((v) => v.message).filter(Boolean).join(" ");
-    message.textContent = limitText;
+  const memberViolations = membershipGate.violations || [];
+  if (memberViolations.length) {
+    message.textContent = memberViolations.map((v) => v.message).filter(Boolean).join(" ");
     message.className = "form-message error";
     updateMembershipRightsNotice();
     membershipRightsNotice?.scrollIntoView({ behavior: "smooth", block: "nearest" });

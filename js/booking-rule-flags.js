@@ -163,12 +163,14 @@
     if (!checkIn || !checkOut) {
       kinds.add("dates");
       violations.push({
+        kind: "dates",
         code: "dates-missing",
         message: "Check-in or check-out date is missing.",
       });
     } else if (checkOut <= checkIn) {
       kinds.add("dates");
       violations.push({
+        kind: "dates",
         code: "dates-order",
         message: "Check-out must be after check-in.",
       });
@@ -181,6 +183,7 @@
       if (nights > cap) {
         kinds.add("nights");
         violations.push({
+          kind: "nights",
           code: "max-nights",
           message: `Stay is ${nights} nights (maximum ${cap} consecutive days per reservation).`,
         });
@@ -195,6 +198,7 @@
         if (checkIn > latestAllowed) {
           kinds.add("advance");
           violations.push({
+            kind: "advance",
             code: "advance-window",
             message: `Check-in was more than ${maxAdvanceDays()} days after the booking was made (advance limit).`,
           });
@@ -206,6 +210,7 @@
     if (needsAssignedSite(reservationType) && !spot) {
       kinds.add("site");
       violations.push({
+        kind: "site",
         code: "site-missing",
         message: "No site/unit is assigned.",
       });
@@ -218,12 +223,14 @@
       if (!unit) {
         kinds.add("site");
         violations.push({
+          kind: "site",
           code: "site-unknown",
           message: `Site/unit “${spot}” was not found on the map.`,
         });
       } else if (expected && unit.category !== expected) {
         kinds.add("site");
         violations.push({
+          kind: "site",
           code: "site-type-mismatch",
           message: `Site/unit “${spot}” is a ${unit.category} site, but this booking is ${reservationType || "unknown type"}.`,
         });
@@ -246,6 +253,7 @@
       if (overlaps.length) {
         kinds.add("overlap");
         violations.push({
+          kind: "overlap",
           code: "site-overlap",
           message: `Overlaps another booking on site/unit ${spot}.`,
         });
@@ -258,6 +266,7 @@
     if (upcoming > capActive && isUpcomingReservation(booking, today)) {
       kinds.add("limit");
       violations.push({
+        kind: "limit",
         code: "max-active",
         message: `Member has ${upcoming} upcoming reservation${upcoming === 1 ? "" : "s"} (maximum ${capActive}).`,
       });
@@ -274,6 +283,7 @@
         kinds.add("class");
         (gate.violations || []).forEach((v) => {
           violations.push({
+            kind: "class",
             code: v.code || "class",
             message: v.message || "Breaks membership class rules.",
           });
@@ -297,6 +307,7 @@
         kinds.add("consecutive");
         (consecutive.violations || []).forEach((v) => {
           violations.push({
+            kind: "consecutive",
             code: v.rule || v.code || "consecutive_14_vacate_7",
             message: v.message || "Breaks 14-day consecutive occupancy / 7-day vacate rule.",
           });
