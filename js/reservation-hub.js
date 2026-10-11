@@ -252,8 +252,10 @@
         const statusClass =
           typeof Auth.bookingStatusClass === "function"
             ? Auth.bookingStatusClass(statusLabel)
-            : statusLabel === "Cancelled" || statusLabel === "Past"
+            : statusLabel === "Past"
               ? "booked"
+              : statusLabel === "Cancelled"
+                ? "cancelled"
               : statusLabel === "Active" || statusLabel === "Confirmed" || statusLabel === "Edit confirmed"
                 ? "available"
                 : "partial";

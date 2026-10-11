@@ -223,7 +223,8 @@
     if (typeof root.Auth?.bookingStatusClass === "function") {
       return root.Auth.bookingStatusClass(label);
     }
-    if (label === "Cancelled" || label === "Past") return "booked";
+    if (label === "Past") return "booked";
+    if (label === "Cancelled") return "cancelled";
     if (label === "Active" || label === "Confirmed") return "available";
     return "partial";
   }

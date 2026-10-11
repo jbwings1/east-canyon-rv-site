@@ -95,18 +95,47 @@
       <span class="admin-class-flag-detail">${AdminCommon.escapeHtml(flag.message)}</span>`;
   }
 
+  function memberChoiceLabel(member) {
+    const name = member.full_name || member.email || "Member";
+    return member.member_id ? `${name} · ${member.member_id}` : name;
+  }
+
+  function memberChoices() {
+    return profiles
+      .filter((member) => AdminCommon.profileHasMembership(member) && member.account_status !== "closed")
+      .sort((a, b) =>
+        memberChoiceLabel(a).localeCompare(memberChoiceLabel(b), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+  }
+
+  function memberMatchesSearch(member, query) {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return true;
+    const name = String(member.full_name || "").toLowerCase();
+    const memberId = String(member.member_id || "").toLowerCase();
+    const label = memberChoiceLabel(member).toLowerCase();
+    return name.includes(q) || memberId.includes(q) || label.includes(q);
+  }
+
   function renderBookingMemberOptions() {
     const current = bookingMember.value;
-    bookingMember.innerHTML = `<option value="">Select member…</option>`;
-    profiles
-      .filter((m) => AdminCommon.profileHasMembership(m) && m.account_status !== "closed")
-      .forEach((m) => {
-        const option = document.createElement("option");
-        option.value = m.id;
-        option.textContent = `${m.full_name || m.email}${m.member_id ? ` · ${m.member_id}` : ""}`;
-        bookingMember.appendChild(option);
-      });
-    if (current) bookingMember.value = current;
+    const query = document.getElementById("booking-member-search")?.value || "";
+    const matches = memberChoices().filter((member) => memberMatchesSearch(member, query));
+    bookingMember.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = matches.length ? "Select member…" : "No members match";
+    bookingMember.appendChild(placeholder);
+    matches.forEach((member) => {
+      const option = document.createElement("option");
+      option.value = member.id;
+      option.textContent = memberChoiceLabel(member);
+      bookingMember.appendChild(option);
+    });
+    if (current && matches.some((member) => member.id === current)) bookingMember.value = current;
   }
 
   function filteredBookings() {
@@ -384,8 +413,10 @@
         const pillClass =
           typeof Auth.bookingStatusClass === "function"
             ? Auth.bookingStatusClass(displayStatus)
-            : displayStatus === "Cancelled" || displayStatus === "Past"
+            : displayStatus === "Past"
               ? "booked"
+              : displayStatus === "Cancelled"
+                ? "cancelled"
               : displayStatus === "Active" ||
                   displayStatus === "Confirmed" ||
                   displayStatus === "Edit confirmed"
@@ -739,6 +770,10 @@
       document.getElementById("booking-member")?.focus();
     }
   }
+
+  document.getElementById("booking-member-search")?.addEventListener("input", () => {
+    renderBookingMemberOptions();
+  });
 
   createOpenBtn?.addEventListener("click", () => {
     const open = Boolean(createCard?.hidden);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Reservations | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site63">
+  <link rel="stylesheet" href="styles.css?v=site64">
 </head>
 <body class="page-visitor page-admin">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -45,8 +45,12 @@
 
         <section class="admin-card" id="admin-create-card" hidden>
           <h2>Make a reservation for a member</h2>
-          <p class="admin-help">You cannot book for yourself while signed in as admin.</p>
+          <p class="admin-help">You cannot book for yourself while signed in as admin. Type a name or member number to shorten the member list, then choose the member.</p>
           <form id="admin-create-booking-form" class="auth-form admin-form">
+            <div class="form-group">
+              <label for="booking-member-search">Find member</label>
+              <input type="search" id="booking-member-search" placeholder="Name or member number" autocomplete="off">
+            </div>
             <div class="form-group">
               <label for="booking-member">Member</label>
               <select id="booking-member" required>
@@ -218,7 +222,7 @@
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
   <script src="js/supabase-client.js?v=sb4"></script>
-  <script src="js/auth.js?v=sb34"></script>
+  <script src="js/auth.js?v=sb35"></script>
   <script src="js/site-header-auth.js?v=4"></script>
   <script src="js/map-units-generated.js?v=1"></script>
   <script src="js/spots-data.js?v=12"></script>
@@ -227,7 +231,7 @@
   <script src="js/booking-rule-flags.js?v=8"></script>
   <script src="js/admin-common.js?v=sb13"></script>
   <script src="js/stay-date-fields.js?v=2"></script>
-  <script src="js/admin-reservations-manage.js?v=sb27"></script>
+  <script src="js/admin-reservations-manage.js?v=sb28"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

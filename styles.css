@@ -3442,6 +3442,7 @@ a:hover {
 .page-reservations .status-pill.available { background: #4a9b6e; }
 .page-reservations .status-pill.partial { background: #e6b800; }
 .page-reservations .status-pill.booked { background: #c0392b; }
+.page-reservations .status-pill.cancelled { background: #b7daf2; color: #1c3a32; }
 .page-reservations .status-pill.tooShort { background: #1a1a1a; }
 .page-reservations .status-pill.member { background: #2f7dba; }
 .page-reservations .status-pill.maintenance { background: #c45c26; }
@@ -4127,8 +4128,9 @@ img.logo {
 }
 
 .status-pill.available { background: #4a9b6e; }
-.status-pill.partial { background: #e6b800; }
+.status-pill.partial { background: #e6b800; color: #1c1916; }
 .status-pill.booked { background: #c0392b; }
+.status-pill.cancelled { background: #b7daf2; color: #1c3a32; }
 .status-pill.tooShort { background: #1a1a1a; }
 .status-pill.member { background: #2f7dba; }
 .status-pill.maintenance { background: #c45c26; }
