@@ -87,25 +87,43 @@
     });
   }
 
-  function ruleFlagPennants(flag) {
+  function violationOverrideIds(violation) {
+    const code = String(violation?.code || "");
+    const kind = String(violation?.kind || "");
+    const ids = new Set([code, kind].filter(Boolean));
+    if (kind === "limit" || code === "max-active") ids.add("max_open_reservations");
+    if (kind === "nights" || code === "max-nights") ids.add("max_nights");
+    if (kind === "consecutive" || code === "consecutive_14_vacate_7") ids.add("consecutive_14_vacate_7");
+    if (kind === "advance" || code === "advance-window") ids.add("advance_window");
+    return ids;
+  }
+
+  function violationAlreadyOverridden(booking, violation) {
+    const overrides = Array.isArray(booking?.rule_overrides) ? booking.rule_overrides : [];
+    const recorded = new Set(overrides.map((item) => String(item?.rule || "")).filter(Boolean));
+    return [...violationOverrideIds(violation)].some((id) => recorded.has(id));
+  }
+
+  function ruleFlagPennants(flag, booking) {
     if (!flag || flag.ok) return [];
     const groups = new Map();
     (flag.violations || []).forEach((violation) => {
+      if (violationAlreadyOverridden(booking, violation)) return;
       const kind = violation.kind || (flag.kinds.length === 1 ? flag.kinds[0] : "rule");
       const message = String(violation.message || "").trim();
       if (!message) return;
       if (!groups.has(kind)) groups.set(kind, []);
       groups.get(kind).push(message);
     });
-    if (!groups.size && flag.message) {
+    if (!groups.size && flag.message && !(flag.violations || []).some((violation) => violationAlreadyOverridden(booking, violation))) {
       const kind = flag.kinds.length === 1 ? flag.kinds[0] : "rule";
       groups.set(kind, [flag.message]);
     }
     return [...groups.entries()].map(([kind, lines]) => ({
-      tone: "violation",
+      tone: "rule",
       label:
         typeof BookingRuleFlags !== "undefined" ? BookingRuleFlags.flagLabel([kind]) : "Rule flag",
-      lines,
+      lines: [...lines, "Needs an override."],
     }));
   }
 
@@ -545,7 +563,7 @@
           <td>${AdminCommon.escapeHtml(dates)}</td>
           <td>${
             typeof BookingLimits !== "undefined"
-              ? BookingLimits.statusWithFlags(pill, b.rule_overrides, ruleFlagPennants(flag))
+              ? BookingLimits.statusWithFlags(pill, b.rule_overrides, ruleFlagPennants(flag, b))
               : pill
           }</td>
           <td class="admin-booking-actions">
