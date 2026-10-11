@@ -87,14 +87,26 @@
     });
   }
 
-  function ruleFlagMarkup(flag) {
-    if (flag.ok) return "";
-    const label =
-      typeof BookingRuleFlags !== "undefined"
-        ? BookingRuleFlags.flagLabel(flag.kinds)
-        : "Rule flag";
-    return `<span class="admin-class-flag" title="${AdminCommon.escapeHtml(flag.message)}">${label}</span>
-      <span class="admin-class-flag-detail">${AdminCommon.escapeHtml(flag.message)}</span>`;
+  function ruleFlagPennants(flag) {
+    if (!flag || flag.ok) return [];
+    const groups = new Map();
+    (flag.violations || []).forEach((violation) => {
+      const kind = violation.kind || (flag.kinds.length === 1 ? flag.kinds[0] : "rule");
+      const message = String(violation.message || "").trim();
+      if (!message) return;
+      if (!groups.has(kind)) groups.set(kind, []);
+      groups.get(kind).push(message);
+    });
+    if (!groups.size && flag.message) {
+      const kind = flag.kinds.length === 1 ? flag.kinds[0] : "rule";
+      groups.set(kind, [flag.message]);
+    }
+    return [...groups.entries()].map(([kind, lines]) => ({
+      tone: "violation",
+      label:
+        typeof BookingRuleFlags !== "undefined" ? BookingRuleFlags.flagLabel([kind]) : "Rule flag",
+      lines,
+    }));
   }
 
   function memberChoiceLabel(member) {
@@ -524,19 +536,17 @@
                   displayStatus === "Edit confirmed"
                 ? "available"
                 : "partial";
+        const pill = `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`;
         return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">
-          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code>${ruleFlagMarkup(flag)}</td>
+          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code></td>
           <td>${AdminCommon.escapeHtml(memberLabel(b.user_id))}</td>
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
           <td>${AdminCommon.escapeHtml(dates)}</td>
           <td>${
             typeof BookingLimits !== "undefined"
-              ? BookingLimits.statusWithFlags(
-                  `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`,
-                  b.rule_overrides
-                )
-              : `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`
+              ? BookingLimits.statusWithFlags(pill, b.rule_overrides, ruleFlagPennants(flag))
+              : pill
           }</td>
           <td class="admin-booking-actions">
             <div class="admin-row-menu">

@@ -4229,6 +4229,14 @@ img.logo {
   background: #c0392b;
 }
 
+.status-flag--violation {
+  background: #8b3a2f;
+}
+
+.status-flag-detail[hidden] {
+  display: none !important;
+}
+
 .status-flag-detail {
   display: block;
   margin-top: 0.35rem;

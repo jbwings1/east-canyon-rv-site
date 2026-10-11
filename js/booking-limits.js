@@ -700,19 +700,33 @@
     return groups;
   }
 
-  function statusWithFlags(pillHtml, overrides) {
+  function statusWithFlags(pillHtml, overrides, extraFlags) {
     const groups = overrideFlagGroups(overrides);
-    if (!groups.length) return pillHtml;
-    const buttons = groups
-      .map((group, index) => {
-        const name = group.tone === "overdue" ? "Overdue account" : "Rule override";
-        return `<button type="button" class="status-flag status-flag--${group.tone}" data-flag-index="${index}" aria-expanded="false" aria-label="${escapeHtml(name)}"></button>`;
+    const extras = (Array.isArray(extraFlags) ? extraFlags : []).filter(
+      (flag) => flag && Array.isArray(flag.lines) && flag.lines.some((line) => String(line || "").trim())
+    );
+    const items = [
+      ...groups.map((group) => ({
+        tone: group.tone,
+        label: group.tone === "overdue" ? "Overdue account" : "Rule override",
+        lines: group.items.map((item) => overrideFlagLine(item)),
+      })),
+      ...extras.map((flag) => ({
+        tone: flag.tone === "rule" || flag.tone === "overdue" ? flag.tone : "violation",
+        label: flag.label || "Rule flag",
+        lines: flag.lines.map((line) => String(line || "").trim()).filter(Boolean),
+      })),
+    ];
+    if (!items.length) return pillHtml;
+    const buttons = items
+      .map((item, index) => {
+        return `<button type="button" class="status-flag status-flag--${escapeHtml(item.tone)}" data-flag-index="${index}" aria-expanded="false" aria-label="${escapeHtml(item.label)}"></button>`;
       })
       .join("");
-    const details = groups
-      .map((group, index) => {
-        const lines = group.items
-          .map((item) => `<span>${escapeHtml(overrideFlagLine(item))}</span>`)
+    const details = items
+      .map((item, index) => {
+        const lines = [`<span>${escapeHtml(item.label)}</span>`]
+          .concat(item.lines.map((line) => `<span>${escapeHtml(line)}</span>`))
           .join("");
         return `<span class="status-flag-detail" data-flag-index="${index}" hidden>${lines}</span>`;
       })
