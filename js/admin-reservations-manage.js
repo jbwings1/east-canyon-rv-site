@@ -727,6 +727,30 @@
     }
   });
 
+  const createCard = document.getElementById("admin-create-card");
+  const createOpenBtn = document.getElementById("admin-create-open");
+
+  function setCreateFormOpen(open) {
+    if (!createCard) return;
+    createCard.hidden = !open;
+    createOpenBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      createCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("booking-member")?.focus();
+    }
+  }
+
+  createOpenBtn?.addEventListener("click", () => {
+    const open = Boolean(createCard?.hidden);
+    setCreateFormOpen(open);
+    if (!open) createOpenBtn.focus();
+  });
+
+  document.getElementById("admin-create-close")?.addEventListener("click", () => {
+    setCreateFormOpen(false);
+    createOpenBtn?.focus();
+  });
+
   document.getElementById("admin-edit-cancel")?.addEventListener("click", () => {
     closeEdit();
   });
