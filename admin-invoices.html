@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Staff | East Canyon Resort</title>
+  <title>Member Accounts | East Canyon Resort</title>
   <link rel="stylesheet" href="styles.css?v=site65">
 </head>
 <body class="page-visitor page-admin">
@@ -30,9 +30,9 @@
   </header>
 
   <main>
-    <div class="container page-content">
+    <div class="container page-content page-content--wide">
       <p class="admin-back"><a href="admin.html">← Admin tasks</a></p>
-      <h1>Staff</h1>
+      <h1>Member accounts</h1>
       <p id="admin-denied" class="form-message error" hidden>
         This area is for resort administrators.
         <a href="admin-login.html">Admin sign in</a>
@@ -44,85 +44,76 @@
         </p>
 
         <section class="admin-card">
-          <h2>Create staff admin</h2>
+          <h2>New charge</h2>
           <p class="admin-help">
-            Create staff-only logins here. To give an existing member staff access, open their
-            member record (Account roles task). Click a staff row to edit, close, or add membership.
+            Create an invoice for annual dues, a penalty, or another charge.
+            This test account does not charge a card and does not update the office accounting software.
           </p>
-          <form id="admin-create-staff-form" class="auth-form admin-form">
-            <div class="form-group">
-              <label for="staff-name">Full name</label>
-              <input type="text" id="staff-name" required>
-            </div>
-            <div class="form-group">
-              <label for="staff-email">Office email</label>
-              <input type="email" id="staff-email" required>
-            </div>
-            <div class="form-group">
-              <label for="staff-phone">Phone</label>
-              <input type="tel" id="staff-phone">
+          <form id="invoice-form">
+            <div class="form-group member-lookup">
+              <label for="invoice-member-search">Member</label>
+              <input type="text" id="invoice-member-search" placeholder="Name or member number" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="invoice-member-list" aria-autocomplete="list" required>
+              <ul id="invoice-member-list" class="member-lookup-list" role="listbox" hidden></ul>
+              <input type="hidden" id="invoice-member" value="">
             </div>
             <div class="admin-form-row">
               <div class="form-group">
-                <label for="staff-level">Level</label>
-                <select id="staff-level" required>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                <label for="invoice-type">Charge type</label>
+                <select id="invoice-type" required>
+                  <option value="annual_dues">Annual dues</option>
+                  <option value="penalty">Penalty</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="staff-seat">Seat letter</label>
-                <input type="text" id="staff-seat" placeholder="a" maxlength="2" required>
+                <label for="invoice-amount">Amount</label>
+                <input type="number" id="invoice-amount" min="0.01" step="0.01" required>
               </div>
               <div class="form-group">
-                <label for="staff-code">Staff code</label>
-                <input type="text" id="staff-code" placeholder="A-002" required>
+                <label for="invoice-due">Due date</label>
+                <input type="date" id="invoice-due" required>
               </div>
             </div>
-            <fieldset class="admin-task-fieldset">
-              <legend>Assigned tasks</legend>
-              <div id="staff-task-list"></div>
-            </fieldset>
             <div class="form-group">
-              <label for="staff-temp-password">Temporary password</label>
-              <input type="text" id="staff-temp-password" required minlength="8">
+              <label for="invoice-description">Description</label>
+              <input type="text" id="invoice-description" maxlength="500" required placeholder="What this charge is for">
             </div>
-            <button type="submit" class="btn btn-primary">Create staff login</button>
+            <button type="submit" class="btn btn-primary">Create invoice</button>
           </form>
-          <p id="admin-create-staff-result" class="form-message" role="status" aria-live="polite"></p>
+          <p id="invoice-result" class="form-message" role="status" aria-live="polite"></p>
+        </section>
 
-          <h3 class="admin-subhead">Staff directory</h3>
+        <section class="admin-card">
+          <h2>Invoices</h2>
           <div class="admin-table-wrap">
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th>Member ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Level / seat</th>
-                  <th>Tasks</th>
+                  <th>Invoice</th>
+                  <th>Member</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Due</th>
+                  <th>Status</th>
                 </tr>
               </thead>
-              <tbody id="admin-staff-body">
+              <tbody id="invoice-body">
                 <tr><td colspan="6">Loading…</td></tr>
               </tbody>
             </table>
           </div>
         </section>
-
-        <p id="admin-message" class="form-message" role="status" aria-live="polite"></p>
       </div>
     </div>
   </main>
 
   <script src="js/supabase-config.js?v=sb2"></script>
   <script src="js/supabase.js?v=sb2"></script>
-  <script src="js/supabase-client.js?v=sb5"></script>
-  <script src="js/auth.js?v=sb30"></script>
+  <script src="js/supabase-client.js?v=sb4"></script>
+  <script src="js/auth.js?v=sb36"></script>
   <script src="js/site-header-auth.js?v=4"></script>
-  <script src="js/admin-common.js?v=sb15"></script>
-  <script src="js/admin-staff.js?v=sb11"></script>
+  <script src="js/admin-common.js?v=sb19"></script>
+  <script src="js/admin-invoices.js?v=1"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

@@ -26,6 +26,7 @@
 
   let profiles = [];
   let bookings = [];
+  let invoices = [];
   let editingId = null;
   let viewingId = null;
   const createOverrideSession =
@@ -528,7 +529,14 @@
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
           <td>${AdminCommon.escapeHtml(dates)}</td>
-          <td><span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span></td>
+          <td>${
+            typeof BookingLimits !== "undefined"
+              ? BookingLimits.statusWithFlags(
+                  `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`,
+                  b.rule_overrides
+                )
+              : `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`
+          }</td>
           <td class="admin-booking-actions">
             <div class="admin-row-menu">
               <button type="button" class="btn btn-outline btn-small admin-row-menu-toggle" aria-expanded="false" aria-haspopup="menu">Actions</button>
@@ -559,8 +567,11 @@
   }
 
   async function load() {
-    profiles = await Auth.listAllProfiles();
-    bookings = await Auth.listAllBookings();
+    [profiles, bookings, invoices] = await Promise.all([
+      Auth.listAllProfiles(),
+      Auth.listAllBookings(),
+      Auth.listInvoices(),
+    ]);
     renderBookingMemberOptions();
     renderBookings();
     const flagged = bookings.filter((b) => !ruleFlagForBooking(b).ok).length;
@@ -582,29 +593,59 @@
     }
   }
 
+  function overdueViolation(userId) {
+    const today = todayIso();
+    const open = invoices.filter(
+      (invoice) => invoice.user_id === userId && Auth.invoiceIsOverdue(invoice, today)
+    );
+    if (!open.length) return null;
+    const total = open.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
+    return {
+      rule: "account_overdue",
+      label: "Account overdue",
+      message: `This member's account is overdue (${Auth.formatMoney(total)}). Override to book and record who approved it.`,
+    };
+  }
+
+  function withOverdue(gate, userId) {
+    const extra = overdueViolation(userId);
+    if (!extra) return gate || { ok: true, violations: [] };
+    return {
+      ...(gate || {}),
+      ok: false,
+      violations: [...(gate?.violations || []), extra],
+    };
+  }
+
   function evaluateSelectedMemberRights() {
     if (typeof BookingLimits === "undefined") {
-      if (typeof MembershipRights === "undefined") return { ok: true, violations: [] };
+      if (typeof MembershipRights === "undefined") return withOverdue({ ok: true, violations: [] }, bookingMember.value);
       const memberUserId = bookingMember.value;
       const profile = profiles.find((p) => p.id === memberUserId);
-      return MembershipRights.validateBooking({
+      return withOverdue(
+        MembershipRights.validateBooking({
+          memberId: profile?.member_id || "",
+          reservationType: bookingType.value,
+          checkIn: document.getElementById("booking-check-in").value,
+          checkOut: document.getElementById("booking-check-out").value,
+          existingBookings: bookings.filter((b) => b.user_id === memberUserId),
+        }),
+        memberUserId
+      );
+    }
+    const memberUserId = bookingMember.value;
+    const profile = profiles.find((p) => p.id === memberUserId);
+    return withOverdue(
+      BookingLimits.evaluateProposedStay({
         memberId: profile?.member_id || "",
         reservationType: bookingType.value,
         checkIn: document.getElementById("booking-check-in").value,
         checkOut: document.getElementById("booking-check-out").value,
         existingBookings: bookings.filter((b) => b.user_id === memberUserId),
-      });
-    }
-    const memberUserId = bookingMember.value;
-    const profile = profiles.find((p) => p.id === memberUserId);
-    return BookingLimits.evaluateProposedStay({
-      memberId: profile?.member_id || "",
-      reservationType: bookingType.value,
-      checkIn: document.getElementById("booking-check-in").value,
-      checkOut: document.getElementById("booking-check-out").value,
-      existingBookings: bookings.filter((b) => b.user_id === memberUserId),
-      isNewBooking: true,
-    });
+        isNewBooking: true,
+      }),
+      memberUserId
+    );
   }
 
   function evaluateEditRights(booking) {
@@ -658,7 +699,12 @@
     const checkOut = document.getElementById("booking-check-out")?.value;
     if (!bookingMember?.value || !checkIn || !checkOut || checkOut <= checkIn) {
       createOverrideSession?.clear();
-      if (typeof BookingLimits !== "undefined") {
+      const extra = bookingMember?.value ? overdueViolation(bookingMember.value) : null;
+      if (extra && el) {
+        el.hidden = false;
+        el.classList.add("stay-length-notice--limit", "booking-limits-notice");
+        el.textContent = extra.message;
+      } else if (typeof BookingLimits !== "undefined") {
         BookingLimits.renderLimitNotice(el, { ok: true, violations: [], condoStatus: null });
       } else if (el) {
         el.hidden = true;
@@ -1034,6 +1080,19 @@
   }
 
   bookingsBody?.addEventListener("click", async (event) => {
+    const flagBtn = event.target.closest(".status-flag");
+    if (flagBtn && bookingsBody.contains(flagBtn)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const index = flagBtn.getAttribute("data-flag-index");
+      const cell = flagBtn.closest("td");
+      const detail = cell?.querySelector(`.status-flag-detail[data-flag-index="${index}"]`);
+      const open = flagBtn.getAttribute("aria-expanded") !== "true";
+      flagBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (detail) detail.hidden = !open;
+      return;
+    }
+
     const toggle = event.target.closest(".admin-row-menu-toggle");
     if (toggle && bookingsBody.contains(toggle)) {
       event.stopPropagation();
