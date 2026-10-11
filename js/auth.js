@@ -1487,9 +1487,14 @@ const Auth = {
     ).padStart(2, "0")}`;
   },
 
-  /** Pill color. Past uses the same red as Cancelled. */
+  /**
+   * Pill color.
+   * Confirmed and Active are green. Completed is yellow.
+   * Past (never checked in) is red. Cancelled is light blue.
+   */
   bookingStatusClass(label) {
-    if (label === "Cancelled" || label === "Past") return "booked";
+    if (label === "Past") return "booked";
+    if (label === "Cancelled") return "cancelled";
     if (label === "Active" || label === "Confirmed" || label === "Edit confirmed") return "available";
     return "partial";
   },

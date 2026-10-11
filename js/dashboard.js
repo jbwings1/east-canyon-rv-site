@@ -71,9 +71,13 @@
         const statusClass =
           typeof Auth.bookingStatusClass === "function"
             ? Auth.bookingStatusClass(statusLabel)
-            : statusLabel === "Cancelled" || statusLabel === "Past"
+            : statusLabel === "Past"
               ? "booked"
-              : "partial";
+              : statusLabel === "Cancelled"
+                ? "cancelled"
+                : statusLabel === "Active" || statusLabel === "Confirmed" || statusLabel === "Edit confirmed"
+                  ? "available"
+                  : "partial";
         const spot = b.spot ? ` · ${b.spot}` : "";
         const dates =
           b.check_in && b.check_out && window.SpotAvailability?.formatDateRange
