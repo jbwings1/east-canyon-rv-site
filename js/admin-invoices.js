@@ -122,15 +122,15 @@
     detailList.innerHTML = [
       detailRow("Inv number", invoice.invoice_number || "—"),
       detailRow("Date", AccountLedger.dateLabel(invoice.created_at)),
+      detailRow("Added by", invoice.created_by_name || "—"),
       detailRow("Member", `${invoice.member_name || "—"}${invoice.member_id ? ` · ${invoice.member_id}` : ""}`),
       detailRow("Description", AccountLedger.description(invoice)),
       detailRow("Amount", Auth.formatMoney(invoice.amount)),
       detailRow("Due date", `${AccountLedger.dateLabel(invoice.due_date)}${overdue ? " · Overdue" : ""}`),
       detailRow("Paid", paid ? Auth.formatMoney(paidAmount) : "—"),
       detailRow("On", paid ? AccountLedger.dateLabel(invoice.paid_at) : "—"),
-      detailRow("How paid", AccountLedger.howPaid(invoice)),
+      detailRow("Paid with", AccountLedger.howPaid(invoice)),
       detailRow("Balance", Auth.formatMoney(owed)),
-      detailRow("Created by", invoice.created_by_name || "—"),
     ].join("");
     detailCard.hidden = false;
   }
