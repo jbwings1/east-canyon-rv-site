@@ -2562,6 +2562,30 @@ a:hover {
   max-width: 40rem;
 }
 
+.page-visitor .page-content.admin-manage-wide {
+  width: min(1480px, 96vw);
+}
+
+.page-admin #admin-create-booking-form.admin-form {
+  max-width: none;
+}
+
+.page-admin #admin-create-booking-form > :not(.admin-create-map) {
+  max-width: 40rem;
+}
+
+.page-admin .admin-create-map {
+  margin: 0.25rem 0 1.25rem;
+}
+
+.page-admin .admin-create-map .map-panel {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+
 .admin-form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
