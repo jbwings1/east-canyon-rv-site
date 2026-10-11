@@ -95,6 +95,16 @@
     if (kind === "nights" || code === "max-nights") ids.add("max_nights");
     if (kind === "consecutive" || code === "consecutive_14_vacate_7") ids.add("consecutive_14_vacate_7");
     if (kind === "advance" || code === "advance-window") ids.add("advance_window");
+    if (kind === "dates" || code === "dates-missing" || code === "dates-order") ids.add("dates");
+    if (
+      kind === "site" ||
+      code === "site-missing" ||
+      code === "site-unknown" ||
+      code === "site-type-mismatch"
+    ) {
+      ids.add("site");
+    }
+    if (kind === "overlap" || code === "site-overlap") ids.add("site_overlap");
     return ids;
   }
 
@@ -834,9 +844,11 @@
       BookingLimits.evaluateProposedStay({
         memberId: profile?.member_id || "",
         reservationType: bookingType.value,
+        spot: document.getElementById("booking-spot").value.trim(),
         checkIn: document.getElementById("booking-check-in").value,
         checkOut: document.getElementById("booking-check-out").value,
         existingBookings: bookings.filter((b) => b.user_id === memberUserId),
+        occupancyBookings: bookings,
         isNewBooking: true,
       }),
       memberUserId
@@ -861,11 +873,14 @@
     return BookingLimits.evaluateProposedStay({
       memberId: profile?.member_id || memberIdForUser(booking.user_id),
       reservationType: document.getElementById("edit-booking-type").value,
+      spot: document.getElementById("edit-booking-spot").value.trim(),
       checkIn: document.getElementById("edit-booking-check-in").value,
       checkOut: document.getElementById("edit-booking-check-out").value,
       existingBookings: bookings.filter((b) => b.user_id === booking.user_id),
+      occupancyBookings: bookings,
       excludeBookingId: booking.id,
       isNewBooking: false,
+      createdAt: booking.created_at,
     });
   }
 
@@ -1003,6 +1018,15 @@
     el.textContent = MembershipRights.formatViolations(gate.violations);
   }
 
+  function uncoveredViolations(gate, session, priorOverrides) {
+    const covered = new Set(
+      [...(priorOverrides || []), ...(session?.list() || [])]
+        .map((item) => String(item?.rule || ""))
+        .filter(Boolean)
+    );
+    return (gate.violations || []).filter((violation) => violation?.rule && !covered.has(violation.rule));
+  }
+
   createForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const result = document.getElementById("admin-create-booking-result");
@@ -1023,8 +1047,7 @@
     try {
       syncCreateOverrideFingerprint();
       const gate = evaluateSelectedMemberRights();
-      const pending =
-        createOverrideSession?.pendingViolations(gate.violations || []) || gate.violations || [];
+      const pending = uncoveredViolations(gate, createOverrideSession, []);
       if (pending.length) {
         refreshCreateRightsNotice();
         AdminCommon.showMessage(
@@ -1080,8 +1103,24 @@
     try {
       syncEditOverrideFingerprint(booking);
       const gate = evaluateEditRights(booking);
-      const pending =
-        editOverrideSession?.pendingViolations(gate.violations || []) || gate.violations || [];
+      const nextType = document.getElementById("edit-booking-type").value;
+      const nextSpot = document.getElementById("edit-booking-spot").value.trim();
+      const nextIn = document.getElementById("edit-booking-check-in").value;
+      const nextOut = document.getElementById("edit-booking-check-out").value;
+      const currentType =
+        (typeof Auth.toUiReservationType === "function" &&
+          Auth.toUiReservationType(booking.reservation_type)) ||
+        booking.reservation_type;
+      const stayUnchanged =
+        (booking.check_in || "") === nextIn &&
+        (booking.check_out || "") === nextOut &&
+        (booking.spot || "") === nextSpot &&
+        String(currentType || "") === String(nextType || "");
+      const pending = uncoveredViolations(
+        gate,
+        editOverrideSession,
+        stayUnchanged ? booking.rule_overrides : []
+      );
       if (pending.length) {
         refreshEditRightsNotice();
         AdminCommon.showMessage(

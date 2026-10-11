@@ -1,7 +1,8 @@
 /**
  * Unified booking limit evaluation + admin per-rule override UX.
  * Rule ids: max_nights, max_open_reservations, regular_time, type_disallowed,
- * consecutive_14_vacate_7, account_overdue.
+ * consecutive_14_vacate_7, account_overdue, advance_window, dates, site, site_overlap.
+ * Members cannot override. Only an admin override lets a breaking stay be saved.
  */
 (function (global) {
   const RULE = {
@@ -11,6 +12,10 @@
     TYPE_DISALLOWED: "type_disallowed",
     CONSECUTIVE_14: "consecutive_14_vacate_7",
     ACCOUNT_OVERDUE: "account_overdue",
+    ADVANCE: "advance_window",
+    DATES: "dates",
+    SITE: "site",
+    SITE_OVERLAP: "site_overlap",
   };
 
   const RULE_LABELS = {
@@ -20,6 +25,10 @@
     [RULE.TYPE_DISALLOWED]: "Membership class lodging rights",
     [RULE.CONSECUTIVE_14]: "14 consecutive days then 7 days off",
     [RULE.ACCOUNT_OVERDUE]: "Account overdue",
+    [RULE.ADVANCE]: "60-day advance booking window",
+    [RULE.DATES]: "Check-in and check-out dates",
+    [RULE.SITE]: "Assigned site",
+    [RULE.SITE_OVERLAP]: "Site already booked",
   };
 
   const STREAK_MAX_DAYS = 14;
@@ -31,6 +40,10 @@
 
   function maxActive() {
     return global.RESERVATION_MAX_ACTIVE || 2;
+  }
+
+  function maxAdvanceDays() {
+    return global.RESERVATION_MAX_ADVANCE_DAYS || 60;
   }
 
   function todayIso() {
@@ -299,24 +312,113 @@
     };
   }
 
+  function uiReservationType(reservationType) {
+    return bookingTypeUi({ reservation_type: reservationType });
+  }
+
+  function needsAssignedSite(reservationType) {
+    const type = uiReservationType(reservationType);
+    const MR = global.MembershipRights;
+    if (MR) {
+      return Boolean(
+        MR.isCondoReservationType?.(type) ||
+          MR.isRvReservationType?.(type) ||
+          MR.isReunionReservationType?.(type)
+      );
+    }
+    return type === "condo" || type === "rv" || type === "family-reunion" || type === "family_reunion";
+  }
+
+  function expectedSiteCategory(reservationType) {
+    const type = uiReservationType(reservationType);
+    const MR = global.MembershipRights;
+    if (MR?.isCondoReservationType?.(type)) return "condo";
+    if (MR?.isReunionReservationType?.(type)) return "reunion";
+    if (MR?.isRvReservationType?.(type)) return "rv";
+    if (type === "condo") return "condo";
+    if (type === "family-reunion" || type === "family_reunion") return "reunion";
+    if (type === "rv" || type === "motorhome" || type === "travel-trailer") return "rv";
+    return null;
+  }
+
+  function occupancySpot(row) {
+    return String(row?.spot || row?.spotId || "").trim();
+  }
+
+  function occupancyIn(row) {
+    return normalizeDate(row?.check_in || row?.checkIn);
+  }
+
+  function occupancyOut(row) {
+    return normalizeDate(row?.check_out || row?.checkOut);
+  }
+
+  function occupancyId(row) {
+    return String(row?.id || row?.bookingId || "");
+  }
+
+  function countsForOverlap(row) {
+    const status = String(row?.status || "").toLowerCase();
+    if (!status) return true;
+    return status === "confirmed" || status === "active";
+  }
+
+  function datesOverlap(aStart, aEnd, bStart, bEnd) {
+    return Boolean(aStart && aEnd && bStart && bEnd && aStart < bEnd && bStart < aEnd);
+  }
+
   /**
    * Full proposed-stay evaluation for create/edit.
+   * Every violation blocks the save unless an admin records an override for that rule.
    */
   function evaluateProposedStay({
     memberId,
     classCode = null,
     reservationType,
+    spot = undefined,
     checkIn,
     checkOut,
     existingBookings = [],
+    occupancyBookings = [],
     excludeBookingId = null,
     isNewBooking = true,
+    createdAt = null,
   } = {}) {
     const violations = [];
     const inDate = normalizeDate(checkIn);
     const outDate = normalizeDate(checkOut);
     const nights = stayNights(inDate, outDate);
     const cap = maxNights();
+    const spotId = String(spot || "").trim();
+
+    if (!inDate || !outDate) {
+      violations.push({
+        rule: RULE.DATES,
+        label: RULE_LABELS[RULE.DATES],
+        code: RULE.DATES,
+        message: "Check-in or check-out date is missing.",
+      });
+    } else if (outDate <= inDate) {
+      violations.push({
+        rule: RULE.DATES,
+        label: RULE_LABELS[RULE.DATES],
+        code: RULE.DATES,
+        message: "Check-out must be after check-in.",
+      });
+    }
+
+    if (inDate) {
+      const createdDay = normalizeDate(createdAt) || todayIso();
+      const latest = addDays(createdDay, maxAdvanceDays());
+      if (inDate > latest) {
+        violations.push({
+          rule: RULE.ADVANCE,
+          label: RULE_LABELS[RULE.ADVANCE],
+          code: RULE.ADVANCE,
+          message: `Check-in is more than ${maxAdvanceDays()} days after the reservation was made (advance limit).`,
+        });
+      }
+    }
 
     if (inDate && outDate && outDate > inDate && nights > cap) {
       violations.push({
@@ -391,6 +493,53 @@
         reservationType,
       });
       (streak.violations || []).forEach((v) => violations.push(v));
+    }
+
+    if (spot !== undefined && needsAssignedSite(reservationType) && !spotId) {
+      violations.push({
+        rule: RULE.SITE,
+        label: RULE_LABELS[RULE.SITE],
+        code: RULE.SITE,
+        message: "No site/unit is assigned.",
+      });
+    }
+
+    if (spotId && global.SpotAvailability?.findUnit) {
+      const unit = global.SpotAvailability.findUnit(spotId);
+      const expected = expectedSiteCategory(reservationType);
+      if (!unit) {
+        violations.push({
+          rule: RULE.SITE,
+          label: RULE_LABELS[RULE.SITE],
+          code: RULE.SITE,
+          message: `Site/unit “${spotId}” was not found on the map.`,
+        });
+      } else if (expected && unit.category !== expected) {
+        violations.push({
+          rule: RULE.SITE,
+          label: RULE_LABELS[RULE.SITE],
+          code: RULE.SITE,
+          message: `Site/unit “${spotId}” does not match this reservation type.`,
+        });
+      }
+    }
+
+    if (spotId && inDate && outDate && outDate > inDate) {
+      const overlaps = (occupancyBookings || []).filter((other) => {
+        if (!other || !countsForOverlap(other)) return false;
+        const otherId = occupancyId(other);
+        if (excludeBookingId && otherId && otherId === String(excludeBookingId)) return false;
+        if (occupancySpot(other) !== spotId) return false;
+        return datesOverlap(inDate, outDate, occupancyIn(other), occupancyOut(other));
+      });
+      if (overlaps.length) {
+        violations.push({
+          rule: RULE.SITE_OVERLAP,
+          label: RULE_LABELS[RULE.SITE_OVERLAP],
+          code: RULE.SITE_OVERLAP,
+          message: `Overlaps another booking on site/unit ${spotId}.`,
+        });
+      }
     }
 
     const condoStatus = condoStatusForStay({
