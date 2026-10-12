@@ -20,12 +20,43 @@ const LEGACY_TASKS = [
   "account_roles",
 ] as const;
 
-export const ALL_TASKS = [...JOBS, ...LEGACY_TASKS] as const;
+const FUNCTIONS = [
+  "view_reservations",
+  "office_check_in",
+  "occupancy_names",
+  "make_reservation",
+  "edit_reservation",
+  "confirm_reservation",
+  "cancel_reservation",
+  "override_rule",
+  "mark_calendar",
+  "edit_calendar_note",
+  "edit_calendar_heading",
+  "manage_alerts",
+  "alert_photos",
+  "delete_alert",
+  "resort_calendar",
+  "gallery",
+  "board_members",
+  "member_accounts",
+  "member_password",
+  "member_charges",
+  "run_reports",
+  "create_staff",
+  "edit_staff",
+  "close_staff",
+  "add_staff_access",
+  "add_membership",
+  "remove_staff_access",
+] as const;
+
+export const ALL_TASKS = [...JOBS, ...LEGACY_TASKS, ...FUNCTIONS] as const;
 
 export type Task = (typeof ALL_TASKS)[number];
 
 /**
- * Level 1 and Site manager include every job.
+ * Level 1 and Site manager include every job and every function.
+ * A job includes its functions. One extra function does not include the rest of a job.
  * Older task names still grant the job they were folded into.
  */
 export function impliedAdminTask(
@@ -41,6 +72,16 @@ export function impliedAdminTask(
   const websiteEditor = has("website_editor") || has("website");
   const specialEvents = has("special_events") || has("website");
   const accounts = has("accounts_manager") || has("members") || has("passwords");
+  const legacyStaff = has("staff");
+  const legacyRoles = has("account_roles");
+  const staffFunctions =
+    legacyStaff ||
+    has("create_staff") ||
+    has("edit_staff") ||
+    has("close_staff") ||
+    has("add_staff_access") ||
+    has("add_membership") ||
+    has("remove_staff_access");
   switch (task) {
     case "front_desk":
     case "reservations_view":
@@ -60,11 +101,47 @@ export function impliedAdminTask(
     case "invoices":
       return accounts;
     case "staff":
-      return has("staff");
+      return staffFunctions;
     case "account_roles":
-      return has("account_roles");
+      return legacyRoles || has("add_staff_access") || has("add_membership") ||
+        has("remove_staff_access");
     case "site_manager":
       return false;
+    case "view_reservations":
+    case "office_check_in":
+    case "occupancy_names":
+      return frontDesk || has(task);
+    case "make_reservation":
+    case "edit_reservation":
+    case "confirm_reservation":
+    case "cancel_reservation":
+    case "override_rule":
+      return reservationAgent || has(task);
+    case "mark_calendar":
+      return specialEvents || has(task);
+    case "manage_alerts":
+    case "alert_photos":
+    case "resort_calendar":
+    case "gallery":
+    case "board_members":
+    case "edit_calendar_note":
+      return websiteEditor || has(task);
+    case "delete_alert":
+    case "edit_calendar_heading":
+      return has(task);
+    case "member_accounts":
+    case "member_password":
+    case "member_charges":
+    case "run_reports":
+      return accounts || has(task);
+    case "create_staff":
+    case "edit_staff":
+    case "close_staff":
+      return legacyStaff || has(task);
+    case "add_staff_access":
+    case "add_membership":
+    case "remove_staff_access":
+      return legacyRoles || has(task);
     default:
       return has(task);
   }
@@ -78,7 +155,10 @@ export function filterAssignableJobs(
 ): Task[] {
   const requestedTasks = asTasks(requested);
   if (targetLevel === 1) {
-    return requestedTasks.length ? requestedTasks : [...JOBS];
+    const jobsOnly = requestedTasks.filter((job) =>
+      (JOBS as readonly string[]).includes(job)
+    );
+    return jobsOnly.length ? jobsOnly : [...JOBS];
   }
   return requestedTasks.filter((job) =>
     impliedAdminTask(job, callerLevel, callerTasks)
