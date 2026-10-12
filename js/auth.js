@@ -252,6 +252,9 @@ function formatClientError(error) {
   if (/already booked for overlapping dates/i.test(msg)) {
     return "That site is already booked for overlapping dates. Choose different dates or another open site.";
   }
+  if (/two spots in the same time frame/i.test(msg)) {
+    return "A member cannot have two spots in the same time frame. Choose dates that do not overlap another reservation for this member.";
+  }
   return msg || "Request failed.";
 }
 
@@ -525,9 +528,11 @@ const Auth = {
         .map((item) => String(item?.rule || ""))
         .filter(Boolean)
     );
-    const pending = (gate.violations || []).filter(
-      (violation) => violation?.rule && !covered.has(violation.rule)
-    );
+    const pending = (gate.violations || []).filter((violation) => {
+      if (!violation?.rule) return false;
+      if (violation.overridable === false || violation.rule === "member_overlap") return true;
+      return !covered.has(violation.rule);
+    });
     if (!pending.length) return;
     const text = pending
       .map((violation) => violation.message)

@@ -720,6 +720,12 @@
     }
     CampgroundMap.setUnitFilter(mapFilterForType(type));
     CampgroundMap.setDates(checkIn, checkOut);
+    if (adminMemberOverlapMessage()) {
+      if (spotInput) spotInput.value = "";
+      if (CampgroundMap._selectedId) CampgroundMap.clearSelection();
+      updateAdminSpotBanner(null);
+      return;
+    }
 
     const unit = typedId ? window.SpotAvailability?.findUnit?.(typedId) || null : null;
     if (!typedId) {
@@ -772,10 +778,14 @@
       canBookSelect(unit) {
         const type = document.getElementById("booking-type")?.value || "";
         if (!unitMatchesType(unit, type)) return false;
+        if (adminMemberOverlapMessage()) return false;
         if (type === "rv" && typeof window.SpotAvailability?.unitFitsRigLength === "function") {
           return window.SpotAvailability.unitFitsRigLength(unit, adminRigLength());
         }
         return true;
+      },
+      bookBlockMessage() {
+        return adminMemberOverlapMessage();
       },
       onSpotSelect(unit) {
         const type = document.getElementById("booking-type")?.value || "";
@@ -820,6 +830,15 @@
       ok: false,
       violations: [...(gate?.violations || []), extra],
     };
+  }
+
+  function adminMemberOverlapMessage() {
+    if (typeof BookingLimits === "undefined") return "";
+    const gate = evaluateSelectedMemberRights();
+    const hit = (gate.violations || []).find(
+      (violation) => violation?.rule === BookingLimits.RULE.MEMBER_OVERLAP
+    );
+    return hit?.message || "";
   }
 
   function evaluateSelectedMemberRights() {
@@ -1024,7 +1043,11 @@
         .map((item) => String(item?.rule || ""))
         .filter(Boolean)
     );
-    return (gate.violations || []).filter((violation) => violation?.rule && !covered.has(violation.rule));
+    return (gate.violations || []).filter((violation) => {
+      if (!violation?.rule) return false;
+      if (violation.overridable === false || violation.rule === "member_overlap") return true;
+      return !covered.has(violation.rule);
+    });
   }
 
   createForm?.addEventListener("submit", async (e) => {
@@ -1050,9 +1073,12 @@
       const pending = uncoveredViolations(gate, createOverrideSession, []);
       if (pending.length) {
         refreshCreateRightsNotice();
+        const locked = pending.filter((violation) => violation.overridable === false);
         AdminCommon.showMessage(
           result,
-          "This booking breaks one or more rules. Override each rule (with a reason note) or change the stay details.",
+          locked.length
+            ? locked.map((violation) => violation.message).filter(Boolean).join(" ")
+            : "This booking breaks one or more rules. Override each rule (with a reason note) or change the stay details.",
           "error"
         );
         document.getElementById("admin-create-rights-notice")?.scrollIntoView({
@@ -1123,9 +1149,12 @@
       );
       if (pending.length) {
         refreshEditRightsNotice();
+        const locked = pending.filter((violation) => violation.overridable === false);
         AdminCommon.showMessage(
           editResult,
-          "This edit breaks one or more rules. Override each rule (with a reason note) or change the stay details.",
+          locked.length
+            ? locked.map((violation) => violation.message).filter(Boolean).join(" ")
+            : "This edit breaks one or more rules. Override each rule (with a reason note) or change the stay details.",
           "error"
         );
         document.getElementById("admin-edit-rights-notice")?.scrollIntoView({
@@ -1308,7 +1337,7 @@
     document.getElementById(id)?.addEventListener("change", () => {
       AdminCommon.showMessage(document.getElementById("admin-create-booking-result"), "", "");
       if (id === "booking-type") syncAdminRigField();
-      if (id !== "booking-member") refreshAdminMap();
+      refreshAdminMap();
       refreshCreateRightsNotice();
     });
   });
