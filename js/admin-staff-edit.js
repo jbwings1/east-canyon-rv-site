@@ -50,7 +50,6 @@
   document.getElementById("edit-staff-email").value = staff.email || "";
   document.getElementById("edit-staff-phone").value = staff.phone || "";
   document.getElementById("edit-staff-level").value = String(staff.admin_level || 2);
-  document.getElementById("edit-staff-seat").value = staff.admin_seat || "";
   document.getElementById("edit-staff-status").value = staff.account_status || "active";
 
   const assigned = new Set(AdminCommon.jobsFromStored(staff.admin_tasks, staff.admin_level));
@@ -89,7 +88,7 @@
     const bits = [
       staff.staff_code ? `Staff code ${staff.staff_code}` : null,
       staff.admin_level != null
-        ? `Level ${staff.admin_level}${staff.admin_seat || ""}`
+        ? `Level ${staff.admin_level}`
         : null,
       staff.member_id ? `Member ID ${staff.member_id}` : null,
       AdminCommon.statusLabel(staff.account_status),
@@ -234,7 +233,7 @@
         email: document.getElementById("edit-staff-email").value.trim(),
         phone: document.getElementById("edit-staff-phone").value.trim(),
         admin_level: level,
-        admin_seat: document.getElementById("edit-staff-seat").value.trim().toLowerCase(),
+        admin_seat: null,
         admin_tasks: tasks,
         account_status: document.getElementById("edit-staff-status").value,
       });

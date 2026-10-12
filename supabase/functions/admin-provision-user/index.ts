@@ -443,9 +443,6 @@ Deno.serve(async (req) => {
     const fullName = String(body.full_name ?? "").trim();
     const phone = String(body.phone ?? "").trim();
     const staffCode = String(body.staff_code ?? staff.staff_code ?? "").trim();
-    const adminSeat = String(body.admin_seat ?? staff.admin_seat ?? "")
-      .trim()
-      .toLowerCase();
     const email = String(body.email ?? staff.email ?? "")
       .trim()
       .toLowerCase();
@@ -582,7 +579,7 @@ Deno.serve(async (req) => {
         email,
         staff_code: staffCode,
         admin_level: adminLevel,
-        admin_seat: adminSeat || null,
+        admin_seat: null,
         admin_tasks: tasks,
         account_status: accountStatus,
         is_admin: true,
@@ -602,7 +599,7 @@ Deno.serve(async (req) => {
       email,
       staff_code: staffCode,
       admin_level: adminLevel,
-      admin_seat: adminSeat || null,
+      admin_seat: null,
       admin_tasks: tasks,
       account_status: accountStatus,
       message: "Staff record updated.",
@@ -849,7 +846,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  const adminSeat = String(body.admin_seat || "").trim().toLowerCase();
   const staffCode = String(body.staff_code || "").trim();
   const tasks = filterAssignableJobs(
     body.admin_tasks,
@@ -895,7 +891,7 @@ Deno.serve(async (req) => {
     must_change_password: true,
     is_admin: true,
     admin_level: adminLevel,
-    admin_seat: adminSeat || null,
+    admin_seat: null,
     staff_code: staffCode,
     admin_tasks: tasks,
     updated_at: new Date().toISOString(),
@@ -911,7 +907,7 @@ Deno.serve(async (req) => {
     user_id: createdAdmin.user.id,
     email,
     admin_level: adminLevel,
-    admin_seat: adminSeat || null,
+    admin_seat: null,
     staff_code: staffCode,
     admin_tasks: tasks,
     temporary_password: password,

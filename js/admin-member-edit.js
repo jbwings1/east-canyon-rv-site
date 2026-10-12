@@ -147,7 +147,7 @@
         userId,
         staffCode: document.getElementById("add-staff-code").value.trim(),
         adminLevel: Number(document.getElementById("add-staff-level").value),
-        adminSeat: document.getElementById("add-staff-seat").value.trim().toLowerCase(),
+        adminSeat: null,
         adminTasks: readAddAssignment(),
       });
       window.location.replace("admin-members.html?ok=staff");
