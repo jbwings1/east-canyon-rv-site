@@ -316,6 +316,7 @@
 
     const message = document.getElementById("admin-message");
     const resBody = document.getElementById("report-res-body");
+    if (typeof BookingLimits !== "undefined") BookingLimits.bindStatusFlagClicks(resBody);
     const resSummary = document.getElementById("report-res-summary");
     const membersBody = document.getElementById("report-members-body");
     const membersSummary = document.getElementById("report-members-summary");
@@ -576,7 +577,14 @@
             <td>${escapeHtml(booking.spot || "—")}</td>
             <td>${escapeHtml(formatStayDate(booking.check_in))}</td>
             <td>${escapeHtml(formatStayDate(booking.check_out))}</td>
-            <td><span class="status-pill ${statusClass(display)}">${escapeHtml(display)}</span></td>
+            <td>${
+              typeof BookingLimits !== "undefined"
+                ? BookingLimits.statusWithFlags(
+                    `<span class="status-pill ${statusClass(display)}">${escapeHtml(display)}</span>`,
+                    booking.rule_overrides
+                  )
+                : `<span class="status-pill ${statusClass(display)}">${escapeHtml(display)}</span>`
+            }</td>
           </tr>`;
         })
         .join("");
