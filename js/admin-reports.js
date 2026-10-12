@@ -865,6 +865,10 @@
                 return Number.isNaN(date.getTime()) ? item.at : date.toLocaleString();
               })()
             : "—";
+          const conf =
+            typeof root.Auth?.bookingConfirmationId === "function"
+              ? root.Auth.bookingConfirmationId(booking)
+              : booking.id || "—";
           const kind = item.rule === "account_overdue" ? "Overdue" : "Rule";
           const who =
             item.by && item.by !== item.by_name
@@ -877,7 +881,7 @@
           return `<tr>
             <td>${escapeHtml(when)}</td>
             <td>${escapeHtml(memberName(profiles, booking.user_id))}</td>
-            <td><code>${escapeHtml(confirmationId(booking))}</code></td>
+            <td><code>${escapeHtml(conf)}</code></td>
             <td>${escapeHtml(stay)}</td>
             <td>${escapeHtml(kind)}</td>
             <td>${escapeHtml(who)}</td>
