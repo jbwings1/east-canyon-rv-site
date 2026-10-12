@@ -198,13 +198,18 @@ function renderMyReservations() {
           : gate.code === "too-late"
             ? `<span class="label-optional" title="${escapeHtml(gate.reason || "")}">Too close to check-in</span>`
             : `<span class="label-optional">Past stay</span>`;
+      const pill = `<span class="status-pill ${
+        status === "confirmed" ? "available" : status === "cancelled" ? "booked" : "partial"
+      }">${escapeHtml(status)}</span>`;
+      const statusHtml =
+        typeof BookingLimits !== "undefined"
+          ? BookingLimits.statusWithFlags(pill, b.rule_overrides)
+          : pill;
       return `<tr>
         <td>${escapeHtml(type)}</td>
         <td>${escapeHtml(formatSpotLabel(b.spot))}</td>
         <td>${escapeHtml(dates)}</td>
-        <td><span class="status-pill ${
-          status === "confirmed" ? "available" : status === "cancelled" ? "booked" : "partial"
-        }">${escapeHtml(status)}</span></td>
+        <td>${statusHtml}</td>
         <td class="admin-actions">${actions}</td>
       </tr>`;
     })
@@ -1153,6 +1158,7 @@ if (cancelEditBtn && cancelEditBtn.tagName === "BUTTON") {
 }
 
 const BOOKING_DRAFT_KEY = "ecrBookingDraft";
+if (typeof BookingLimits !== "undefined") BookingLimits.bindStatusFlagClicks(myReservationsBody);
 
 function overdueInvoiceRows() {
   const today = typeof Auth?.localToday === "function" ? Auth.localToday() : "";

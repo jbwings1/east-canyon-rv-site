@@ -880,7 +880,36 @@
         return `<span class="status-flag-detail" data-flag-index="${index}" hidden>${lines}</span>`;
       })
       .join("");
-    return `<span class="status-with-flags">${pillHtml}<span class="status-flag-group">${buttons}</span></span>${details}`;
+    return `<span class="status-flag-host"><span class="status-with-flags">${pillHtml}<span class="status-flag-group">${buttons}</span></span>${details}</span>`;
+  }
+
+  /** Open or close the note for one pennant. Returns true when the click was on a flag. */
+  function toggleStatusFlagFromEvent(event) {
+    const flagBtn = event.target?.closest?.(".status-flag");
+    if (!flagBtn) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const index = flagBtn.getAttribute("data-flag-index");
+    const host = flagBtn.closest(".status-flag-host");
+    const detail = host?.querySelector(`.status-flag-detail[data-flag-index="${index}"]`);
+    const open = flagBtn.getAttribute("aria-expanded") !== "true";
+    host?.querySelectorAll(".status-flag").forEach((btn) => {
+      if (btn !== flagBtn) btn.setAttribute("aria-expanded", "false");
+    });
+    host?.querySelectorAll(".status-flag-detail").forEach((el) => {
+      if (el !== detail) el.hidden = true;
+    });
+    flagBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (detail) detail.hidden = !open;
+    return true;
+  }
+
+  function bindStatusFlagClicks(root) {
+    if (!root || root.dataset.statusFlagBound === "1") return;
+    root.dataset.statusFlagBound = "1";
+    root.addEventListener("click", (event) => {
+      toggleStatusFlagFromEvent(event);
+    });
   }
 
   function mergeOverrides(existing, draftList) {
@@ -934,6 +963,8 @@
     mergeOverrides,
     formatOverridesForDisplay,
     statusWithFlags,
+    toggleStatusFlagFromEvent,
+    bindStatusFlagClicks,
     isOverdueOverride,
     isLodgingForStreak,
   };
