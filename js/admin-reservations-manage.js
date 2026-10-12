@@ -278,6 +278,32 @@
     return window.SpotAvailability?.formatStayDate?.(value) || String(value);
   }
 
+  function formatBookedDate(value) {
+    if (!value) return "—";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "—";
+    const iso = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+    return formatStayDate(iso);
+  }
+
+  function reservationIdLink(booking) {
+    const id = AdminCommon.escapeHtml(booking.id);
+    const conf = AdminCommon.escapeHtml(confirmationId(booking));
+    const href = `admin-reservations-manage.html?view=${encodeURIComponent(booking.id)}`;
+    return `<a class="reservation-id-link" href="${href}" data-open-booking="${id}"><code>${conf}</code></a>`;
+  }
+
+  function syncBookingQuery() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("view");
+    url.searchParams.delete("edit");
+    if (editingId) url.searchParams.set("edit", editingId);
+    else if (viewingId) url.searchParams.set("view", viewingId);
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next !== current) history.replaceState(null, "", next);
+  }
+
   function formatStayRange(checkIn, checkOut) {
     if (!checkIn || !checkOut) return "—";
     return (
@@ -369,6 +395,7 @@
     if (viewDetails) viewDetails.innerHTML = "";
     if (viewSummary) viewSummary.textContent = "";
     if (viewEditBtn) viewEditBtn.hidden = true;
+    syncBookingQuery();
   }
 
   function openView(booking) {
@@ -407,7 +434,7 @@
         detailRow("Original check in", formatStayDate(booking.original_check_in)),
         detailRow("Original check out", formatStayDate(booking.original_check_out)),
         detailRow("Booked by", bookedBy),
-        detailRow("Created", formatDateTime(booking.created_at)),
+        detailRow("Date booked", formatDateTime(booking.created_at)),
         detailRow("Confirmed", formatDateTime(booking.confirmed_at)),
         detailRow("Last edited", formatDateTime(booking.edited_at)),
         detailRow("Last edit summary", formatEditSummary(booking.last_edit_summary), { span: true }),
@@ -449,6 +476,7 @@
       viewCard.hidden = false;
       viewCard.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    syncBookingQuery();
   }
 
   function closeEdit() {
@@ -463,6 +491,7 @@
       ok: true,
       violations: [],
     });
+    syncBookingQuery();
   }
 
   function openEdit(booking) {
@@ -490,12 +519,13 @@
       editCard.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     AdminCommon.showMessage(editResult, "", "");
+    syncBookingQuery();
   }
 
   function renderBookings() {
     const rows = filteredBookings();
     if (!rows.length) {
-      bookingsBody.innerHTML = `<tr><td colspan="7">No bookings match this filter.</td></tr>`;
+      bookingsBody.innerHTML = `<tr><td colspan="8">No bookings match this filter.</td></tr>`;
       return;
     }
     bookingsBody.innerHTML = rows
@@ -524,7 +554,8 @@
                 : "partial";
         const pill = `<span class="status-pill ${pillClass}">${AdminCommon.escapeHtml(displayStatus)}</span>`;
         return `<tr class="${rowClass.trim()}" data-booking-id="${AdminCommon.escapeHtml(b.id)}">
-          <td><code>${AdminCommon.escapeHtml(confirmationId(b))}</code></td>
+          <td>${reservationIdLink(b)}</td>
+          <td>${AdminCommon.escapeHtml(formatBookedDate(b.created_at))}</td>
           <td>${AdminCommon.escapeHtml(memberLabel(b.user_id))}</td>
           <td>${AdminCommon.escapeHtml(type)}</td>
           <td>${AdminCommon.escapeHtml(b.spot || "—")}</td>
@@ -1351,6 +1382,15 @@
       return;
     }
 
+    const openLink = event.target.closest("a[data-open-booking]");
+    if (openLink && bookingsBody.contains(openLink)) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+      event.preventDefault();
+      const booking = bookings.find((b) => b.id === openLink.getAttribute("data-open-booking"));
+      if (booking) openView(booking);
+      return;
+    }
+
     const button = event.target.closest("button[data-action]");
     if (!button || !bookingsBody.contains(button)) return;
     const row = button.closest("tr[data-booking-id]");
@@ -1424,9 +1464,13 @@
     await load();
     const params = new URLSearchParams(window.location.search);
     const editId = params.get("edit");
+    const viewId = params.get("view");
     if (editId) {
       const booking = bookings.find((b) => b.id === editId);
       if (booking) openEdit(booking);
+    } else if (viewId) {
+      const booking = bookings.find((b) => b.id === viewId);
+      if (booking) openView(booking);
     }
   } catch (err) {
     AdminCommon.showMessage(message, err.message, "error");
