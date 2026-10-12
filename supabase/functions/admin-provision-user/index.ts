@@ -1,11 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  ALL_TASKS,
-  type Task,
   corsHeaders,
   json,
-  asTasks,
+  impliedAdminTask,
+  filterAssignableJobs,
   isMemberStatus,
   isBlockedStatus,
   isStaffRow,
@@ -71,7 +70,8 @@ Deno.serve(async (req) => {
   const callerTasks: string[] = Array.isArray(callerProfile.admin_tasks)
     ? callerProfile.admin_tasks
     : [];
-  const can = (task: Task) => isLevel1 || callerTasks.includes(task);
+  const can = (task: string) =>
+    impliedAdminTask(task, callerProfile.admin_level, callerTasks);
 
   let body: Record<string, unknown>;
   try {
@@ -102,16 +102,16 @@ Deno.serve(async (req) => {
       kind === "delete_member") &&
     !can("members")
   ) {
-    return json(403, { error: "You are not assigned the Members task" });
+    return json(403, { error: "You are not assigned the Accounts manager job" });
   }
   if (
     (kind === "admin" || kind === "update_staff" || kind === "delete_staff") &&
     !can("staff")
   ) {
-    return json(403, { error: "You are not assigned the Staff task" });
+    return json(403, { error: "You are not assigned the Site manager job" });
   }
   if (kind === "reset_password" && !can("passwords")) {
-    return json(403, { error: "You are not assigned the Passwords task" });
+    return json(403, { error: "You are not assigned the Accounts manager job" });
   }
 
   if (kind === "reset_password") {
@@ -516,21 +516,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    let tasks = asTasks(body.admin_tasks);
-    if (adminLevel === 1) {
-      tasks = [...ALL_TASKS];
-    } else if (!isLevel1) {
-      tasks = tasks.filter((t) => callerTasks.includes(t));
-    }
+    let tasks = filterAssignableJobs(
+      body.admin_tasks,
+      callerProfile.admin_level,
+      callerTasks,
+      adminLevel,
+    );
     if (adminLevel !== 1 && !tasks.length) {
-      return json(400, { error: "Assign at least one task" });
+      return json(400, { error: "Assign at least one job" });
     }
 
-    if (userId === caller.id) {
-      const keepsStaff = adminLevel === 1 || tasks.includes("staff");
-      if (!keepsStaff) {
-        return json(400, { error: "You cannot remove your own Staff task" });
-      }
+    if (
+      userId === caller.id &&
+      callerTasks.includes("site_manager") &&
+      adminLevel !== 1 &&
+      !tasks.includes("site_manager")
+    ) {
+      return json(400, { error: "You cannot remove your own Site manager job" });
     }
 
     const { data: others, error: othersError } = await adminClient
@@ -833,14 +835,14 @@ Deno.serve(async (req) => {
 
   const adminSeat = String(body.admin_seat || "").trim().toLowerCase();
   const staffCode = String(body.staff_code || "").trim();
-  let tasks = asTasks(body.admin_tasks);
-  if (!isLevel1) {
-    tasks = tasks.filter((t) => callerTasks.includes(t) && t !== "staff");
-  } else {
-    tasks = tasks.filter((t) => t !== "staff" || adminLevel === 1);
-  }
+  const tasks = filterAssignableJobs(
+    body.admin_tasks,
+    callerProfile.admin_level,
+    callerTasks,
+    adminLevel,
+  );
   if (!tasks.length) {
-    return json(400, { error: "Assign at least one task" });
+    return json(400, { error: "Assign at least one job" });
   }
   if (!staffCode) {
     return json(400, { error: "Staff code is required" });
