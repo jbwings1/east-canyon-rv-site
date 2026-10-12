@@ -100,18 +100,15 @@ Deno.serve(async (req) => {
     (kind === "member" ||
       kind === "update_member" ||
       kind === "delete_member") &&
-    !can("members")
+    !can("member_accounts")
   ) {
-    return json(403, { error: "You are not assigned the Accounts manager job" });
+    return json(403, { error: "You are not assigned this function." });
   }
-  if (
-    (kind === "admin" || kind === "update_staff" || kind === "delete_staff") &&
-    !can("staff")
-  ) {
-    return json(403, { error: "You are not assigned the Site manager job" });
+  if (kind === "admin" && !can("create_staff")) {
+    return json(403, { error: "You are not assigned this function." });
   }
-  if (kind === "reset_password" && !can("passwords")) {
-    return json(403, { error: "You are not assigned the Accounts manager job" });
+  if (kind === "reset_password" && !can("member_password")) {
+    return json(403, { error: "You are not assigned this function." });
   }
 
   if (kind === "reset_password") {
@@ -421,6 +418,9 @@ Deno.serve(async (req) => {
   }
 
   if (kind === "update_staff") {
+    if (!can("edit_staff")) {
+      return json(403, { error: "You are not assigned this function." });
+    }
     const userId = String(body.user_id || "").trim();
     if (!userId) {
       return json(400, { error: "Staff is required" });
@@ -477,6 +477,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    const previousStatus = String(staff.account_status || "active");
+    if (
+      isBlockedStatus(accountStatus) &&
+      accountStatus !== previousStatus &&
+      !can("close_staff")
+    ) {
+      return json(403, { error: "You are not assigned this function." });
+    }
+
     if (!isLevel1 && adminLevel === 1 && Number(staff.admin_level) !== 1) {
       return json(403, { error: "Level 1 is reserved" });
     }
@@ -523,7 +532,7 @@ Deno.serve(async (req) => {
       adminLevel,
     );
     if (adminLevel !== 1 && !tasks.length) {
-      return json(400, { error: "Assign at least one job" });
+      return json(400, { error: "Assign at least one job or function" });
     }
 
     if (
@@ -650,6 +659,13 @@ Deno.serve(async (req) => {
     }
 
     const hasMembership = hasMemberId(staff);
+
+    if (hasMembership && !can("remove_staff_access")) {
+      return json(403, { error: "You are not assigned this function." });
+    }
+    if (!hasMembership && !can("close_staff")) {
+      return json(403, { error: "You are not assigned this function." });
+    }
 
     if (hasMembership) {
       const { error: stripError } = await adminClient
@@ -842,7 +858,7 @@ Deno.serve(async (req) => {
     adminLevel,
   );
   if (!tasks.length) {
-    return json(400, { error: "Assign at least one job" });
+    return json(400, { error: "Assign at least one job or function" });
   }
   if (!staffCode) {
     return json(400, { error: "Staff code is required" });
