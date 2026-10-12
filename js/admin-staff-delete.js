@@ -71,7 +71,7 @@
     row("Staff code", staff.staff_code),
     row("Name", staff.full_name),
     row("Email", staff.email),
-    row("Level / seat", staff.admin_level != null ? `${staff.admin_level}${staff.admin_seat || ""}` : "—"),
+    row("Level", staff.admin_level != null ? String(staff.admin_level) : "—"),
     row("Member ID", staff.member_id || "—"),
     row("Status", AdminCommon.statusLabel(staff.account_status)),
     row("Reservations on file", String(bookingCount)),

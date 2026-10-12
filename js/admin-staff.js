@@ -20,8 +20,7 @@
     }
     staffBody.innerHTML = staff
       .map((p) => {
-        const levelSeat =
-          p.admin_level != null ? `${p.admin_level}${p.admin_seat || ""}` : "—";
+        const levelSeat = p.admin_level != null ? String(p.admin_level) : "—";
         const tasks = AdminCommon.assignmentSummary(p.admin_tasks, p.admin_level);
         const href = AdminCommon.profileEditHref("admin-staff-edit.html", p);
         const safeHref = AdminCommon.escapeHtml(href);
@@ -103,7 +102,7 @@
         email: document.getElementById("staff-email").value.trim(),
         phone: document.getElementById("staff-phone").value.trim(),
         admin_level: Number(document.getElementById("staff-level").value),
-        admin_seat: document.getElementById("staff-seat").value.trim().toLowerCase(),
+        admin_seat: null,
         staff_code: document.getElementById("staff-code").value.trim(),
         admin_tasks: tasks,
         temporary_password: document.getElementById("staff-temp-password").value,

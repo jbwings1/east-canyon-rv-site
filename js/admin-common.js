@@ -561,10 +561,7 @@ window.AdminCommon = {
 
     const who = document.getElementById("admin-whoami");
     if (who) {
-      const seat = me.adminSeat
-        ? `${me.adminLevel}${me.adminSeat}`
-        : `Level ${me.adminLevel || 1}`;
-      who.textContent = `${me.name || me.email} · ${seat}${
+      who.textContent = `${me.name || me.email} · Level ${me.adminLevel || 1}${
         me.staffCode ? ` · ${me.staffCode}` : ""
       }. `;
     }

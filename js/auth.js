@@ -681,7 +681,7 @@ const Auth = {
         booked_by_name: admin.name || admin.email || "Admin",
         booked_by_code:
           admin.staffCode ||
-          (admin.adminLevel != null ? `${admin.adminLevel}${admin.adminSeat || ""}` : "") ||
+          (admin.adminLevel != null ? String(admin.adminLevel) : "") ||
           null,
         rule_overrides: overrides,
       })
@@ -786,7 +786,7 @@ const Auth = {
 
   /**
    * Admin shown on a booking, report, invoice, or note: name and admin number.
-   * The number is the staff code (A-001). Level and seat are used only when
+   * The number is the staff code (A-001). The level number is used only when
    * that account has no staff code.
    */
   adminPersonLabel(source) {
@@ -795,9 +795,8 @@ const Auth = {
       source.name || source.full_name || source.by_name || source.fullName || ""
     ).trim();
     const level = source.admin_level ?? source.adminLevel;
-    const seat = String(source.admin_seat ?? source.adminSeat ?? "").trim();
     const seatLabel =
-      level != null && String(level).trim() !== "" ? `${String(level).trim()}${seat}` : "";
+      level != null && String(level).trim() !== "" ? String(level).trim() : "";
     const number =
       [source.code, source.staff_code, source.staffCode, source.booked_by_code]
         .map((value) => this.adminNumberToken(value))
