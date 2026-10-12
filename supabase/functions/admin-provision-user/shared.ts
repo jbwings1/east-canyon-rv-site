@@ -1,7 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-export const ALL_TASKS = [
+export const JOBS = [
+  "front_desk",
+  "reservation_agent",
+  "special_events",
+  "website_editor",
+  "accounts_manager",
+  "site_manager",
+] as const;
+
+const LEGACY_TASKS = [
   "members",
   "passwords",
   "reservations_view",
@@ -11,7 +20,70 @@ export const ALL_TASKS = [
   "account_roles",
 ] as const;
 
+export const ALL_TASKS = [...JOBS, ...LEGACY_TASKS] as const;
+
 export type Task = (typeof ALL_TASKS)[number];
+
+/**
+ * Level 1 and Site manager include every job.
+ * Older task names still grant the job they were folded into.
+ */
+export function impliedAdminTask(
+  task: string,
+  adminLevel: number | null | undefined,
+  adminTasks: string[],
+): boolean {
+  if (Number(adminLevel) === 1) return true;
+  const has = (id: string) => adminTasks.includes(id);
+  if (has("site_manager")) return true;
+  const reservationAgent = has("reservation_agent") || has("reservations_manage");
+  const frontDesk = has("front_desk") || reservationAgent || has("reservations_view");
+  const websiteEditor = has("website_editor") || has("website");
+  const specialEvents = has("special_events") || has("website");
+  const accounts = has("accounts_manager") || has("members") || has("passwords");
+  switch (task) {
+    case "front_desk":
+    case "reservations_view":
+      return frontDesk;
+    case "reservation_agent":
+    case "reservations_manage":
+      return reservationAgent;
+    case "special_events":
+      return specialEvents;
+    case "website_editor":
+    case "website":
+      return websiteEditor;
+    case "accounts_manager":
+    case "members":
+    case "passwords":
+    case "reports":
+    case "invoices":
+      return accounts;
+    case "staff":
+      return has("staff");
+    case "account_roles":
+      return has("account_roles");
+    case "site_manager":
+      return false;
+    default:
+      return has(task);
+  }
+}
+
+export function filterAssignableJobs(
+  requested: unknown,
+  callerLevel: number | null | undefined,
+  callerTasks: string[],
+  targetLevel: number,
+): Task[] {
+  const requestedTasks = asTasks(requested);
+  if (targetLevel === 1) {
+    return requestedTasks.length ? requestedTasks : [...JOBS];
+  }
+  return requestedTasks.filter((job) =>
+    impliedAdminTask(job, callerLevel, callerTasks)
+  );
+}
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
