@@ -31,6 +31,7 @@ let memberBookings = [];
 let editingBookingId = null;
 let occupancyRows = [];
 let occupancyFetchToken = 0;
+let memberInvoices = [];
 const reservationMode = document.body?.dataset?.reservationMode || "book";
 const editIdFromUrl = new URLSearchParams(window.location.search).get("id");
 
@@ -512,10 +513,73 @@ function updateMemberClassRulesPanel() {
   });
 }
 
+function memberMapRuleViolations() {
+  const violations = [];
+  if (!editingBookingId && overdueInvoiceRows().length) {
+    violations.push({
+      rule: "account_overdue",
+      message: "Your account is overdue. Pay the open charge before choosing a site.",
+    });
+  }
+  if (!bookingLimitsAvailable()) return violations;
+  const editing = editingBookingId
+    ? memberBookings.find((booking) => booking.id === editingBookingId)
+    : null;
+  const gate = window.BookingLimits.evaluateProposedStay({
+    memberId: bookingMemberIdForRights(),
+    reservationType: typeSelect.value,
+    checkIn: checkIn.value,
+    checkOut: checkOut.value,
+    existingBookings: memberBookings,
+    occupancyBookings: spotOccupancyRows(),
+    excludeBookingId: editingBookingId,
+    isNewBooking: !editingBookingId,
+    createdAt: editing?.created_at || null,
+  });
+  (gate.violations || []).forEach((violation) => {
+    const rule = String(violation.rule || "");
+    if (rule === "site" || rule === "site_overlap") return;
+    if (rule === "dates" && /missing/i.test(violation.message || "")) return;
+    violations.push(violation);
+  });
+  return violations;
+}
+
+function memberMapRuleMessage() {
+  return memberMapRuleViolations()
+    .map((violation) => {
+      const text = String(violation.message || "").trim();
+      if (!text) return "";
+      if (violation.rule === "max_open_reservations") {
+        return (
+          text.replace(/^Member has/, "You have") +
+          " A site cannot be selected for another stay."
+        );
+      }
+      return text;
+    })
+    .filter(Boolean)
+    .join(" ");
+}
+
+let mapRuleMessage = "";
+
+function applyMapRuleBlock() {
+  const text = memberMapRuleMessage();
+  mapRuleMessage = text;
+  if (text && preferredSpotInput?.value) {
+    clearPreferredSpot();
+  }
+  if (text && mapSummary) {
+    mapSummary.textContent = text;
+  }
+}
+
 function canBookSelectUnit(unit) {
   const type = typeSelect.value;
   if (!type) return false;
-  return unitMatchesReservationType(unit, type);
+  if (!unitMatchesReservationType(unit, type)) return false;
+  return !memberMapRuleMessage();
 }
 
 CampgroundMap.init({
@@ -526,8 +590,14 @@ CampgroundMap.init({
   requireDatesForSpots: false,
   unitFilter: "all",
   canBookSelect: canBookSelectUnit,
+  bookBlockMessage() {
+    return mapRuleMessage;
+  },
   onSpotSelect(unit) {
-    if (!canBookSelectUnit(unit)) return;
+    if (!canBookSelectUnit(unit)) {
+      applyMapRuleBlock();
+      return;
+    }
     preferredSpotInput.value = unit.id;
     selectedSpotLabel.textContent = formatSelectedUnit(unit);
     preferredSpotDisplay.hidden = false;
@@ -704,6 +774,7 @@ function updateMapAvailability() {
     mapSummary.textContent = advanceBookingMessage();
     CampgroundMap.setDates("", "");
     clearPreferredSpot();
+    applyMapRuleBlock();
     return;
   }
 
@@ -728,6 +799,7 @@ function updateMapAvailability() {
       }
     }
     updateStaySummary();
+    applyMapRuleBlock();
     return;
   }
 
@@ -787,7 +859,7 @@ function updateMapAvailability() {
       : "booked";
     const wrongCategory = unit && type && !unitMatchesReservationType(unit, type);
 
-    if (status !== "available" || wrongCategory) {
+    if (status !== "available" || wrongCategory || memberMapRuleMessage()) {
       clearPreferredSpot();
     } else {
       CampgroundMap.selectUnit(preferredSpotInput.value, { force: true });
@@ -795,6 +867,7 @@ function updateMapAvailability() {
   }
 
   updateStaySummary();
+  applyMapRuleBlock();
 }
 
 async function syncAvailabilityFromDates() {
@@ -1080,7 +1153,6 @@ if (cancelEditBtn && cancelEditBtn.tagName === "BUTTON") {
 }
 
 const BOOKING_DRAFT_KEY = "ecrBookingDraft";
-let memberInvoices = [];
 
 function overdueInvoiceRows() {
   const today = typeof Auth?.localToday === "function" ? Auth.localToday() : "";
@@ -1511,6 +1583,7 @@ form.addEventListener("submit", async (e) => {
     }
     restoreBookingDraft();
     renderOverdueNotice();
+    applyMapRuleBlock();
     showBookingFormState();
   }
   updateMemberReservationNotice();
