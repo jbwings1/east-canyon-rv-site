@@ -561,6 +561,9 @@ function memberMapRuleMessage() {
           " A site cannot be selected for another stay."
         );
       }
+      if (violation.rule === "member_overlap") {
+        return text + " A site cannot be selected for another stay.";
+      }
       return text;
     })
     .filter(Boolean)

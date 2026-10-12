@@ -1,8 +1,10 @@
 /**
  * Unified booking limit evaluation + admin per-rule override UX.
  * Rule ids: max_nights, max_open_reservations, regular_time, type_disallowed,
- * consecutive_14_vacate_7, account_overdue, advance_window, dates, site, site_overlap.
+ * consecutive_14_vacate_7, account_overdue, advance_window, dates, site, site_overlap,
+ * member_overlap.
  * Members cannot override. Only an admin override lets a breaking stay be saved.
+ * member_overlap cannot be overridden by a member or an admin.
  */
 (function (global) {
   const RULE = {
@@ -16,6 +18,7 @@
     DATES: "dates",
     SITE: "site",
     SITE_OVERLAP: "site_overlap",
+    MEMBER_OVERLAP: "member_overlap",
   };
 
   const RULE_LABELS = {
@@ -29,6 +32,7 @@
     [RULE.DATES]: "Check-in and check-out dates",
     [RULE.SITE]: "Assigned site",
     [RULE.SITE_OVERLAP]: "Site already booked",
+    [RULE.MEMBER_OVERLAP]: "Two spots in the same time frame",
   };
 
   const STREAK_MAX_DAYS = 14;
@@ -367,6 +371,20 @@
     return Boolean(aStart && aEnd && bStart && bEnd && aStart < bEnd && bStart < aEnd);
   }
 
+  function memberOverlapMessage() {
+    return "These dates overlap another reservation. A member cannot have two spots in the same time frame.";
+  }
+
+  function findMemberDateOverlap(existingBookings, inDate, outDate, excludeBookingId) {
+    return (existingBookings || []).find((booking) => {
+      if (!booking || !countsForOverlap(booking)) return false;
+      if (excludeBookingId && String(booking.id) === String(excludeBookingId)) return false;
+      const otherIn = normalizeDate(booking.check_in || booking.checkIn);
+      const otherOut = normalizeDate(booking.check_out || booking.checkOut);
+      return datesOverlap(inDate, outDate, otherIn, otherOut);
+    });
+  }
+
   /**
    * Full proposed-stay evaluation for create/edit.
    * Every violation blocks the save unless an admin records an override for that rule.
@@ -428,6 +446,16 @@
         message: `Stay is ${nights} nights (maximum ${cap} consecutive days per reservation).`,
         nights,
         cap,
+      });
+    }
+
+    if (inDate && outDate && outDate > inDate && findMemberDateOverlap(existingBookings, inDate, outDate, excludeBookingId)) {
+      violations.push({
+        rule: RULE.MEMBER_OVERLAP,
+        label: RULE_LABELS[RULE.MEMBER_OVERLAP],
+        code: RULE.MEMBER_OVERLAP,
+        message: memberOverlapMessage(),
+        overridable: false,
       });
     }
 
@@ -604,12 +632,16 @@
     }
 
     function add(record) {
-      if (!record?.rule) return;
+      if (!record?.rule || record.overridable === false || record.rule === RULE.MEMBER_OVERLAP) return;
       drafts[record.rule] = record;
     }
 
     function pendingViolations(violations) {
-      return (violations || []).filter((v) => v?.rule && !drafts[v.rule]);
+      return (violations || []).filter((violation) => {
+        if (!violation?.rule) return false;
+        if (violation.overridable === false || violation.rule === RULE.MEMBER_OVERLAP) return true;
+        return !drafts[violation.rule];
+      });
     }
 
     function allCovered(violations) {
@@ -659,6 +691,9 @@
    * Per-rule override popup. Resolves override record or null if cancelled.
    */
   function showRuleOverrideDialog(violation, actor = {}) {
+    if (violation?.overridable === false || violation?.rule === RULE.MEMBER_OVERLAP) {
+      return Promise.resolve(null);
+    }
     const root = ensureOverrideDialog();
     const ruleEl = root.querySelector("#booking-rule-override-rule");
     const detailEl = root.querySelector("#booking-rule-override-detail");
@@ -764,7 +799,7 @@
 
     pending.forEach((v) => {
       const btn =
-        adminMode && typeof onOverrideClick === "function"
+        adminMode && v.overridable !== false && v.rule !== RULE.MEMBER_OVERLAP && typeof onOverrideClick === "function"
           ? `<button type="button" class="btn btn-outline btn-small booking-limits-override-btn" data-rule="${escapeHtml(
               v.rule
             )}">Override</button>`
@@ -954,6 +989,7 @@
     VACATE_CLEAR_DAYS,
     evaluateProposedStay,
     evaluateConsecutiveOccupancy,
+    memberOverlapMessage,
     buildOccupancyStreaks,
     condoStatusForStay,
     createOverrideSession,
