@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Staff | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site73">
+  <link rel="stylesheet" href="styles.css?v=site74">
 </head>
 <body class="page-visitor page-admin page-staff">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -33,7 +33,10 @@
     <div class="container page-content">
       <p class="staff-print-banner">East Canyon Resort</p>
       <p class="admin-back"><a href="admin.html">← Admin tasks</a></p>
-      <h1>Staff</h1>
+      <div class="staff-title-row">
+        <h1>Staff</h1>
+        <button type="button" class="staff-create-pill" id="staff-create-toggle" hidden aria-expanded="false" aria-controls="staff-create-panel">Create staff admin</button>
+      </div>
       <p id="admin-denied" class="form-message error" hidden>
         This area is for resort administrators.
         <a href="admin-login.html">Admin sign in</a>
@@ -45,7 +48,11 @@
         </p>
 
         <section class="admin-card">
-          <h2 id="staff-create-heading">Create staff admin</h2>
+          <div id="staff-create-panel" class="staff-create-panel" hidden>
+          <div class="staff-create-panel-head">
+            <h2 id="staff-create-heading">Create staff admin</h2>
+            <button type="button" class="staff-create-close" id="staff-create-close" aria-label="Close create staff admin">&times;</button>
+          </div>
           <p id="staff-create-help" class="admin-help">
             Create staff-only logins here. To give an existing member staff access, open their
             member record (Site manager). Click a staff row to edit, close, or add membership.
@@ -84,6 +91,7 @@
             </div>
             <button type="submit" class="btn btn-primary">Create staff login</button>
           </form>
+          </div>
           <p id="admin-create-staff-result" class="form-message" role="status" aria-live="polite"></p>
 
           <h3 class="admin-subhead">Staff directory</h3>
@@ -128,7 +136,7 @@
   <script src="js/auth.js?v=sb44"></script>
   <script src="js/site-header-auth.js?v=4"></script>
   <script src="js/admin-common.js?v=sb26"></script>
-  <script src="js/admin-staff.js?v=sb18"></script>
+  <script src="js/admin-staff.js?v=sb19"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
