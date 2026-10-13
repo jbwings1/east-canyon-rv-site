@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Staff | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site71">
+  <link rel="stylesheet" href="styles.css?v=site72">
 </head>
-<body class="page-visitor page-admin">
+<body class="page-visitor page-admin page-staff">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
     <p>
       <strong>Alert</strong>
@@ -31,6 +31,7 @@
 
   <main>
     <div class="container page-content">
+      <p class="staff-print-banner">East Canyon Resort</p>
       <p class="admin-back"><a href="admin.html">← Admin tasks</a></p>
       <h1>Staff</h1>
       <p id="admin-denied" class="form-message error" hidden>
@@ -86,12 +87,22 @@
           <p id="admin-create-staff-result" class="form-message" role="status" aria-live="polite"></p>
 
           <h3 class="admin-subhead">Staff directory</h3>
+          <div class="staff-directory-toolbar">
+            <div class="staff-status-filters" id="staff-status-filters" role="group" aria-label="Filter staff by status">
+              <button type="button" class="staff-filter-pill" data-staff-status="all" aria-pressed="true">All</button>
+              <button type="button" class="staff-filter-pill" data-staff-status="pending_activation" aria-pressed="false">Pending</button>
+              <button type="button" class="staff-filter-pill" data-staff-status="active" aria-pressed="false">Active</button>
+              <button type="button" class="staff-filter-pill" data-staff-status="suspended" aria-pressed="false">Suspended</button>
+              <button type="button" class="staff-filter-pill" data-staff-status="closed" aria-pressed="false">Closed</button>
+            </div>
+            <button type="button" class="btn btn-outline" id="staff-print-btn">Print</button>
+          </div>
           <div class="admin-table-wrap">
             <table class="admin-table">
               <thead>
                 <tr>
                   <th>Code</th>
-                  <th>Member ID</th>
+                  <th class="staff-col-member">Member ID</th>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Status</th>
@@ -116,7 +127,7 @@
   <script src="js/auth.js?v=sb43"></script>
   <script src="js/site-header-auth.js?v=4"></script>
   <script src="js/admin-common.js?v=sb24"></script>
-  <script src="js/admin-staff.js?v=sb15"></script>
+  <script src="js/admin-staff.js?v=sb16"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">

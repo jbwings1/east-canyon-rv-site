@@ -11,11 +11,20 @@
 
   const staffBody = document.getElementById("admin-staff-body");
   const message = document.getElementById("admin-message");
+  const statusFilters = document.getElementById("staff-status-filters");
   let listedStaff = [];
+  let statusFilter = "all";
 
-  function renderStaff(staff) {
+  function visibleStaff() {
+    if (statusFilter === "all") return listedStaff;
+    return listedStaff.filter((p) => AdminCommon.staffSideStatus(p) === statusFilter);
+  }
+
+  function renderStaff() {
+    const staff = visibleStaff();
     if (!staff.length) {
-      staffBody.innerHTML = `<tr><td colspan="6">No staff yet.</td></tr>`;
+      const empty = statusFilter === "all" ? "No staff yet." : "There are no staff in that status.";
+      staffBody.innerHTML = `<tr><td colspan="6">${empty}</td></tr>`;
       return;
     }
     staffBody.innerHTML = staff
@@ -31,7 +40,7 @@
         const email = p.email || "—";
         return `<tr class="admin-row-link" data-profile-id="${AdminCommon.escapeHtml(rowKey)}" data-href="${safeHref}" tabindex="0">
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(code)}</a></td>
-          <td>${AdminCommon.escapeHtml(memberId)}</td>
+          <td class="staff-col-member">${AdminCommon.escapeHtml(memberId)}</td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(name)}</a></td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(email)}</a></td>
           <td>${AdminCommon.statusPill(status)}</td>
@@ -59,8 +68,22 @@
   async function load() {
     const profiles = await Auth.listAllProfiles();
     listedStaff = profiles.filter((p) => AdminCommon.isStaffProfile(p));
-    renderStaff(listedStaff);
+    renderStaff();
   }
+
+  statusFilters?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-staff-status]");
+    if (!button || !statusFilters.contains(button)) return;
+    statusFilter = button.getAttribute("data-staff-status") || "all";
+    statusFilters.querySelectorAll("[data-staff-status]").forEach((el) => {
+      el.setAttribute("aria-pressed", el === button ? "true" : "false");
+    });
+    renderStaff();
+  });
+
+  document.getElementById("staff-print-btn")?.addEventListener("click", () => {
+    window.print();
+  });
 
   AdminCommon.bindProfileListClicks(staffBody, {
     kind: "staff",
