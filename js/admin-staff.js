@@ -23,10 +23,14 @@
     return STAFF_STATUSES.filter((value) => statusBox(value)?.checked);
   }
 
+  function displayedStatus(profile) {
+    return AdminCommon.displayedStaffStatus(profile);
+  }
+
   function visibleStaff() {
     const selected = new Set(checkedStatuses());
     if (!selected.size) return [];
-    return listedStaff.filter((p) => selected.has(AdminCommon.staffSideStatus(p)));
+    return listedStaff.filter((p) => selected.has(displayedStatus(p)));
   }
 
   function renderStaff() {
@@ -40,7 +44,7 @@
     staffBody.innerHTML = staff
       .map((p) => {
         const tasks = AdminCommon.assignmentSummary(p.admin_tasks, p.admin_level, p.staff_code);
-        const status = AdminCommon.staffSideStatus(p);
+        const status = displayedStatus(p);
         const href = AdminCommon.profileEditHref("admin-staff-edit.html", p);
         const safeHref = AdminCommon.escapeHtml(href);
         const rowKey = AdminCommon.profileRowKey(p);

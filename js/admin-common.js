@@ -180,6 +180,19 @@ window.AdminCommon = {
     return profile?.staff_status || profile?.account_status || "active";
   },
 
+  // Directory, filters, and print. Stored staff_status stays on the edit form.
+  // A temporary password still outstanding shows Pending unless that side is
+  // Closed or Suspended. pending_activation stays Pending either way.
+  displayedStaffStatus(profile) {
+    const side = String(this.staffSideStatus(profile) || "").trim().toLowerCase();
+    if (!side) return "";
+    if (side === "closed" || side === "suspended") return side;
+    if (profile?.must_change_password === true || side === "pending_activation") {
+      return "pending_activation";
+    }
+    return side;
+  },
+
   memberSideStatus(profile) {
     if (!this.profileHasMembership(profile)) return "";
     return profile?.account_status || "active";
@@ -586,8 +599,29 @@ window.AdminCommon = {
 
     const isAdmin = await Auth.verifyAdmin();
     const me = Auth.getCurrentUser() || sessionUser;
-    if (!isAdmin) {
+    const pageFile = String(window.location.pathname.split("/").pop() || "");
+    const passwordPage = pageFile === "admin-change-password.html";
+    const mustChange = Auth.needsPasswordChange(me);
+    const staffSession = me?.sessionRole === "admin" && me?.hasStaffAccess === true;
+    const passwordException = passwordPage && mustChange && staffSession;
+
+    if (mustChange && staffSession && !passwordPage) {
+      window.location.replace("admin-change-password.html");
+      return null;
+    }
+
+    if (!isAdmin && !passwordException) {
       if (denied) denied.hidden = false;
+      if (app) app.hidden = true;
+      return null;
+    }
+
+    if (!Auth.staffCanUseJobs(me) && !passwordException) {
+      if (denied) {
+        denied.hidden = false;
+        denied.textContent =
+          "Your staff account is not active, so assigned jobs are unavailable.";
+      }
       if (app) app.hidden = true;
       return null;
     }
@@ -604,12 +638,6 @@ window.AdminCommon = {
           `You are not assigned this. <a href="admin.html">Back to Admin</a>`;
       }
       if (app) app.hidden = true;
-      return null;
-    }
-
-    const pageFile = String(window.location.pathname.split("/").pop() || "");
-    if (Auth.needsPasswordChange(me) && pageFile !== "admin-change-password.html") {
-      window.location.replace("admin-change-password.html");
       return null;
     }
 
