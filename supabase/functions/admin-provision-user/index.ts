@@ -17,6 +17,7 @@ import {
   isAdminCode,
   isTopAdminCode,
   staffRecordDenial,
+  staffCanUseJobs,
   asTasks,
 } from "./shared.ts";
 
@@ -64,18 +65,13 @@ Deno.serve(async (req) => {
   if (profileError || !callerProfile) {
     return json(403, { error: "Admin profile not found" });
   }
-  const callerStaffStatus = String(callerProfile.staff_status || "active");
-  if (
-    !callerProfile.is_admin ||
-    callerStaffStatus === "closed" ||
-    callerStaffStatus === "suspended"
-  ) {
+  if (callerProfile.is_admin !== true || !staffCanUseJobs(callerProfile)) {
+    if (callerProfile.must_change_password === true) {
+      return json(403, {
+        error: "Change your temporary password before using admin tasks.",
+      });
+    }
     return json(403, { error: "Admin access required" });
-  }
-  if (callerProfile.must_change_password === true) {
-    return json(403, {
-      error: "Change your temporary password before using admin tasks.",
-    });
   }
   const { data: sessionIsAdmin, error: sessionRoleError } = await callerClient
     .rpc("is_admin");

@@ -599,8 +599,29 @@ window.AdminCommon = {
 
     const isAdmin = await Auth.verifyAdmin();
     const me = Auth.getCurrentUser() || sessionUser;
-    if (!isAdmin) {
+    const pageFile = String(window.location.pathname.split("/").pop() || "");
+    const passwordPage = pageFile === "admin-change-password.html";
+    const mustChange = Auth.needsPasswordChange(me);
+    const staffSession = me?.sessionRole === "admin" && me?.hasStaffAccess === true;
+    const passwordException = passwordPage && mustChange && staffSession;
+
+    if (mustChange && staffSession && !passwordPage) {
+      window.location.replace("admin-change-password.html");
+      return null;
+    }
+
+    if (!isAdmin && !passwordException) {
       if (denied) denied.hidden = false;
+      if (app) app.hidden = true;
+      return null;
+    }
+
+    if (!Auth.staffCanUseJobs(me) && !passwordException) {
+      if (denied) {
+        denied.hidden = false;
+        denied.textContent =
+          "Your staff account is not active, so assigned jobs are unavailable.";
+      }
       if (app) app.hidden = true;
       return null;
     }
@@ -617,12 +638,6 @@ window.AdminCommon = {
           `You are not assigned this. <a href="admin.html">Back to Admin</a>`;
       }
       if (app) app.hidden = true;
-      return null;
-    }
-
-    const pageFile = String(window.location.pathname.split("/").pop() || "");
-    if (Auth.needsPasswordChange(me) && pageFile !== "admin-change-password.html") {
-      window.location.replace("admin-change-password.html");
       return null;
     }
 

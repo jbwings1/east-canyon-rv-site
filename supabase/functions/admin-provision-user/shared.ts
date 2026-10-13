@@ -302,6 +302,47 @@ export function isBlockedStatus(status: string) {
   return status === "closed" || status === "suspended";
 }
 
+function cleanStatus(value: unknown) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+/**
+ * Staff side for the job gate. staff_status wins when set. A staff-only account
+ * with no staff_status uses account_status. A dual account does not inherit
+ * Closed or Suspended from the member side.
+ */
+export function staffGateStatus(row: {
+  account_kind?: string | null;
+  is_admin?: boolean | null;
+  staff_code?: string | null;
+  member_id?: string | null;
+  account_status?: string | null;
+  staff_status?: string | null;
+} | null): string {
+  if (!row || !isStaffRow(row)) return "";
+  const explicit = cleanStatus(row.staff_status);
+  if (explicit) return explicit;
+  const account = cleanStatus(row.account_status) || "active";
+  if (!hasMemberId(row)) return account;
+  if (account === "pending_activation") return "pending_activation";
+  return "active";
+}
+
+/** Jobs and extra functions require an Active staff side and a cleared password flag. */
+export function staffCanUseJobs(row: {
+  account_kind?: string | null;
+  is_admin?: boolean | null;
+  staff_code?: string | null;
+  member_id?: string | null;
+  account_status?: string | null;
+  staff_status?: string | null;
+  must_change_password?: boolean | null;
+} | null): boolean {
+  if (!row || !isStaffRow(row)) return false;
+  if (row.must_change_password === true) return false;
+  return staffGateStatus(row) === "active";
+}
+
 export function isStaffRow(row: {
   account_kind?: string | null;
   is_admin?: boolean | null;

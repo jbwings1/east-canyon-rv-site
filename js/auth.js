@@ -111,6 +111,66 @@ function profileHasStaffAccess(profile) {
   return profile?.is_admin === true || Boolean(String(profile?.staff_code || "").trim());
 }
 
+function cleanAccountStatus(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function rowHasMembership(row) {
+  if (!row || typeof row !== "object") return false;
+  if (String(row.member_id ?? row.memberId ?? "").trim()) return true;
+  return row.hasMembership === true;
+}
+
+function rowHasStaff(row) {
+  if (!row || typeof row !== "object") return false;
+  if (row.hasStaffAccess === true || row.is_admin === true) return true;
+  const kind = cleanAccountStatus(row.account_kind || row.accountKind);
+  if (kind === "admin" || kind === "both") return true;
+  return Boolean(String(row.staff_code || row.staffCode || "").trim());
+}
+
+function explicitStaffStatus(row) {
+  if (!row || typeof row !== "object") return "";
+  if (row.staff_status != null && String(row.staff_status).trim() !== "") {
+    return cleanAccountStatus(row.staff_status);
+  }
+  if (row.staffStatusRaw != null && String(row.staffStatusRaw).trim() !== "") {
+    return cleanAccountStatus(row.staffStatusRaw);
+  }
+  const rawProvided =
+    Object.prototype.hasOwnProperty.call(row, "staff_status") ||
+    Object.prototype.hasOwnProperty.call(row, "staffStatusRaw");
+  if (!rawProvided && row.staffStatus) return cleanAccountStatus(row.staffStatus);
+  return "";
+}
+
+/**
+ * Staff side used for the job gate.
+ * staff_status wins when it is set. A staff-only account with no staff_status
+ * uses account_status. A dual account does not inherit Closed or Suspended
+ * from the member side; pending_activation still counts when staff_status is empty.
+ */
+function staffGateStatus(row) {
+  if (!rowHasStaff(row)) return "";
+  const explicit = explicitStaffStatus(row);
+  if (explicit) return explicit;
+  const account = cleanAccountStatus(row.account_status || row.accountStatus) || "active";
+  if (!rowHasMembership(row)) return account;
+  if (account === "pending_activation") return "pending_activation";
+  return "active";
+}
+
+/**
+ * Assigned jobs and extra functions are usable only when the staff side is Active
+ * and the temporary-password flag is clear. Pending, Suspended, and Closed are not.
+ * Admin 001 is included. The password-change page is a separate exception.
+ */
+function profileMayUseStaffJobs(row) {
+  if (!rowHasStaff(row)) return false;
+  if (row.must_change_password === true || row.mustChangePassword === true) return false;
+  return staffGateStatus(row) === "active";
+}
+
 function readCachedSessionRole() {
   const cached = readJson(SESSION_ROLE_KEY);
   if (cached === "member" || cached === "admin") return cached;
@@ -147,8 +207,9 @@ function mapProfile(session, profile) {
   const hasStaffAccess = profileHasStaffAccess(profile);
   const sessionRole = inferSessionRole(profile, profile?._session_role || readCachedSessionRole());
   const accountStatus = profile?.account_status || "active";
+  const staffStatusRaw = hasStaffAccess ? profile?.staff_status ?? null : null;
   const staffStatus = hasStaffAccess
-    ? profile?.staff_status || accountStatus || "active"
+    ? (staffStatusRaw && String(staffStatusRaw).trim()) || accountStatus || "active"
     : "";
   const staffBlocked = staffStatus === "closed" || staffStatus === "suspended";
   return {
@@ -173,6 +234,7 @@ function mapProfile(session, profile) {
     accountKind: profile?.account_kind || (hasStaffAccess && hasMembership ? "both" : hasStaffAccess ? "admin" : "member"),
     accountStatus,
     staffStatus,
+    staffStatusRaw,
     memberId: profile?.member_id || "",
     username: profile?.username || "",
     mustChangePassword: profile?.must_change_password === true,
@@ -412,7 +474,12 @@ const Auth = {
     }
   },
 
+  staffCanUseJobs(user = this.getCurrentUser()) {
+    return profileMayUseStaffJobs(user);
+  },
+
   hasAdminTask(task, user = this.getCurrentUser()) {
+    if (!this.staffCanUseJobs(user)) return false;
     if (!this.isAdmin(user)) return false;
     return this.impliesAdminTask(task, user.adminLevel, user.adminTasks, user.staffCode);
   },
