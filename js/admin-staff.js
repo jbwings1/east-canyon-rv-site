@@ -11,11 +11,30 @@
 
   const staffBody = document.getElementById("admin-staff-body");
   const message = document.getElementById("admin-message");
+  const statusFilters = document.getElementById("staff-status-filters");
+  const STAFF_STATUSES = ["pending_activation", "active", "suspended", "closed"];
   let listedStaff = [];
 
-  function renderStaff(staff) {
+  function statusBox(value) {
+    return statusFilters?.querySelector(`input[data-staff-status="${value}"]`) || null;
+  }
+
+  function checkedStatuses() {
+    return STAFF_STATUSES.filter((value) => statusBox(value)?.checked);
+  }
+
+  function visibleStaff() {
+    const selected = new Set(checkedStatuses());
+    if (!selected.size) return [];
+    return listedStaff.filter((p) => selected.has(AdminCommon.staffSideStatus(p)));
+  }
+
+  function renderStaff() {
+    const selected = checkedStatuses();
+    const staff = visibleStaff();
     if (!staff.length) {
-      staffBody.innerHTML = `<tr><td colspan="6">No staff yet.</td></tr>`;
+      const empty = selected.length ? "There are no staff in that status." : "No status is selected.";
+      staffBody.innerHTML = `<tr><td colspan="6">${empty}</td></tr>`;
       return;
     }
     staffBody.innerHTML = staff
@@ -31,7 +50,7 @@
         const email = p.email || "—";
         return `<tr class="admin-row-link" data-profile-id="${AdminCommon.escapeHtml(rowKey)}" data-href="${safeHref}" tabindex="0">
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(code)}</a></td>
-          <td>${AdminCommon.escapeHtml(memberId)}</td>
+          <td class="staff-col-member">${AdminCommon.escapeHtml(memberId)}</td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(name)}</a></td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(email)}</a></td>
           <td>${AdminCommon.statusPill(status)}</td>
@@ -59,8 +78,28 @@
   async function load() {
     const profiles = await Auth.listAllProfiles();
     listedStaff = profiles.filter((p) => AdminCommon.isStaffProfile(p));
-    renderStaff(listedStaff);
+    renderStaff();
   }
+
+  statusFilters?.addEventListener("change", (event) => {
+    const input = event.target.closest("input[data-staff-status]");
+    if (!input || !statusFilters.contains(input)) return;
+    const value = input.getAttribute("data-staff-status");
+    if (value === "all") {
+      STAFF_STATUSES.forEach((status) => {
+        const box = statusBox(status);
+        if (box) box.checked = input.checked;
+      });
+    } else {
+      const all = statusBox("all");
+      if (all) all.checked = STAFF_STATUSES.every((status) => statusBox(status)?.checked);
+    }
+    renderStaff();
+  });
+
+  document.getElementById("staff-print-btn")?.addEventListener("click", () => {
+    window.print();
+  });
 
   AdminCommon.bindProfileListClicks(staffBody, {
     kind: "staff",
