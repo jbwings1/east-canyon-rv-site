@@ -20,8 +20,8 @@
     }
     staffBody.innerHTML = staff
       .map((p) => {
-        const levelSeat = p.admin_level != null ? String(p.admin_level) : "—";
-        const tasks = AdminCommon.assignmentSummary(p.admin_tasks, p.admin_level);
+        const tasks = AdminCommon.assignmentSummary(p.admin_tasks, p.admin_level, p.staff_code);
+        const status = AdminCommon.staffSideStatus(p);
         const href = AdminCommon.profileEditHref("admin-staff-edit.html", p);
         const safeHref = AdminCommon.escapeHtml(href);
         const rowKey = AdminCommon.profileRowKey(p);
@@ -34,7 +34,7 @@
           <td>${AdminCommon.escapeHtml(memberId)}</td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(name)}</a></td>
           <td><a href="${safeHref}">${AdminCommon.escapeHtml(email)}</a></td>
-          <td>${AdminCommon.escapeHtml(levelSeat)}</td>
+          <td>${AdminCommon.statusPill(status)}</td>
           <td>${AdminCommon.escapeHtml(tasks || "—")}</td>
         </tr>`;
       })
@@ -69,14 +69,20 @@
 
   const taskList = document.getElementById("staff-task-list");
   const functionList = document.getElementById("staff-function-list");
-  if (taskList) taskList.innerHTML = AdminCommon.taskCheckboxHtml("staff-task");
+  const canAssignAdmin = Auth.isTopAdmin(me);
+  const canAssignSiteManager = Auth.isAdminCoded(me);
+  if (taskList) {
+    taskList.innerHTML = AdminCommon.taskCheckboxHtml("staff-task", {
+      includeSiteManager: canAssignSiteManager,
+      includeAdmin: canAssignAdmin,
+    });
+  }
   if (functionList) functionList.innerHTML = AdminCommon.functionCheckboxHtml("staff-function");
   const readAssignment = AdminCommon.wireFunctionPicker({
     button: document.getElementById("staff-add-function"),
     fieldset: document.getElementById("staff-function-fieldset"),
     jobName: "staff-task",
     functionName: "staff-function",
-    levelInput: document.getElementById("staff-level"),
     storedTasks: [],
     note: document.getElementById("staff-tasks-note"),
   });
@@ -101,9 +107,6 @@
         full_name: document.getElementById("staff-name").value.trim(),
         email: document.getElementById("staff-email").value.trim(),
         phone: document.getElementById("staff-phone").value.trim(),
-        admin_level: Number(document.getElementById("staff-level").value),
-        admin_seat: null,
-        staff_code: document.getElementById("staff-code").value.trim(),
         admin_tasks: tasks,
         temporary_password: document.getElementById("staff-temp-password").value,
       });

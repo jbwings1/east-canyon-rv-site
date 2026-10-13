@@ -4196,6 +4196,32 @@ img.logo {
   margin-top: 0.25rem;
 }
 
+.account-status-pill {
+  display: inline-block;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  color: #f6f1e8;
+  background: #1c3a32;
+}
+
+.account-status-pill.active { background: #2f6b4f; }
+.account-status-pill.suspended { background: #c4922a; color: #1c1916; }
+.account-status-pill.closed { background: #14110e; }
+.account-status-pill.pending_activation { background: #8a8175; }
+
+.admin-readonly {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #e4d8c8;
+  border-radius: 0.6rem;
+  background: #f6f1e8;
+  color: #1c1916;
+}
+
 .status-pill {
   display: inline-block;
   font-size: 0.78rem;
