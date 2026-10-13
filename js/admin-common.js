@@ -180,6 +180,19 @@ window.AdminCommon = {
     return profile?.staff_status || profile?.account_status || "active";
   },
 
+  // Directory, filters, and print. Stored staff_status stays on the edit form.
+  // A temporary password still outstanding shows Pending unless that side is
+  // Closed or Suspended. pending_activation stays Pending either way.
+  displayedStaffStatus(profile) {
+    const side = String(this.staffSideStatus(profile) || "").trim().toLowerCase();
+    if (!side) return "";
+    if (side === "closed" || side === "suspended") return side;
+    if (profile?.must_change_password === true || side === "pending_activation") {
+      return "pending_activation";
+    }
+    return side;
+  },
+
   memberSideStatus(profile) {
     if (!this.profileHasMembership(profile)) return "";
     return profile?.account_status || "active";
