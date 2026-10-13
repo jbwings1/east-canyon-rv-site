@@ -130,11 +130,58 @@
     note: document.getElementById("staff-tasks-note"),
   });
   const canCreate = Auth.hasAdminTask("create_staff");
+  const createToggle = document.getElementById("staff-create-toggle");
+  const createPanel = document.getElementById("staff-create-panel");
+
+  function setCreateOpen(open) {
+    if (createPanel) createPanel.hidden = !open;
+    if (createToggle) {
+      createToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      createToggle.classList.toggle("is-selected", open);
+    }
+  }
+
+  function resetCreateForm(form) {
+    functionList?.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+      if (!el.checked) return;
+      const wasDisabled = el.disabled;
+      el.disabled = false;
+      el.checked = false;
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.disabled = wasDisabled;
+    });
+    taskList?.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+      if (el.disabled || !el.checked) return;
+      el.checked = false;
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    form.reset();
+    const functionFieldset = document.getElementById("staff-function-fieldset");
+    const addFunction = document.getElementById("staff-add-function");
+    if (functionFieldset) functionFieldset.hidden = true;
+    addFunction?.setAttribute("aria-expanded", "false");
+  }
+
   if (!canCreate) {
+    createToggle?.setAttribute("hidden", "");
+    createPanel?.setAttribute("hidden", "");
     document.getElementById("staff-create-heading")?.setAttribute("hidden", "");
     document.getElementById("staff-create-help")?.setAttribute("hidden", "");
     document.getElementById("admin-create-staff-form")?.setAttribute("hidden", "");
     document.getElementById("staff-add-function")?.setAttribute("hidden", "");
+    document.getElementById("staff-create-close")?.setAttribute("hidden", "");
+  } else {
+    createToggle?.removeAttribute("hidden");
+    setCreateOpen(false);
+    createToggle?.addEventListener("click", () => {
+      const open = Boolean(createPanel?.hidden);
+      setCreateOpen(open);
+      if (open) document.getElementById("staff-name")?.focus();
+    });
+    document.getElementById("staff-create-close")?.addEventListener("click", () => {
+      setCreateOpen(false);
+      createToggle?.focus();
+    });
   }
 
   document.getElementById("admin-create-staff-form")?.addEventListener("submit", async (e) => {
@@ -158,7 +205,8 @@
         `Staff ${created.email} created (${created.staff_code}).`,
         "success"
       );
-      e.target.reset();
+      resetCreateForm(e.target);
+      setCreateOpen(false);
       await load();
     } catch (err) {
       AdminCommon.showMessage(result, err.message, "error");
