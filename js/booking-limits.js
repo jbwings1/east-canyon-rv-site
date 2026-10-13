@@ -884,7 +884,7 @@
     const code =
       String(profile?.staff_code || "").trim() ||
       adminNumberToken(override?.by) ||
-      (profile?.admin_level != null ? String(profile.admin_level) : "");
+      "";
     return labelNameAndNumber(name, code);
   }
 

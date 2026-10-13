@@ -10,6 +10,8 @@ export const JOBS = [
   "site_manager",
 ] as const;
 
+export const ADMIN_JOB = "admin" as const;
+
 const LEGACY_TASKS = [
   "members",
   "passwords",
@@ -50,7 +52,27 @@ const FUNCTIONS = [
   "remove_staff_access",
 ] as const;
 
-export const ALL_TASKS = [...JOBS, ...LEGACY_TASKS, ...FUNCTIONS] as const;
+export const ALL_TASKS = [...JOBS, ADMIN_JOB, ...LEGACY_TASKS, ...FUNCTIONS] as const;
+
+export function isAdminCode(code: unknown): boolean {
+  return /^admin \d{3}$/i.test(String(code ?? "").trim());
+}
+
+export function isTopAdminCode(code: unknown): boolean {
+  return /^admin 001$/i.test(String(code ?? "").trim());
+}
+
+export function isTopAdminProfile(row: {
+  staff_code?: string | null;
+  admin_level?: number | null;
+} | null | undefined): boolean {
+  if (!row) return false;
+  return Number(row.admin_level) === 1 || isTopAdminCode(row.staff_code);
+}
+
+export function taskList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
 
 export type Task = (typeof ALL_TASKS)[number];
 
@@ -63,10 +85,12 @@ export function impliedAdminTask(
   task: string,
   adminLevel: number | null | undefined,
   adminTasks: string[],
+  staffCode?: string | null,
 ): boolean {
-  if (Number(adminLevel) === 1) return true;
+  if (Number(adminLevel) === 1 || isTopAdminCode(staffCode)) return true;
   const has = (id: string) => adminTasks.includes(id);
   if (has("site_manager")) return true;
+  const adminStaff = isAdminCode(staffCode) || has(ADMIN_JOB);
   const reservationAgent = has("reservation_agent") || has("reservations_manage");
   const frontDesk = has("front_desk") || reservationAgent || has("reservations_view");
   const websiteEditor = has("website_editor") || has("website");
@@ -101,11 +125,13 @@ export function impliedAdminTask(
     case "invoices":
       return accounts;
     case "staff":
-      return staffFunctions;
+      return staffFunctions || adminStaff;
     case "account_roles":
-      return legacyRoles || has("add_staff_access") || has("add_membership") ||
+      return legacyRoles || adminStaff || has("add_staff_access") || has("add_membership") ||
         has("remove_staff_access");
     case "site_manager":
+      return false;
+    case "admin":
       return false;
     case "view_reservations":
     case "office_check_in":
@@ -137,11 +163,11 @@ export function impliedAdminTask(
     case "create_staff":
     case "edit_staff":
     case "close_staff":
-      return legacyStaff || has(task);
+      return adminStaff || legacyStaff || has(task);
     case "add_staff_access":
     case "add_membership":
     case "remove_staff_access":
-      return legacyRoles || has(task);
+      return adminStaff || legacyRoles || has(task);
     default:
       return has(task);
   }
@@ -151,18 +177,86 @@ export function filterAssignableJobs(
   requested: unknown,
   callerLevel: number | null | undefined,
   callerTasks: string[],
-  targetLevel: number,
+  callerCode?: string | null,
 ): Task[] {
-  const requestedTasks = asTasks(requested);
-  if (targetLevel === 1) {
-    const jobsOnly = requestedTasks.filter((job) =>
-      (JOBS as readonly string[]).includes(job)
-    );
-    return jobsOnly.length ? jobsOnly : [...JOBS];
+  const caller = { staff_code: callerCode, admin_level: callerLevel };
+  const top = isTopAdminProfile(caller);
+  const admin = top || isAdminCode(callerCode);
+  return asTasks(requested).filter((job) => {
+    if (job === ADMIN_JOB) return top;
+    if (job === "site_manager") return admin;
+    return impliedAdminTask(job, callerLevel, callerTasks, callerCode);
+  });
+}
+
+export function isRegularStaffRecord(row: {
+  staff_code?: string | null;
+  admin_level?: number | null;
+  admin_tasks?: string[] | null;
+} | null | undefined): boolean {
+  if (!row) return false;
+  if (isTopAdminProfile(row) || isAdminCode(row.staff_code)) return false;
+  return !taskList(row.admin_tasks).includes("site_manager");
+}
+
+export function staffRecordDenial(opts: {
+  caller: {
+    id?: string;
+    staff_code?: string | null;
+    admin_level?: number | null;
+    admin_tasks?: string[] | null;
+  };
+  target: {
+    id?: string;
+    staff_code?: string | null;
+    admin_level?: number | null;
+    admin_tasks?: string[] | null;
+  };
+  nextTasks?: string[];
+  closingStaff?: boolean;
+  deleting?: boolean;
+}): string | null {
+  const { caller, target } = opts;
+  const self = Boolean(caller.id && target.id && caller.id === target.id);
+  const callerTop = isTopAdminProfile(caller);
+  const targetTop = isTopAdminProfile(target);
+  const targetAdmin = targetTop || isAdminCode(target.staff_code);
+  const callerAdmin = callerTop || isAdminCode(caller.staff_code);
+  const callerTasks = taskList(caller.admin_tasks);
+  const targetTasks = taskList(target.admin_tasks);
+
+  if (targetTop && (opts.closingStaff || opts.deleting)) {
+    return "Nobody can delete or close admin 001.";
   }
-  return requestedTasks.filter((job) =>
-    impliedAdminTask(job, callerLevel, callerTasks)
-  );
+  if (self && opts.closingStaff) {
+    return "You cannot close or suspend your own signed-in account from this page.";
+  }
+  if (callerTop) {
+    if (self && callerTasks.includes("site_manager") && opts.nextTasks &&
+      !opts.nextTasks.includes("site_manager")) {
+      return "You cannot remove your own Site manager job.";
+    }
+    return null;
+  }
+  if (targetAdmin) {
+    return "You cannot change an admin record.";
+  }
+  if (callerAdmin) {
+    if (self) return "You cannot change an admin record.";
+    if (self && callerTasks.includes("site_manager") && opts.nextTasks &&
+      !opts.nextTasks.includes("site_manager")) {
+      return "You cannot remove your own Site manager job.";
+    }
+    return null;
+  }
+  if (targetTasks.includes("site_manager") && !self) {
+    return "You cannot change a site manager or an admin.";
+  }
+  if (self && callerTasks.includes("site_manager") && opts.nextTasks &&
+    !opts.nextTasks.includes("site_manager")) {
+    return "You cannot remove your own Site manager job.";
+  }
+  return null;
 }
 
 export const corsHeaders = {
@@ -233,6 +327,37 @@ export function usernameError(username: string): string | null {
     return "Username must be 3–30 characters and use only letters, numbers, underscore, or hyphen.";
   }
   return null;
+}
+
+export function hasOpenSide(row: {
+  account_kind?: string | null;
+  is_admin?: boolean | null;
+  staff_code?: string | null;
+  member_id?: string | null;
+  account_status?: string | null;
+  staff_status?: string | null;
+} | null): boolean {
+  if (!row) return false;
+  const staff = isStaffRow(row);
+  const member = hasMemberId(row);
+  const staffBlocked = staff && isBlockedStatus(String(row.staff_status || "active"));
+  const memberBlocked = member && isBlockedStatus(String(row.account_status || "active"));
+  if (staff && member) return !(staffBlocked && memberBlocked);
+  if (staff) return !staffBlocked;
+  if (member) return !memberBlocked;
+  return !isBlockedStatus(String(row.account_status || "active"));
+}
+
+export async function syncAuthBan(
+  adminClient: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  const { data: row } = await adminClient
+    .from("profiles")
+    .select("id,is_admin,staff_code,member_id,account_kind,account_status,staff_status")
+    .eq("id", userId)
+    .maybeSingle();
+  await applyAuthAccess(adminClient, userId, row ? !hasOpenSide(row) : false);
 }
 
 export async function applyAuthAccess(

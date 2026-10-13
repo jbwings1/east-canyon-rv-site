@@ -11,8 +11,13 @@ import {
   hasMemberId,
   normalizeUsername,
   usernameError,
-  applyAuthAccess,
+  syncAuthBan,
   sendMemberWelcomeEmail,
+  isTopAdminProfile,
+  isAdminCode,
+  isTopAdminCode,
+  staffRecordDenial,
+  asTasks,
 } from "./shared.ts";
 
 Deno.serve(async (req) => {
@@ -50,15 +55,27 @@ Deno.serve(async (req) => {
 
   const { data: callerProfile, error: profileError } = await adminClient
     .from("profiles")
-    .select("id,is_admin,account_kind,account_status,admin_level,admin_tasks")
+    .select(
+      "id,is_admin,account_kind,account_status,staff_status,admin_level,admin_tasks,staff_code,must_change_password",
+    )
     .eq("id", caller.id)
     .maybeSingle();
 
   if (profileError || !callerProfile) {
     return json(403, { error: "Admin profile not found" });
   }
-  if (!callerProfile.is_admin || callerProfile.account_status !== "active") {
+  const callerStaffStatus = String(callerProfile.staff_status || "active");
+  if (
+    !callerProfile.is_admin ||
+    callerStaffStatus === "closed" ||
+    callerStaffStatus === "suspended"
+  ) {
     return json(403, { error: "Admin access required" });
+  }
+  if (callerProfile.must_change_password === true) {
+    return json(403, {
+      error: "Change your temporary password before using admin tasks.",
+    });
   }
   const { data: sessionIsAdmin, error: sessionRoleError } = await callerClient
     .rpc("is_admin");
@@ -66,12 +83,17 @@ Deno.serve(async (req) => {
     return json(403, { error: "Admin access required" });
   }
 
-  const isLevel1 = callerProfile.admin_level === 1;
+  const callerIsTop = isTopAdminProfile(callerProfile);
   const callerTasks: string[] = Array.isArray(callerProfile.admin_tasks)
     ? callerProfile.admin_tasks
     : [];
   const can = (task: string) =>
-    impliedAdminTask(task, callerProfile.admin_level, callerTasks);
+    impliedAdminTask(
+      task,
+      callerProfile.admin_level,
+      callerTasks,
+      callerProfile.staff_code,
+    );
 
   let body: Record<string, unknown>;
   try {
@@ -176,7 +198,7 @@ Deno.serve(async (req) => {
     const { data: member, error: memberError } = await adminClient
       .from("profiles")
       .select(
-        "id,email,username,member_id,full_name,phone,address,city,state,zip,account_kind,account_status",
+        "id,email,username,member_id,full_name,phone,address,city,state,zip,account_kind,account_status,staff_status,is_admin,staff_code,admin_level",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -200,6 +222,7 @@ Deno.serve(async (req) => {
     const accountStatus = String(
       body.account_status ?? member.account_status ?? "active",
     ).trim();
+    const statusScope = String(body.status_scope || "member").trim();
     const username = Object.prototype.hasOwnProperty.call(body, "username")
       ? normalizeUsername(body.username)
       : normalizeUsername(member.username);
@@ -259,6 +282,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    const dual = isStaffRow(member) && hasMemberId(member);
+    const blockedRequest = isBlockedStatus(accountStatus);
+    if (dual && blockedRequest && !["staff", "member", "both"].includes(statusScope)) {
+      return json(400, { error: "Choose Staff, Member, or Both." });
+    }
+    const touchStaff = dual
+      ? blockedRequest && (statusScope === "staff" || statusScope === "both")
+      : false;
+    const touchMember = !dual || !blockedRequest || statusScope === "member" ||
+      statusScope === "both";
+    if (touchStaff && isTopAdminProfile(member)) {
+      return json(400, { error: "Nobody can delete or close admin 001." });
+    }
+    if (touchStaff && blockedRequest && !can("close_staff")) {
+      return json(403, { error: "You are not assigned this function." });
+    }
+    const nextMemberStatus = touchMember
+      ? accountStatus
+      : String(member.account_status || "active");
+    const nextStaffStatus = touchStaff
+      ? accountStatus
+      : member.staff_status;
+
     const { error: updateError } = await adminClient
       .from("profiles")
       .update({
@@ -271,7 +317,8 @@ Deno.serve(async (req) => {
         zip,
         email,
         username,
-        account_status: accountStatus,
+        account_status: nextMemberStatus,
+        staff_status: isStaffRow(member) ? nextStaffStatus : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
@@ -279,7 +326,7 @@ Deno.serve(async (req) => {
       return json(500, { error: updateError.message });
     }
 
-    await applyAuthAccess(adminClient, userId, isBlockedStatus(accountStatus));
+    await syncAuthBan(adminClient, userId);
 
     return json(200, {
       ok: true,
@@ -288,7 +335,8 @@ Deno.serve(async (req) => {
       email,
       member_id: memberId,
       username,
-      account_status: accountStatus,
+      account_status: nextMemberStatus,
+      staff_status: isStaffRow(member) ? nextStaffStatus : null,
       message: "Member record updated.",
     });
   }
@@ -331,6 +379,7 @@ Deno.serve(async (req) => {
       if (stripError) {
         return json(500, { error: stripError.message });
       }
+      await syncAuthBan(adminClient, userId);
       return json(200, {
         ok: true,
         kind: "delete_member",
@@ -363,7 +412,7 @@ Deno.serve(async (req) => {
       if (closeError) {
         return json(500, { error: closeError.message });
       }
-      await applyAuthAccess(adminClient, userId, true);
+      await syncAuthBan(adminClient, userId);
       return json(200, {
         ok: true,
         kind: "delete_member",
@@ -391,7 +440,7 @@ Deno.serve(async (req) => {
       if (closeError) {
         return json(400, { error: deleteError.message });
       }
-      await applyAuthAccess(adminClient, userId, true);
+      await syncAuthBan(adminClient, userId);
       return json(200, {
         ok: true,
         kind: "delete_member",
@@ -429,7 +478,7 @@ Deno.serve(async (req) => {
     const { data: staff, error: staffError } = await adminClient
       .from("profiles")
       .select(
-        "id,email,full_name,phone,staff_code,admin_level,admin_seat,admin_tasks,account_kind,account_status,is_admin,member_id",
+        "id,email,full_name,phone,staff_code,admin_level,admin_seat,admin_tasks,account_kind,account_status,staff_status,is_admin,member_id,must_change_password",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -442,14 +491,15 @@ Deno.serve(async (req) => {
 
     const fullName = String(body.full_name ?? "").trim();
     const phone = String(body.phone ?? "").trim();
-    const staffCode = String(body.staff_code ?? staff.staff_code ?? "").trim();
+    const staffCode = String(staff.staff_code || "").trim();
     const email = String(body.email ?? staff.email ?? "")
       .trim()
       .toLowerCase();
     const accountStatus = String(
-      body.account_status ?? staff.account_status ?? "active",
+      body.account_status ?? staff.staff_status ?? staff.account_status ?? "active",
     ).trim();
-    const adminLevel = Number(body.admin_level ?? staff.admin_level ?? 0);
+    const statusScope = String(body.status_scope || "staff").trim();
+    const temporaryPassword = String(body.temporary_password || "");
 
     if (!fullName) {
       return json(400, { error: "Full name is required" });
@@ -463,83 +513,66 @@ Deno.serve(async (req) => {
     if (!isMemberStatus(accountStatus)) {
       return json(400, { error: "Account status is not valid" });
     }
-    if (!Number.isInteger(adminLevel) || adminLevel < 1 || adminLevel > 3) {
-      return json(400, { error: "Admin level must be 1, 2, or 3" });
+    if (temporaryPassword && temporaryPassword.length < 8) {
+      return json(400, { error: "Temporary password must be at least 8 characters" });
     }
 
-    if (userId === caller.id && isBlockedStatus(accountStatus)) {
-      return json(400, {
-        error:
-          "You cannot close or suspend your own signed-in account from this page",
-      });
+    const dual = isStaffRow(staff) && hasMemberId(staff);
+    const blockedRequest = isBlockedStatus(accountStatus);
+    if (dual && blockedRequest && !["staff", "member", "both"].includes(statusScope)) {
+      return json(400, { error: "Choose Staff, Member, or Both." });
     }
-
-    const previousStatus = String(staff.account_status || "active");
-    if (
-      isBlockedStatus(accountStatus) &&
-      accountStatus !== previousStatus &&
-      !can("close_staff")
-    ) {
+    const touchStaff = !dual || !blockedRequest || statusScope === "staff" ||
+      statusScope === "both";
+    const touchMember = dual && blockedRequest &&
+      (statusScope === "member" || statusScope === "both");
+    if (touchStaff && blockedRequest && !can("close_staff")) {
+      return json(403, { error: "You are not assigned this function." });
+    }
+    if (touchMember && blockedRequest && !can("member_accounts")) {
       return json(403, { error: "You are not assigned this function." });
     }
 
-    if (!isLevel1 && adminLevel === 1 && Number(staff.admin_level) !== 1) {
-      return json(403, { error: "Level 1 is reserved" });
+    const requestedTasks = asTasks(body.admin_tasks);
+    if (requestedTasks.includes("admin") && !callerIsTop) {
+      return json(403, { error: "You cannot assign Admin." });
     }
-
-    if (!isLevel1 && userId !== caller.id) {
-      const targetLevel = Number(staff.admin_level || 99);
-      if (targetLevel <= Number(callerProfile.admin_level || 99)) {
-        return json(403, { error: "You can only edit staff below your level" });
-      }
-      if (adminLevel <= Number(callerProfile.admin_level || 99)) {
-        return json(403, { error: "You can only assign a level below your own" });
-      }
-    }
-
     if (
-      !isLevel1 &&
-      userId === caller.id &&
-      adminLevel !== Number(staff.admin_level)
+      requestedTasks.includes("site_manager") &&
+      !callerIsTop &&
+      !isAdminCode(callerProfile.staff_code)
     ) {
-      return json(403, { error: "You cannot change your own admin level" });
+      return json(403, { error: "You cannot assign Site manager." });
     }
-
-    if (Number(staff.admin_level) === 1 && adminLevel !== 1) {
-      const { count, error: levelCountError } = await adminClient
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("admin_level", 1)
-        .eq("account_status", "active")
-        .neq("id", userId);
-      if (levelCountError) {
-        return json(500, { error: levelCountError.message });
-      }
-      if ((count || 0) < 1) {
-        return json(400, {
-          error: "There must be at least one active level 1 staff account",
-        });
-      }
-    }
-
     let tasks = filterAssignableJobs(
       body.admin_tasks,
       callerProfile.admin_level,
       callerTasks,
-      adminLevel,
+      callerProfile.staff_code,
     );
-    if (adminLevel !== 1 && !tasks.length) {
+    if (isTopAdminCode(staffCode) || Number(staff.admin_level) === 1) {
+      tasks = tasks.filter((task) => task !== "admin");
+    } else if (isAdminCode(staffCode) && !tasks.includes("admin")) {
+      tasks = [...tasks, "admin"];
+    }
+    if (!tasks.length) {
       return json(400, { error: "Assign at least one job or function" });
     }
 
-    if (
-      userId === caller.id &&
-      callerTasks.includes("site_manager") &&
-      adminLevel !== 1 &&
-      !tasks.includes("site_manager")
-    ) {
-      return json(400, { error: "You cannot remove your own Site manager job" });
-    }
+    const previousStaffStatus = String(staff.staff_status || staff.account_status || "active");
+    const nextStaffStatus = touchStaff ? accountStatus : previousStaffStatus;
+    const nextMemberStatus = touchMember
+      ? accountStatus
+      : String(staff.account_status || "active");
+    const closingStaff = touchStaff && blockedRequest &&
+      nextStaffStatus !== previousStaffStatus;
+    const denial = staffRecordDenial({
+      caller: callerProfile,
+      target: staff,
+      nextTasks: tasks,
+      closingStaff,
+    });
+    if (denial) return json(403, { error: denial });
 
     const { data: others, error: othersError } = await adminClient
       .from("profiles")
@@ -551,10 +584,6 @@ Deno.serve(async (req) => {
     const otherRows = others || [];
     const sameText = (value: unknown, expected: string) =>
       String(value || "").trim().toLowerCase() === expected;
-
-    if (otherRows.some((row) => sameText(row.staff_code, staffCode.toLowerCase()))) {
-      return json(409, { error: "That staff code is already in use" });
-    }
 
     const currentEmail = String(staff.email || "").trim().toLowerCase();
     if (email !== currentEmail) {
@@ -571,6 +600,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (temporaryPassword) {
+      const { error: passwordError } = await adminClient.auth.admin.updateUserById(
+        userId,
+        { password: temporaryPassword },
+      );
+      if (passwordError) {
+        return json(400, { error: passwordError.message });
+      }
+    }
+
+    const storedLevel = isTopAdminCode(staffCode)
+      ? 1
+      : staff.admin_level ?? null;
     const { error: updateError } = await adminClient
       .from("profiles")
       .update({
@@ -578,10 +620,14 @@ Deno.serve(async (req) => {
         phone,
         email,
         staff_code: staffCode,
-        admin_level: adminLevel,
+        admin_level: storedLevel,
         admin_seat: null,
         admin_tasks: tasks,
-        account_status: accountStatus,
+        staff_status: nextStaffStatus,
+        account_status: dual ? nextMemberStatus : nextStaffStatus,
+        must_change_password: temporaryPassword
+          ? true
+          : staff.must_change_password === true,
         is_admin: true,
         updated_at: new Date().toISOString(),
       })
@@ -590,7 +636,7 @@ Deno.serve(async (req) => {
       return json(500, { error: updateError.message });
     }
 
-    await applyAuthAccess(adminClient, userId, isBlockedStatus(accountStatus));
+    await syncAuthBan(adminClient, userId);
 
     return json(200, {
       ok: true,
@@ -598,10 +644,11 @@ Deno.serve(async (req) => {
       user_id: userId,
       email,
       staff_code: staffCode,
-      admin_level: adminLevel,
+      admin_level: storedLevel,
       admin_seat: null,
       admin_tasks: tasks,
-      account_status: accountStatus,
+      account_status: dual ? nextMemberStatus : nextStaffStatus,
+      staff_status: nextStaffStatus,
       message: "Staff record updated.",
     });
   }
@@ -631,29 +678,12 @@ Deno.serve(async (req) => {
       return json(400, { error: "Only staff accounts can be removed here" });
     }
 
-    if (!isLevel1) {
-      const targetLevel = Number(staff.admin_level || 99);
-      if (targetLevel <= Number(callerProfile.admin_level || 99)) {
-        return json(403, { error: "You can only close staff below your level" });
-      }
-    }
-
-    if (Number(staff.admin_level) === 1) {
-      const { count, error: levelCountError } = await adminClient
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("admin_level", 1)
-        .eq("account_status", "active")
-        .neq("id", userId);
-      if (levelCountError) {
-        return json(500, { error: levelCountError.message });
-      }
-      if ((count || 0) < 1) {
-        return json(400, {
-          error: "There must be at least one active level 1 staff account",
-        });
-      }
-    }
+    const denial = staffRecordDenial({
+      caller: callerProfile,
+      target: staff,
+      deleting: true,
+    });
+    if (denial) return json(403, { error: denial });
 
     const hasMembership = hasMemberId(staff);
 
@@ -673,6 +703,7 @@ Deno.serve(async (req) => {
           admin_level: null,
           admin_seat: null,
           admin_tasks: [],
+          staff_status: null,
           account_kind: "member",
           updated_at: new Date().toISOString(),
         })
@@ -680,6 +711,7 @@ Deno.serve(async (req) => {
       if (stripError) {
         return json(500, { error: stripError.message });
       }
+      await syncAuthBan(adminClient, userId);
       return json(200, {
         ok: true,
         kind: "delete_staff",
@@ -834,34 +866,41 @@ Deno.serve(async (req) => {
     });
   }
 
-  const adminLevel = Number(body.admin_level || 0);
-  if (!Number.isInteger(adminLevel) || adminLevel < 2) {
-    return json(400, {
-      error: "New staff must be level 2 or lower (level 1 is reserved)",
-    });
+  const requestedTasks = asTasks(body.admin_tasks);
+  if (requestedTasks.includes("admin") && !callerIsTop) {
+    return json(403, { error: "You cannot assign Admin." });
   }
-  if (!isLevel1 && adminLevel <= Number(callerProfile.admin_level || 99)) {
-    return json(403, {
-      error: "You can only create staff below your level",
-    });
+  if (
+    requestedTasks.includes("site_manager") &&
+    !callerIsTop &&
+    !isAdminCode(callerProfile.staff_code)
+  ) {
+    return json(403, { error: "You cannot assign Site manager." });
   }
-
-  const staffCode = String(body.staff_code || "").trim();
   const tasks = filterAssignableJobs(
     body.admin_tasks,
     callerProfile.admin_level,
     callerTasks,
-    adminLevel,
+    callerProfile.staff_code,
   );
   if (!tasks.length) {
     return json(400, { error: "Assign at least one job or function" });
   }
-  if (!staffCode) {
-    return json(400, { error: "Staff code is required" });
-  }
   if (!fullName) {
     return json(400, { error: "Full name is required" });
   }
+
+  const { data: reservedCode, error: codeError } = await adminClient.rpc(
+    "reserve_staff_code",
+    { p_tasks: tasks },
+  );
+  if (codeError || !reservedCode) {
+    return json(500, {
+      error: codeError?.message || "Could not assign a staff code",
+    });
+  }
+  const staffCode = String(reservedCode);
+  const adminLevel = isTopAdminCode(staffCode) ? 1 : null;
 
   const { data: createdAdmin, error: createAdminError } =
     await adminClient.auth.admin.createUser({
@@ -888,6 +927,7 @@ Deno.serve(async (req) => {
     phone,
     account_kind: "admin",
     account_status: "active",
+    staff_status: "active",
     must_change_password: true,
     is_admin: true,
     admin_level: adminLevel,

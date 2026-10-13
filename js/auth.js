@@ -147,6 +147,10 @@ function mapProfile(session, profile) {
   const hasStaffAccess = profileHasStaffAccess(profile);
   const sessionRole = inferSessionRole(profile, profile?._session_role || readCachedSessionRole());
   const accountStatus = profile?.account_status || "active";
+  const staffStatus = hasStaffAccess
+    ? profile?.staff_status || accountStatus || "active"
+    : "";
+  const staffBlocked = staffStatus === "closed" || staffStatus === "suspended";
   return {
     id: authUser.id || profile?.id || "",
     email,
@@ -165,9 +169,10 @@ function mapProfile(session, profile) {
     hasMembership,
     hasStaffAccess,
     sessionRole,
-    isAdmin: sessionRole === "admin" && hasStaffAccess && accountStatus === "active",
+    isAdmin: sessionRole === "admin" && hasStaffAccess && !staffBlocked,
     accountKind: profile?.account_kind || (hasStaffAccess && hasMembership ? "both" : hasStaffAccess ? "admin" : "member"),
     accountStatus,
+    staffStatus,
     memberId: profile?.member_id || "",
     username: profile?.username || "",
     mustChangePassword: profile?.must_change_password === true,
@@ -296,8 +301,10 @@ const Auth = {
   },
 
   isAdmin(user = this.getCurrentUser()) {
+    const staffStatus = user?.staffStatus || (user?.hasStaffAccess ? user?.accountStatus : "active");
+    const staffBlocked = staffStatus === "closed" || staffStatus === "suspended";
     return Boolean(
-      user?.isAdmin && user?.sessionRole === "admin" && user?.accountStatus === "active"
+      user?.isAdmin && user?.sessionRole === "admin" && user?.hasStaffAccess && !staffBlocked
     );
   },
 
@@ -307,11 +314,23 @@ const Auth = {
    * A job includes its functions. One extra function does not include the rest of a job.
    * Older task names still grant the job they were folded into.
    */
-  impliesAdminTask(task, adminLevel, adminTasks) {
-    if (Number(adminLevel) === 1) return true;
+  isTopAdmin(user = this.getCurrentUser()) {
+    const code = String(user?.staffCode || user?.staff_code || "").trim();
+    return /^admin 001$/i.test(code) || Number(user?.adminLevel ?? user?.admin_level) === 1;
+  },
+
+  isAdminCoded(user = this.getCurrentUser()) {
+    const code = String(user?.staffCode || user?.staff_code || "").trim();
+    return this.isTopAdmin(user) || /^admin \d{3}$/i.test(code);
+  },
+
+  impliesAdminTask(task, adminLevel, adminTasks, staffCode) {
+    const code = String(staffCode || "").trim();
+    if (Number(adminLevel) === 1 || /^admin 001$/i.test(code)) return true;
     const tasks = Array.isArray(adminTasks) ? adminTasks : [];
     const has = (id) => tasks.includes(id);
     if (has("site_manager")) return true;
+    const adminStaff = /^admin \d{3}$/i.test(code) || has("admin");
     const reservationAgent = has("reservation_agent") || has("reservations_manage");
     const frontDesk = has("front_desk") || reservationAgent || has("reservations_view");
     const websiteEditor = has("website_editor") || has("website");
@@ -346,10 +365,12 @@ const Auth = {
       case "invoices":
         return accounts;
       case "staff":
-        return staffFunctions;
+        return staffFunctions || adminStaff;
       case "account_roles":
-        return legacyRoles || has("add_staff_access") || has("add_membership") || has("remove_staff_access");
+        return legacyRoles || adminStaff || has("add_staff_access") || has("add_membership") || has("remove_staff_access");
       case "site_manager":
+        return false;
+      case "admin":
         return false;
       case "view_reservations":
       case "office_check_in":
@@ -381,11 +402,11 @@ const Auth = {
       case "create_staff":
       case "edit_staff":
       case "close_staff":
-        return legacyStaff || has(task);
+        return adminStaff || legacyStaff || has(task);
       case "add_staff_access":
       case "add_membership":
       case "remove_staff_access":
-        return legacyRoles || has(task);
+        return adminStaff || legacyRoles || has(task);
       default:
         return has(task);
     }
@@ -393,7 +414,7 @@ const Auth = {
 
   hasAdminTask(task, user = this.getCurrentUser()) {
     if (!this.isAdmin(user)) return false;
-    return this.impliesAdminTask(task, user.adminLevel, user.adminTasks);
+    return this.impliesAdminTask(task, user.adminLevel, user.adminTasks, user.staffCode);
   },
 
   async verifyAdmin() {
@@ -423,7 +444,7 @@ const Auth = {
     const { data, error } = await getClient()
       .from("profiles")
       .select(
-        "id,email,full_name,phone,address,city,state,zip,reservation_type,assigned_spot,profile_complete,is_admin,account_kind,account_status,member_id,username,must_change_password,admin_level,admin_seat,staff_code,admin_tasks,created_at"
+        "id,email,full_name,phone,address,city,state,zip,reservation_type,assigned_spot,profile_complete,is_admin,account_kind,account_status,staff_status,member_id,username,must_change_password,admin_level,admin_seat,staff_code,admin_tasks,created_at"
       )
       .order("full_name", { ascending: true, nullsFirst: false });
     throwIfError(error);
@@ -455,8 +476,8 @@ const Auth = {
     }
     const { data, error } = await getClient().rpc("attach_staff_access", {
       p_user_id: userId,
-      p_staff_code: staffCode,
-      p_admin_level: Number(adminLevel),
+      p_staff_code: staffCode || null,
+      p_admin_level: adminLevel == null || adminLevel === "" ? null : Number(adminLevel),
       p_admin_seat: adminSeat,
       p_admin_tasks: Array.isArray(adminTasks) ? adminTasks : [],
     });
@@ -679,10 +700,7 @@ const Auth = {
         booked_by_kind: "admin",
         booked_by_user_id: admin.id,
         booked_by_name: admin.name || admin.email || "Admin",
-        booked_by_code:
-          admin.staffCode ||
-          (admin.adminLevel != null ? String(admin.adminLevel) : "") ||
-          null,
+        booked_by_code: admin.staffCode || null,
         rule_overrides: overrides,
       })
       .select()
@@ -794,13 +812,10 @@ const Auth = {
     const rawName = String(
       source.name || source.full_name || source.by_name || source.fullName || ""
     ).trim();
-    const level = source.admin_level ?? source.adminLevel;
-    const seatLabel =
-      level != null && String(level).trim() !== "" ? String(level).trim() : "";
     const number =
       [source.code, source.staff_code, source.staffCode, source.booked_by_code]
         .map((value) => this.adminNumberToken(value))
-        .find(Boolean) || seatLabel;
+        .find(Boolean) || "";
     const name = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawName)
       ? ""
       : rawName;
@@ -1272,12 +1287,7 @@ const Auth = {
     } catch {
       writeJson(PROFILE_CACHE_KEY, null);
     }
-    const user = this.getCurrentUser();
-    if (user?.accountStatus === "suspended" || user?.accountStatus === "closed") {
-      await this.signOutQuiet();
-      throw new Error("This account is closed or suspended. Contact the office.");
-    }
-    return user;
+    return this.getCurrentUser();
   },
 
   async signInAsMember(loginId, password) {
@@ -1286,6 +1296,10 @@ const Auth = {
     if (!user?.hasMembership) {
       await this.signOutQuiet();
       throw new Error("Use Admin Sign In for staff accounts. Member Sign In is for members only.");
+    }
+    if (user.accountStatus === "suspended" || user.accountStatus === "closed") {
+      await this.signOutQuiet();
+      throw new Error("This member account is closed or suspended. Contact the office.");
     }
     try {
       await this.setSessionRole("member");
@@ -1307,6 +1321,10 @@ const Auth = {
     if (!user?.hasStaffAccess) {
       await this.signOutQuiet();
       throw new Error("This account does not have administrator access.");
+    }
+    if (user.staffStatus === "suspended" || user.staffStatus === "closed") {
+      await this.signOutQuiet();
+      throw new Error("This staff account is closed or suspended. Contact the office.");
     }
     try {
       await this.setSessionRole("admin");
