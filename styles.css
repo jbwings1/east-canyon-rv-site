@@ -4226,59 +4226,22 @@ img.logo {
   margin: 0 0 0.85rem;
 }
 
-.staff-status-filters {
+.staff-status-filters.admin-task-fieldset {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.2rem 1rem;
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0.45rem 0.9rem 0.55rem;
 }
 
-.staff-filter-pill {
-  appearance: none;
-  font-family: "Source Sans 3", sans-serif;
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.2;
-  padding: 0.38rem 0.85rem;
-  border: 0;
-  border-radius: 999px;
-  background: #efe8dc;
-  color: #5c564e;
+.staff-status-filters.admin-task-fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.15rem 0;
   cursor: pointer;
-}
-
-.staff-filter-pill:hover {
-  background: #e4d8c8;
-  color: #1c1916;
-}
-
-.staff-filter-pill:focus-visible {
-  outline: 2px solid #1c3a32;
-  outline-offset: 2px;
-}
-
-.staff-filter-pill[aria-pressed="true"] {
-  background: #1c3a32;
-  color: #f6f1e8;
-}
-
-.staff-filter-pill[data-staff-status="active"][aria-pressed="true"] {
-  background: #2f6b4f;
-  color: #f6f1e8;
-}
-
-.staff-filter-pill[data-staff-status="pending_activation"][aria-pressed="true"] {
-  background: #8a8175;
-  color: #f6f1e8;
-}
-
-.staff-filter-pill[data-staff-status="suspended"][aria-pressed="true"] {
-  background: #c4922a;
-  color: #1c1916;
-}
-
-.staff-filter-pill[data-staff-status="closed"][aria-pressed="true"] {
-  background: #14110e;
-  color: #f6f1e8;
 }
 
 @media print {

@@ -12,18 +12,28 @@
   const staffBody = document.getElementById("admin-staff-body");
   const message = document.getElementById("admin-message");
   const statusFilters = document.getElementById("staff-status-filters");
+  const STAFF_STATUSES = ["pending_activation", "active", "suspended", "closed"];
   let listedStaff = [];
-  let statusFilter = "all";
+
+  function statusBox(value) {
+    return statusFilters?.querySelector(`input[data-staff-status="${value}"]`) || null;
+  }
+
+  function checkedStatuses() {
+    return STAFF_STATUSES.filter((value) => statusBox(value)?.checked);
+  }
 
   function visibleStaff() {
-    if (statusFilter === "all") return listedStaff;
-    return listedStaff.filter((p) => AdminCommon.staffSideStatus(p) === statusFilter);
+    const selected = new Set(checkedStatuses());
+    if (!selected.size) return [];
+    return listedStaff.filter((p) => selected.has(AdminCommon.staffSideStatus(p)));
   }
 
   function renderStaff() {
+    const selected = checkedStatuses();
     const staff = visibleStaff();
     if (!staff.length) {
-      const empty = statusFilter === "all" ? "No staff yet." : "There are no staff in that status.";
+      const empty = selected.length ? "There are no staff in that status." : "No status is selected.";
       staffBody.innerHTML = `<tr><td colspan="6">${empty}</td></tr>`;
       return;
     }
@@ -71,13 +81,19 @@
     renderStaff();
   }
 
-  statusFilters?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-staff-status]");
-    if (!button || !statusFilters.contains(button)) return;
-    statusFilter = button.getAttribute("data-staff-status") || "all";
-    statusFilters.querySelectorAll("[data-staff-status]").forEach((el) => {
-      el.setAttribute("aria-pressed", el === button ? "true" : "false");
-    });
+  statusFilters?.addEventListener("change", (event) => {
+    const input = event.target.closest("input[data-staff-status]");
+    if (!input || !statusFilters.contains(input)) return;
+    const value = input.getAttribute("data-staff-status");
+    if (value === "all") {
+      STAFF_STATUSES.forEach((status) => {
+        const box = statusBox(status);
+        if (box) box.checked = input.checked;
+      });
+    } else {
+      const all = statusBox("all");
+      if (all) all.checked = STAFF_STATUSES.every((status) => statusBox(status)?.checked);
+    }
     renderStaff();
   });
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Staff | East Canyon Resort</title>
-  <link rel="stylesheet" href="styles.css?v=site72">
+  <link rel="stylesheet" href="styles.css?v=site73">
 </head>
 <body class="page-visitor page-admin page-staff">
   <aside class="home-alert-banner" role="status" aria-label="Current alert">
@@ -88,13 +88,14 @@
 
           <h3 class="admin-subhead">Staff directory</h3>
           <div class="staff-directory-toolbar">
-            <div class="staff-status-filters" id="staff-status-filters" role="group" aria-label="Filter staff by status">
-              <button type="button" class="staff-filter-pill" data-staff-status="all" aria-pressed="true">All</button>
-              <button type="button" class="staff-filter-pill" data-staff-status="pending_activation" aria-pressed="false">Pending</button>
-              <button type="button" class="staff-filter-pill" data-staff-status="active" aria-pressed="false">Active</button>
-              <button type="button" class="staff-filter-pill" data-staff-status="suspended" aria-pressed="false">Suspended</button>
-              <button type="button" class="staff-filter-pill" data-staff-status="closed" aria-pressed="false">Closed</button>
-            </div>
+            <fieldset class="admin-task-fieldset staff-status-filters" id="staff-status-filters">
+              <legend>Status</legend>
+              <label><input type="checkbox" data-staff-status="all" checked> All</label>
+              <label><input type="checkbox" data-staff-status="pending_activation" checked> Pending</label>
+              <label><input type="checkbox" data-staff-status="active" checked> Active</label>
+              <label><input type="checkbox" data-staff-status="suspended" checked> Suspended</label>
+              <label><input type="checkbox" data-staff-status="closed" checked> Closed</label>
+            </fieldset>
             <button type="button" class="btn btn-outline" id="staff-print-btn">Print</button>
           </div>
           <div class="admin-table-wrap">
@@ -127,7 +128,7 @@
   <script src="js/auth.js?v=sb43"></script>
   <script src="js/site-header-auth.js?v=4"></script>
   <script src="js/admin-common.js?v=sb24"></script>
-  <script src="js/admin-staff.js?v=sb16"></script>
+  <script src="js/admin-staff.js?v=sb17"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
