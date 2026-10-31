@@ -148,6 +148,16 @@
               <ul id="booking-member-list" class="member-lookup-list" role="listbox" hidden></ul>
               <input type="hidden" id="booking-member" value="">
             </div>
+            <div
+              id="admin-member-current-bookings"
+              class="admin-member-current-bookings"
+              hidden
+              aria-live="polite"
+            >
+              <h3 class="admin-subhead">Current reservations</h3>
+              <p id="admin-member-current-bookings-summary" class="admin-help"></p>
+              <div id="admin-member-current-bookings-list" class="admin-member-current-bookings-list"></div>
+            </div>
             <div class="form-group">
               <label for="booking-type">Type</label>
               <select id="booking-type" required>
@@ -272,7 +282,7 @@
   <script src="js/booking-rule-flags.js?v=10"></script>
   <script src="js/admin-common.js?v=sb27"></script>
   <script src="js/stay-date-fields.js?v=3"></script>
-  <script src="js/admin-reservations-manage.js?v=sb45"></script>
+  <script src="js/admin-reservations-manage.js?v=sb46"></script>
   <script src="js/alert-banner.js?v=2"></script>
   <footer class="home-footer">
     <div class="container home-footer-inner">
