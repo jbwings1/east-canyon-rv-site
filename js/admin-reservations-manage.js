@@ -297,106 +297,65 @@
     if (list && !list.hidden) showMemberList();
   }
 
-  /** Upcoming / on-property stays for the member selected on Make a reservation. */
-  function memberCurrentBookings(userId) {
-    if (!userId) return [];
-    const today = todayIso();
-    const rows = (bookings || []).filter((b) => {
-      if (String(b.user_id) !== String(userId)) return false;
-      if (b.status === "cancelled") return false;
-      if (!b.check_out || b.check_out <= today) return false;
-      return true;
-    });
-    if (typeof Auth.sortBookingsForDisplay === "function") {
-      return Auth.sortBookingsForDisplay(rows);
-    }
-    return rows.sort((a, b) => String(a.check_in || "").localeCompare(String(b.check_in || "")));
-  }
-
-  function formatAdminSiteLabel(spotId) {
-    if (!spotId) return "Not assigned yet";
-    if (typeof window.SpotAvailability?.formatSiteDetails === "function") {
-      return window.SpotAvailability.formatSiteDetails(spotId);
-    }
-    return String(spotId);
-  }
-
+  /**
+   * Same notice pattern as the member reservations / book pages:
+   * yellow when the member has upcoming stays, red at the max of 2.
+   */
   function refreshMemberCurrentBookings() {
-    const box = document.getElementById("admin-member-current-bookings");
-    const summary = document.getElementById("admin-member-current-bookings-summary");
-    const list = document.getElementById("admin-member-current-bookings-list");
-    if (!box || !list) return;
+    const notice = document.getElementById("admin-member-current-bookings");
+    if (!notice) return;
 
     const userId = bookingMember?.value || "";
     if (!userId) {
-      box.hidden = true;
-      if (summary) summary.textContent = "";
-      list.innerHTML = "";
+      notice.hidden = true;
+      notice.textContent = "";
+      notice.classList.remove("stay-length-notice--limit");
       return;
     }
 
-    box.hidden = false;
-    const rows = memberCurrentBookings(userId);
-    // Confirmed upcoming stays count toward the max of 2 until office check-in.
-    const countingTowardMax =
+    const memberRows = (bookings || []).filter((b) => String(b.user_id) === String(userId));
+    const active =
       typeof Auth.getActiveBookings === "function"
-        ? Auth.getActiveBookings(rows)
-        : rows.filter((b) => b.status === "confirmed");
+        ? Auth.getActiveBookings(memberRows)
+        : memberRows.filter((b) => b.status === "confirmed" && b.check_out && b.check_out > todayIso());
     const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
 
-    if (summary) {
-      if (!rows.length) {
-        summary.textContent = "This member has no current or upcoming reservations.";
-        summary.classList.remove("stay-length-notice", "stay-length-notice--limit");
-      } else if (countingTowardMax.length >= maxActive) {
-        summary.className = "admin-help stay-length-notice stay-length-notice--limit";
-        summary.textContent = `This member has ${countingTowardMax.length} upcoming reservation${
-          countingTowardMax.length === 1 ? "" : "s"
-        } (maximum ${maxActive}) that still count toward the booking limit.`;
-      } else {
-        summary.className = "admin-help";
-        const remaining = maxActive - countingTowardMax.length;
-        summary.textContent =
-          remaining === 1
-            ? `This member has ${rows.length} current reservation${rows.length === 1 ? "" : "s"} and can hold one more upcoming stay.`
-            : `This member has ${rows.length} current reservation${rows.length === 1 ? "" : "s"} and can hold ${remaining} more upcoming stays.`;
-      }
-    }
-
-    if (!rows.length) {
-      list.innerHTML = "";
+    if (!active.length) {
+      notice.hidden = true;
+      notice.textContent = "";
+      notice.classList.remove("stay-length-notice--limit");
       return;
     }
 
-    list.innerHTML = rows
+    const bookingLines = active
       .map((b) => {
-        const type = Auth.reservationTypeLabel(b.reservation_type) || "Reservation";
-        const dates =
-          b.check_in && b.check_out
-            ? window.SpotAvailability.formatDateRange(b.check_in, b.check_out)
-            : "Dates unavailable";
-        const statusLabel =
-          typeof Auth.bookingDisplayStatus === "function"
-            ? Auth.bookingDisplayStatus(b)
-            : b.status || "—";
-        const statusClass =
-          typeof Auth.bookingStatusClass === "function"
-            ? Auth.bookingStatusClass(statusLabel)
-            : "partial";
-        return `<article class="admin-member-current-booking">
-          <div class="admin-member-current-booking-top">
-            <strong>${AdminCommon.escapeHtml(type)}</strong>
-            <span class="status-pill ${statusClass}">${AdminCommon.escapeHtml(statusLabel)}</span>
-          </div>
-          <p class="admin-member-current-booking-line">
-            ${reservationIdLink(b)} · ${AdminCommon.escapeHtml(dates)}
-          </p>
-          <p class="admin-member-current-booking-line">
-            ${AdminCommon.escapeHtml(formatAdminSiteLabel(b.spot))}
-          </p>
-        </article>`;
+        const range = window.SpotAvailability.formatDateRange(b.check_in, b.check_out);
+        const href = `admin-reservations-manage.html?view=${encodeURIComponent(b.id)}`;
+        return `<a class="reservation-id-link" href="${href}">Confirmation #${AdminCommon.escapeHtml(
+          confirmationId(b)
+        )}</a> · ${AdminCommon.escapeHtml(range)}`;
       })
-      .join("");
+      .join("<br>");
+
+    notice.hidden = false;
+    if (active.length >= maxActive) {
+      notice.classList.add("stay-length-notice--limit");
+      notice.innerHTML =
+        `This member has ${active.length} upcoming reservations (maximum ${maxActive}):<br>` +
+        `${bookingLines}<br>` +
+        `Once the office checks them in, or after cancelling one, they can book again.`;
+    } else {
+      notice.classList.remove("stay-length-notice--limit");
+      const remaining = maxActive - active.length;
+      const remainingPhrase =
+        remaining === 1
+          ? "They have one more booking available."
+          : `They may book ${remaining} more.`;
+      notice.innerHTML =
+        `This member has ${active.length} upcoming reservation${active.length === 1 ? "" : "s"}:<br>` +
+        `${bookingLines}<br>` +
+        remainingPhrase;
+    }
   }
 
   function filteredBookings() {
