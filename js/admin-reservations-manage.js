@@ -337,13 +337,11 @@
 
     box.hidden = false;
     const rows = memberCurrentBookings(userId);
-    const activeCount =
-      typeof Auth.getActiveBookings === "function"
-        ? Auth.getActiveBookings(rows.filter((b) => b.user_id === userId || true)).length
-        : rows.filter((b) => b.status === "confirmed").length;
-    // getActiveBookings already filters confirmed+future; pass member rows only
+    // Confirmed upcoming stays count toward the max of 2 until office check-in.
     const countingTowardMax =
-      typeof Auth.getActiveBookings === "function" ? Auth.getActiveBookings(rows) : rows.filter((b) => b.status === "confirmed");
+      typeof Auth.getActiveBookings === "function"
+        ? Auth.getActiveBookings(rows)
+        : rows.filter((b) => b.status === "confirmed");
     const maxActive = window.RESERVATION_MAX_ACTIVE || 2;
 
     if (summary) {
