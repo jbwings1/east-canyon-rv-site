@@ -1548,10 +1548,25 @@
   const createOpenBtn = document.getElementById("admin-create-open");
   if (!canMake && createOpenBtn) createOpenBtn.hidden = true;
 
+  function placeSitesTakenCard(inCreate) {
+    const card = document.getElementById("admin-sites-taken-card");
+    const createSlot = document.getElementById("admin-sites-taken-slot-create");
+    const pageSlot = document.getElementById("admin-sites-taken-slot-page");
+    if (!card || !createSlot || !pageSlot) return;
+    if (inCreate && canMake) {
+      createSlot.appendChild(card);
+      card.classList.add("admin-sites-taken--in-create");
+    } else {
+      pageSlot.appendChild(card);
+      card.classList.remove("admin-sites-taken--in-create");
+    }
+  }
+
   function setCreateFormOpen(open) {
     if (!canMake || !createCard) return;
     createCard.hidden = !open;
     createOpenBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+    placeSitesTakenCard(open);
     if (open) {
       // Admin booking may use any stay dates (no advance-window min on the map).
       const checkIn = document.getElementById("booking-check-in");
