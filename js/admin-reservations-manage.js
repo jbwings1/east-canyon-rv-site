@@ -1,34 +1,42 @@
 /**
- * Admin Manage Reservations — create, edit, confirm, cancel.
+ * Admin reservations — Make page (Sites taken + book) or Manage page (list).
  */
 (async function () {
-  const me = await AdminCommon.requireAdmin([
-    "view_reservations",
-    "office_check_in",
-    "make_reservation",
-    "edit_reservation",
-    "confirm_reservation",
-    "cancel_reservation",
-    "override_rule",
-  ]);
+  const isMakePage = document.body?.dataset?.adminReservations === "make";
+  const isManagePage = !isMakePage;
+
+  const me = await AdminCommon.requireAdmin(
+    isMakePage
+      ? ["make_reservation"]
+      : [
+          "view_reservations",
+          "office_check_in",
+          "edit_reservation",
+          "confirm_reservation",
+          "cancel_reservation",
+          "override_rule",
+        ]
+  );
   if (!me) return;
 
-  const canViewList = [
-    "view_reservations",
-    "office_check_in",
-    "edit_reservation",
-    "confirm_reservation",
-    "cancel_reservation",
-    "override_rule",
-  ].some((task) => Auth.hasAdminTask(task));
-  const canMake = Auth.hasAdminTask("make_reservation");
-  const canEditBooking = Auth.hasAdminTask("edit_reservation");
-  const canConfirmStatus = Auth.hasAdminTask("confirm_reservation");
-  const canCancelStatus = Auth.hasAdminTask("cancel_reservation");
+  const canViewList =
+    isManagePage &&
+    [
+      "view_reservations",
+      "office_check_in",
+      "edit_reservation",
+      "confirm_reservation",
+      "cancel_reservation",
+      "override_rule",
+    ].some((task) => Auth.hasAdminTask(task));
+  const canMake = isMakePage || Auth.hasAdminTask("make_reservation");
+  const canEditBooking = isManagePage && Auth.hasAdminTask("edit_reservation");
+  const canConfirmStatus = isManagePage && Auth.hasAdminTask("confirm_reservation");
+  const canCancelStatus = isManagePage && Auth.hasAdminTask("cancel_reservation");
   const canOverride = Auth.hasAdminTask("override_rule");
-  const canCheckIn = Auth.hasAdminTask("office_check_in");
+  const canCheckIn = isManagePage && Auth.hasAdminTask("office_check_in");
 
-  if (!canViewList) {
+  if (isManagePage && !canViewList) {
     document.querySelector(".admin-booking-filters")?.setAttribute("hidden", "");
     document.getElementById("admin-bookings-table")?.closest(".admin-table-wrap")?.setAttribute("hidden", "");
     document
@@ -1546,43 +1554,27 @@
 
   const createCard = document.getElementById("admin-create-card");
   const createOpenBtn = document.getElementById("admin-create-open");
-  if (!canMake && createOpenBtn) createOpenBtn.hidden = true;
+  if (createOpenBtn) createOpenBtn.hidden = true;
 
-  function placeSitesTakenCard(inCreate) {
-    const card = document.getElementById("admin-sites-taken-card");
-    const createSlot = document.getElementById("admin-sites-taken-slot-create");
-    const pageSlot = document.getElementById("admin-sites-taken-slot-page");
-    if (!card || !createSlot || !pageSlot) return;
-    if (inCreate && canMake) {
-      createSlot.appendChild(card);
-      card.classList.add("admin-sites-taken--in-create");
-    } else {
-      pageSlot.appendChild(card);
-      card.classList.remove("admin-sites-taken--in-create");
-    }
+  function prepareCreateDates() {
+    const checkIn = document.getElementById("booking-check-in");
+    const checkOut = document.getElementById("booking-check-out");
+    checkIn?.removeAttribute("min");
+    checkOut?.removeAttribute("min");
+    checkIn?.removeAttribute("max");
+    checkOut?.removeAttribute("max");
   }
 
   function setCreateFormOpen(open) {
-    if (!canMake || !createCard) return;
+    if (!isMakePage || !canMake || !createCard) return;
     createCard.hidden = !open;
-    createOpenBtn?.setAttribute("aria-expanded", open ? "true" : "false");
-    placeSitesTakenCard(open);
     if (open) {
-      // Admin booking may use any stay dates (no advance-window min on the map).
-      const checkIn = document.getElementById("booking-check-in");
-      const checkOut = document.getElementById("booking-check-out");
-      checkIn?.removeAttribute("min");
-      checkOut?.removeAttribute("min");
-      checkIn?.removeAttribute("max");
-      checkOut?.removeAttribute("max");
-      createCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      prepareCreateDates();
       syncAdminRigField();
       window.requestAnimationFrame(() => {
         ensureAdminMap();
         refreshAdminMap();
       });
-      memberSearchField()?.focus();
-      showMemberList();
     }
   }
 
@@ -1642,20 +1634,17 @@
     if (!open) createOpenBtn.focus();
   });
 
-  initOccupancyDefaults();
-  occBtn?.addEventListener("click", runOccupancyCheck);
-  occRig?.addEventListener("change", () => {
-    if (!occupancyMapReady || occWrap?.hidden || CampgroundMap._layer?.id !== "admin-occupancy-spots-layer") {
-      applyOccupancyRigLength({ render: false });
-      return;
-    }
-    applyOccupancyRigLength({ render: true });
-  });
-
-  document.getElementById("admin-create-close")?.addEventListener("click", () => {
-    setCreateFormOpen(false);
-    createOpenBtn?.focus();
-  });
+  if (isMakePage) {
+    initOccupancyDefaults();
+    occBtn?.addEventListener("click", runOccupancyCheck);
+    occRig?.addEventListener("change", () => {
+      if (!occupancyMapReady || occWrap?.hidden || CampgroundMap._layer?.id !== "admin-occupancy-spots-layer") {
+        applyOccupancyRigLength({ render: false });
+        return;
+      }
+      applyOccupancyRigLength({ render: true });
+    });
+  }
 
   document.getElementById("admin-edit-cancel")?.addEventListener("click", () => {
     closeEdit();
@@ -1873,13 +1862,15 @@
     const params = new URLSearchParams(window.location.search);
     const editId = params.get("edit");
     const viewId = params.get("view");
-    if (canMake && !canViewList) setCreateFormOpen(true);
-    if (editId) {
+    if (isMakePage && canMake) {
+      setCreateFormOpen(true);
+    }
+    if (isManagePage && editId) {
       const booking = bookings.find((b) => b.id === editId);
       if (booking && (canEditBooking || canCheckIn)) {
         openEdit(booking, canEditBooking ? "edit" : "checkin");
       }
-    } else if (viewId && canViewList) {
+    } else if (isManagePage && viewId && canViewList) {
       const booking = bookings.find((b) => b.id === viewId);
       if (booking) openView(booking);
     }
