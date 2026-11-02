@@ -2420,7 +2420,7 @@ a:hover {
   margin-bottom: 0.15rem;
 }
 
-.admin-booking-filter-checks label {
+.admin-booking-filters .admin-booking-filter-checks label {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
