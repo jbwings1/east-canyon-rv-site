@@ -644,6 +644,7 @@ function ensureBookingMap() {
       selectedSpotLabel.textContent = formatSelectedUnit(unit);
       preferredSpotDisplay.hidden = false;
       updateStaySummary();
+      updateMembershipRightsNotice();
     },
   });
   if (typeof CampgroundMap.setOwnBookings === "function") {
@@ -960,6 +961,7 @@ function clearPreferredSpot() {
     CampgroundMap.clearSelection();
   }
   updateStaySummary();
+  updateMembershipRightsNotice();
 }
 
 function updateRvFields() {
