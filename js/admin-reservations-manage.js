@@ -1019,6 +1019,7 @@
         const spotInput = document.getElementById("booking-spot");
         if (spotInput) spotInput.value = unit.id;
         updateAdminSpotBanner(unit);
+        refreshCreateRightsNotice();
       },
     });
     if (!adminZoomReady && typeof MapZoom !== "undefined") {
@@ -1859,14 +1860,16 @@
   });
   document.getElementById("booking-spot")?.addEventListener("change", () => {
     refreshAdminMap();
+    refreshCreateRightsNotice();
   });
   document.getElementById("admin-clear-spot")?.addEventListener("click", () => {
     const spotInput = document.getElementById("booking-spot");
     if (spotInput) spotInput.value = "";
     if (adminMapReady && typeof CampgroundMap !== "undefined") CampgroundMap.clearSelection();
     updateAdminSpotBanner(null);
+    refreshCreateRightsNotice();
   });
-  ["edit-booking-type", "edit-booking-check-in", "edit-booking-check-out"].forEach((id) => {
+  ["edit-booking-type", "edit-booking-spot", "edit-booking-check-in", "edit-booking-check-out"].forEach((id) => {
     document.getElementById(id)?.addEventListener("change", () => {
       AdminCommon.showMessage(editResult, "", "");
       refreshEditRightsNotice();
